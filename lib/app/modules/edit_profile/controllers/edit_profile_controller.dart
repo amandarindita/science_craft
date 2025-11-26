@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../profile/controllers/profile_controller.dart';
+import '../../dashboard/controllers/dashboard_controller.dart';
+import '../../../data/api_service.dart';
 
 class EditProfileController extends GetxController {
   // Menangkap ProfileController yang sudah ada
@@ -26,14 +28,14 @@ class EditProfileController extends GetxController {
 
   // Daftar semua pilihan avatar yang tersedia
   final List<String> avatarOptions = [
-    'assets/amanda.png',
-    'assets/ava_male_01.png',
-    'assets/ava_female_01.png', // <-- Path assetmu ada spasi, 'assetsA/'
-    'assets/ava_male_02.png',
-    'assets/ava_female_02.png',
-    'assets/ava_robot_01.png',
-    'assets/ava_female_03.png', // Tambah jika ada
-    'assets/ava_male_03.png', // Tambah jika ada
+    'assets/volt.png',
+    'assets/aira.png',
+    'assets/aqua.png', // <-- Path assetmu ada spasi, 'assetsA/'
+    'assets/ferro.png',
+    'assets/lyra.png',
+    'assets/nova.png',
+    'assets/orion.png', // Tambah jika ada
+    'assets/terra.png', // Tambah jika ada
   ];
 
   @override
@@ -62,8 +64,7 @@ class EditProfileController extends GetxController {
   }
 
   // Fungsi untuk menyimpan perubahan NAMA dan AVATAR
-  void saveProfile() {
-// ... (sisa kodenya sama persis seperti sebelumnya) ...
+  void saveProfile() async {
     // 1. Validasi nama tidak boleh kosong
     if (nameController.text.isEmpty) {
       Get.snackbar(
@@ -76,23 +77,57 @@ class EditProfileController extends GetxController {
       return;
     }
 
-    // 2. Update data di ProfileController
-    profileController.userName.value = nameController.text;
-    profileController.avatarPath.value = selectedAvatar.value;
+    // --- 2. KIRIM KE SERVER (API) ---
+    Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
+    
+    // Panggil fungsi update di API Service
+    bool success = await ApiService.updateProfile(nameController.text);
+    
+    Get.back(); // Tutup loading
 
-    // 3. Kembali ke halaman profil
-    Get.back();
+    if (success) {
+      // --- 3. UPDATE DATA LOKAL (AGAR UI BERUBAH INSTAN) ---
+      
+      // A. Update Halaman Profil (Ini kode lamamu)
+      profileController.userName.value = nameController.text;
+      profileController.avatarPath.value = selectedAvatar.value;
 
-    // 4. Tampilkan notifikasi sukses
-    Get.snackbar(
-      'Berhasil',
-      'Profil berhasil diperbarui!',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-    );
+      // B. UPDATE DASHBOARD JUGA (INI YANG KURANG)
+      // Kita cek apakah DashboardController sedang hidup?
+      if (Get.isRegistered<DashboardController>()) {
+         // Kita paksa DashboardController untuk update nama user-nya
+         final dashboard = Get.find<DashboardController>();
+         dashboard.userName.value = nameController.text;
+         
+         // Atau kalau mau lebih pasti, suruh dia fetch ulang dari server:
+         // dashboard.fetchUserProfile(); 
+      }
+
+      // 4. Kembali ke halaman sebelumnya
+      Get.back();
+
+      // 5. Tampilkan notifikasi sukses
+      Get.snackbar(
+        'Berhasil',
+        'Profil berhasil diperbarui!',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+      
+      // 6. Refresh data profil dari server untuk memastikan sinkronisasi
+      profileController.fetchUserProfile(); 
+      
+    } else {
+      Get.snackbar(
+        'Gagal',
+        'Gagal menyimpan ke server. Cek koneksi internet.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
-
   // Fungsi untuk mengganti password
   void changePassword() {
     // 1. Validasi field kosong

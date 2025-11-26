@@ -8,7 +8,7 @@ class AboutAppView extends GetView<AboutAppController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1E3A8A), // Latar belakang biru tua
+      backgroundColor: const Color(0xFF1E3A8), // Latar belakang biru tua
       body: SafeArea(
         bottom: false,
         child: Column(

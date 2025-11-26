@@ -34,67 +34,103 @@ class ProfileView extends GetView<ProfileController> {
   }
 
   // --- 1. HEADER (TETAP SAMA) ---
-  Widget _buildProfileHeader() {
-    return Center(
-      child: Column(
-        children: [
-          Obx(() => CircleAvatar(
-                radius: 50,
-                backgroundImage: AssetImage(controller.avatarPath.value),
-              )),
-          const SizedBox(height: 12),
-          Obx(() => Text(
-                controller.userName.value,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              )),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Obx(() => Text(
-                    controller.userLevel.value,
-                    style: const TextStyle(fontSize: 16, color: Colors.black54),
-                  )),
-              IconButton(
-                icon: const Icon(Icons.edit, size: 20, color: Colors.black54),
-                onPressed: () => controller.gotoEditProfile(),
-              )
-            ],
-          ),
-          const SizedBox(height: 12),
-          GestureDetector(
-            onTap: () => controller.goToLevelBenefits(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Column(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Obx(() => LinearProgressIndicator(
-                          value: (controller.nextLevelXp.value == 0)
-                              ? 0.0
-                              : controller.currentXp.value / controller.nextLevelXp.value,
-                          minHeight: 12,
-                          backgroundColor: Colors.grey.shade200,
-                          color: Colors.blueAccent,
-                        )),
-                  ),
-                  const SizedBox(height: 6),
-                  Obx(() => Text(
-                        '${controller.currentXp.value} / ${controller.nextLevelXp.value} XP',
-                        style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.black54,
-                            fontWeight: FontWeight.w600),
-                      )),
-                ],
+ Widget _buildProfileHeader() {
+  return Center(
+    child: Column(
+      children: [
+        // --- BAGIAN AVATAR YANG DIPERBAIKI ---
+        Obx(() {
+          // Radius 50 berarti diameter (lebar & tinggi) adalah 100
+          const double size = 100.0;
+          
+          return Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.grey.shade200, // Warna dasar jika gambar loading
+              border: Border.all(color: Colors.white, width: 2), // Opsional: border putih biar rapi
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                controller.avatarPath.value,
+                width: size,
+                height: size,
+                // BoxFit.cover = Gambar di-zoom biar penuh lingkaran (tidak gepeng)
+                fit: BoxFit.cover, 
+                // Error handling kalau gambar tidak ditemukan
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Icon(Icons.person, size: 50, color: Colors.grey),
+                  );
+                },
               ),
             ),
+          );
+        }),
+        // -------------------------------------
+
+        const SizedBox(height: 12),
+        
+        // Nama User
+        Obx(() => Text(
+              controller.userName.value,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            )),
+            
+        const SizedBox(height: 4),
+        
+        // Level dan Tombol Edit
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Obx(() => Text(
+                  controller.userLevel.value,
+                  style: const TextStyle(fontSize: 16, color: Colors.black54),
+                )),
+            IconButton(
+              icon: const Icon(Icons.edit, size: 20, color: Colors.black54),
+              onPressed: () => controller.gotoEditProfile(),
+            )
+          ],
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // XP Bar (Progress Bar)
+        GestureDetector(
+          onTap: () => controller.goToLevelBenefits(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Column(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Obx(() => LinearProgressIndicator(
+                        value: (controller.nextLevelXp.value == 0)
+                            ? 0.0
+                            : controller.currentXp.value / controller.nextLevelXp.value,
+                        minHeight: 12,
+                        backgroundColor: Colors.grey.shade200,
+                        color: Colors.blueAccent,
+                      )),
+                ),
+                const SizedBox(height: 6),
+                Obx(() => Text(
+                      '${controller.currentXp.value} / ${controller.nextLevelXp.value} XP',
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                          fontWeight: FontWeight.w600),
+                    )),
+              ],
+            ),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   // --- 2. BAGIAN STATS (Eksperimen + Streak ala Duolingo) ---
   Widget _buildNewStatsSection() {

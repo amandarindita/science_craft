@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:science_craft/app/modules/FAQ/bindings/faq_binding.dart';
 import 'package:science_craft/app/modules/FAQ/views/faq_view.dart';
 import 'package:science_craft/app/modules/notification/views/notification_view.dart';
+import 'package:science_craft/app/modules/on_boarding/views/on_boarding_view.dart';
 import 'package:science_craft/app/modules/quiz/bindings/quiz_binding.dart';
 import 'package:science_craft/app/modules/quiz/views/quiz_view.dart';
 import '../modules/login/bindings/login_binding.dart';
@@ -114,6 +115,11 @@ class AppPages {
       name: _Paths.CHATBOT,
       page: () => const ChatbotView(),
       binding: ChatbotBinding(),
+    ),
+    GetPage(
+      name: _Paths.ONBOARDING,
+      page: () => OnboardingView(),
+      // Kita tidak perlu binding khusus karena sudah pakai Get.put di View
     ),
   ];
 }

@@ -72,8 +72,7 @@ class ProfileController extends GetxController {
   void onInit() {
     super.onInit();
     
-    // --- PERBAIKAN UTAMA DISINI ---
-    // 1. Isi data kosong dulu biar UI langsung muncul (gak loading terus)
+    // 1. Isi data kosong dulu biar UI langsung muncul
     _generateWeeklyStreak(0);
     
     // 2. Baru ambil data asli dari server
@@ -119,37 +118,28 @@ class ProfileController extends GetxController {
     }
   }
 
-  // --- LOGIKA PINTAR: GENERATE HARI MINGGU INI ---
+  // --- LOGIKA GENERATE HARI MINGGU INI ---
   void _generateWeeklyStreak(int streakCount) {
     DateTime now = DateTime.now();
-    
-    // 1. Cari hari Senin minggu ini
-    // (now.weekday: Senin=1 ... Minggu=7)
     DateTime monday = now.subtract(Duration(days: now.weekday - 1));
 
     List<StreakDay> tempDays = [];
     List<String> dayLabels = ['S', 'S', 'R', 'K', 'J', 'S', 'M']; // Senin - Minggu
 
     for (int i = 0; i < 7; i++) {
-      // Tanggal yang sedang dicek (Senin + i hari)
       DateTime checkDate = monday.add(Duration(days: i));
       
-      // Cek apakah ini hari ini? (Abaikan jam/menit)
       bool isToday = (checkDate.year == now.year && 
                       checkDate.month == now.month && 
                       checkDate.day == now.day);
 
-      // Cek apakah "Selesai" (Completed)?
       bool isCompleted = false;
       
-      // Logic Simulasi Sederhana:
-      // Jika hari ini atau sebelumnya, dan masuk dalam range streak, anggap selesai.
       if (checkDate.isBefore(now) || isToday) {
           int diffDays = DateTime(now.year, now.month, now.day)
               .difference(DateTime(checkDate.year, checkDate.month, checkDate.day))
               .inDays;
           
-          // Jika selisih hari lebih kecil dari jumlah streak, berarti masuk streak!
           if (diffDays < streakCount) {
             isCompleted = true;
           }
@@ -185,29 +175,32 @@ class ProfileController extends GetxController {
     }
   }
 
-  // --- SISA FUNGSI LAINNYA SAMA ---
+  // --- [PERBAIKAN] LOGIKA ADD XP BIAR POPUP GAK MUNCUL 2X ---
   void addXp(int amount) async {
+    // 1. Simpan level LAMA sebelum ditambah XP
+    String previousLevel = userLevel.value;
+
+    // 2. Tambah XP
     currentXp.value += amount;
-    if (nextLevelXp.value > 0 && currentXp.value >= nextLevelXp.value) {
-       _showLevelUpDialog("Level Up!", "Selamat!");
-    }
+
+    // 3. Hitung level BARU berdasarkan XP baru
     _calculateLevel(currentXp.value);
+
+    // 4. BANDINGKAN: Apakah level berubah?
+    // Jika string level berubah, berarti User naik level!
+    if (userLevel.value != previousLevel) {
+       _showLevelUpDialog(userLevel.value);
+    }
+
+    // 5. Simpan ke server (Background process)
     await ApiService.addXp(amount);
   }
 
-  void _showLevelUpDialog(String newLevel, String reward) {
+  // --- [PERBAIKAN] MENAMPILKAN POPUP ---
+  void _showLevelUpDialog(String newLevel) {
     Get.dialog(
-      Stack(
-        alignment: Alignment.center,
-        children: [
-          Lottie.asset('assets/animations/confetti.json', repeat: false),
-          AlertDialog(
-            title: const Text('NAIK LEVEL!'),
-            content: Text('Selamat datang di $newLevel'),
-            actions: [TextButton(onPressed: ()=>Get.back(), child: const Text('OK'))]
-          )
-        ]
-      )
+      LevelUpPopup(newLevel: newLevel), // Menggunakan Widget Custom di bawah
+      barrierDismissible: false,
     );
   }
 
@@ -219,4 +212,144 @@ class ProfileController extends GetxController {
   void gotoEditProfile() => Get.toNamed(Routes.EDITPROFILE);
   void goToLevelBenefits() => Get.toNamed(Routes.ROADMAP); 
   void logout() => authService.logout();
+}
+
+// =========================================================
+// WIDGET KHUSUS POPUP LEVEL UP (Simpan di file ini juga boleh)
+// =========================================================
+class LevelUpPopup extends StatefulWidget {
+  final String newLevel;
+  const LevelUpPopup({Key? key, required this.newLevel}) : super(key: key);
+
+  @override
+  State<LevelUpPopup> createState() => _LevelUpPopupState();
+}
+
+class _LevelUpPopupState extends State<LevelUpPopup> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // Inisialisasi Controller Animasi agar bisa dikontrol (Play/Stop)
+    _controller = AnimationController(vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent, // Transparan agar bisa custom bentuk
+      elevation: 0,
+      child: Stack(
+        clipBehavior: Clip.none, // PENTING: Biar animasi bisa "keluar" dari kotak
+        alignment: Alignment.topCenter,
+        children: [
+          // --- LAYER 1: KARTU PUTIH ---
+          Container(
+            margin: const EdgeInsets.only(top: 60), // Ruang untuk Trophy
+            padding: const EdgeInsets.only(top: 70, left: 20, right: 20, bottom: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "LEVEL UP!",
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF6C63FF), // Warna ungu modern
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                
+                // Dekorasi garis
+                Container(
+                  width: 50, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.amber,
+                    borderRadius: BorderRadius.circular(10)
+                  ),
+                ),
+                const SizedBox(height: 15),
+
+                Text(
+                  "Selamat! Kamu sekarang adalah\n${widget.newLevel}",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15, color: Colors.grey, height: 1.4),
+                ),
+                const SizedBox(height: 25),
+
+                // Tombol
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Get.back(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6C63FF),
+                      foregroundColor: Colors.white,
+                      elevation: 5,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    ),
+                    child: const Text("KEREN!", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // --- LAYER 2: GLOW BACKGROUND ---
+          Positioned(
+            top: 0,
+            child: Container(
+              width: 120, height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(color: Colors.amber.withOpacity(0.3), blurRadius: 30, spreadRadius: 5)
+                ],
+              ),
+            ),
+          ),
+
+          // --- LAYER 3: LOTTIE ANIMATION ---
+          Positioned(
+            top: -10,
+            child: Lottie.asset(
+              'assets/animation/Trophy.json',
+              width: 150,
+              height: 150,
+              fit: BoxFit.contain,
+              repeat: false, // Main sekali saja
+              controller: _controller, // Pasang controller
+              onLoaded: (composition) {
+                // Saat file Lottie selesai dimuat, paksa main (PLAY)
+                _controller
+                  ..duration = composition.duration
+                  ..forward(); 
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

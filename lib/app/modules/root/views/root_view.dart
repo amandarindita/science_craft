@@ -158,7 +158,7 @@ class RootView extends GetView<RootController> {
                     height: circleDiameter,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFF2A65D8),
+                      color: const Color(0xFF4A90E2),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.15),

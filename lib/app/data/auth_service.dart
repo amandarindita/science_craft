@@ -13,37 +13,48 @@ class AuthService extends GetxService {
   final _storage = GetStorage();
   final _googleSignIn = GoogleSignIn(
     // Client ID dari Google Cloud Console (Web Client ID)
+    // Pastikan ini sama dengan GOOGLE_CLIENT_ID di .env Backend kamu
     serverClientId: '90764646083-urjenubpi8uoa5bbbmqsgia36pg62gl5.apps.googleusercontent.com',
   );
 
-  // Ini fungsi pengecekan, bukan variabel penyimpanan.
-  // Jadi tidak perlu di-set nilainya.
+  // Fungsi pengecekan status login
   bool isLoggedIn() {
     return _storage.hasData('authToken');
   }
 
-  // --- FUNGSI LOGOUT (SUDAH DIPERBAIKI) ---
+  // --- FUNGSI LOGOUT ---
   void logout() async {
     // 1. Hapus Token Server
     await _storage.remove('authToken');
     
-    // 2. Hapus Data Lokal (PENTING: Supaya data user lama hilang)
+    // 2. Sign out juga dari Google agar nanti bisa pilih akun lagi
+    // (Opsional, tapi bagus untuk kebersihan sesi)
+    try {
+      await _googleSignIn.signOut(); 
+    } catch (e) {
+      print("Error google sign out: $e");
+    }
+    
+    // 3. Hapus Data Lokal (PENTING: Supaya data user lama hilang)
     await DatabaseHelper.instance.clearUserData(); 
 
-    // 3. Kembali ke Login
-    // HAPUS BARIS ERROR INI: isLoggedIn.value = false; 
-    // Cukup panggil navigasi ini, GetX akan otomatis cek ulang nanti.
+    // 4. Kembali ke Login
     Get.offAllNamed(Routes.LOGIN);
   }
 
-  // --- FUNGSI LOGIN GOOGLE ---
+  // --- FUNGSI LOGIN GOOGLE (DIPERBAIKI) ---
   Future<void> loginWithGoogle() async {
     try {
       Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
       
+      // --- 1. TAMBAHAN PENTING: PAKSA LOGOUT GOOGLE DULU ---
+      // Ini akan memaksa dialog "Pilih Akun" muncul lagi
+      await _googleSignIn.signOut(); 
+      // -----------------------------------------------------
+      
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        Get.back(); // User batal login
+        Get.back(); // User batal login (klik back/luar dialog)
         return;
       }
       
@@ -69,7 +80,7 @@ class AuthService extends GetxService {
         final data = jsonDecode(response.body);
         final myAppToken = data['access_token']; 
         
-        // Simpan token
+        // Simpan token aplikasi kita
         await _storage.write('authToken', myAppToken);
         
         // Masuk aplikasi
@@ -81,7 +92,9 @@ class AuthService extends GetxService {
 
     } catch (e) {
       Get.back();
-      Get.snackbar('Login Gagal', 'Terjadi kesalahan: $e');
+      // Print error ke console biar tau kenapa (misal: network error)
+      print("Error Login Google: $e"); 
+      Get.snackbar('Login Gagal', 'Terjadi kesalahan koneksi.');
     }
   }
 

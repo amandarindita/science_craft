@@ -1,4 +1,3 @@
-// Untuk Get.snackbar (opsional)
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -10,6 +9,12 @@ class ApiService {
 
   // --- HELPER: Ambil Token ---
   static String? get _token => _storage.read('authToken');
+
+  // --- HELPER: Header Standar ---
+  static Map<String, String> get _headers => {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $_token',
+  };
 
   // --- 1. PROGRESS ---
 
@@ -29,8 +34,7 @@ class ApiService {
     }
   }
 
-  // Ambil SEMUA progress user (Dipakai di List Materi) -- BARU --
-  // Return format: {1: 1.0, 2: 0.5} (Map ID -> Progress)
+  // Ambil SEMUA progress user (Dipakai di List Materi)
   static Future<Map<int, double>> getAllProgress() async {
     if (_token == null) return {};
     try {
@@ -41,9 +45,6 @@ class ApiService {
 
       if (response.statusCode == 200) {
         List<dynamic> data = jsonDecode(response.body);
-        // Konversi List JSON ke Map biar gampang dicari
-        // Dari: [{"material_id": 1, "progress": 1.0}]
-        // Jadi: {1: 1.0}
         Map<int, double> progressMap = {};
         for (var item in data) {
           progressMap[item['material_id']] = (item['progress'] as num).toDouble();
@@ -53,12 +54,12 @@ class ApiService {
     } catch (e) {
       print("[API] Error getAllProgress: $e");
     }
-    return {}; // Return map kosong jika gagal
+    return {}; 
   }
 
   // --- 2. GAMIFICATION (XP & USER DATA) ---
 
-  // Tambah XP (Dipakai saat selesai materi/kuis) -- BARU --
+  // Tambah XP
   static Future<void> addXp(int amount) async {
     if (_token == null) return;
     try {
@@ -73,8 +74,7 @@ class ApiService {
     }
   }
 
-  // Ambil Data Profil (XP, Badge, Nama) -- BARU --
-  // Dipakai di ProfileController
+  // Ambil Data Profil
   static Future<Map<String, dynamic>?> getUserData() async {
     if (_token == null) return null;
     try {
@@ -90,10 +90,48 @@ class ApiService {
     }
     return null;
   }
+  
+  // Unlock Badge
+  static Future<bool> unlockBadge(String badgeCode) async {
+    if (_token == null) return false;
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/gamification/badge'),
+        headers: _headers,
+        body: jsonEncode({'badge_code': badgeCode}),
+      );
 
-  // --- HELPER: Header Standar ---
-  static Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer $_token',
-  };
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['message'].toString().contains("berhasil dibuka");
+      }
+    } catch (e) {
+      print("[API] Error unlockBadge: $e");
+    }
+    return false;
+  }
+
+  // --- 3. UPDATE PROFILE (INI YANG TADI HILANG) ---
+  static Future<bool> updateProfile(String newName) async {
+    if (_token == null) return false;
+    
+    try {
+      final response = await http.put( // Perhatikan: pakai http.put
+        Uri.parse('$baseUrl/auth/update-profile'),
+        headers: _headers,
+        body: jsonEncode({'username': newName}),
+      );
+
+      if (response.statusCode == 200) {
+        print("[API] Update Profile Sukses: $newName");
+        return true;
+      } else {
+        print("[API] Gagal Update Profile: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("[API] Error updateProfile: $e");
+      return false;
+    }
+  }
 }

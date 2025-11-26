@@ -8,7 +8,7 @@ class RegisterView extends GetView<RegisterController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D47A1), // Biru gradasi atas
+      backgroundColor: const Color(0xFF4A90E2), // Biru gradasi atas
       body: SafeArea(
         child: Column(
           children: [
@@ -20,7 +20,7 @@ class RegisterView extends GetView<RegisterController> {
                   width: double.infinity,
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Color(0xFF0D47A1), Color(0xFF2196F3)],
+                      colors: [Color(0xFF4A90E2), Color(0xFF2196F3)],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
@@ -105,7 +105,7 @@ class RegisterView extends GetView<RegisterController> {
                               child: const Text(
                                 'Sign Up',
                                 style: TextStyle(
-                                  color: Color(0xFF0D47A1),
+                                  color: Color(0xFF333333),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 17,
                                 ),
@@ -159,7 +159,7 @@ class RegisterView extends GetView<RegisterController> {
                           // --- SAMBUNGKAN KE CONTROLLER ---
                           onPressed: () => controller.register(),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF183C6B),
+                            backgroundColor: const Color(0xFF4A90E2),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
                             ),
@@ -199,7 +199,7 @@ class RegisterView extends GetView<RegisterController> {
                                 label: const Text(
                                   'Register with Google',
                                   style: TextStyle(
-                                    color: Color(0xFF183C6B),
+                                    color: Color(0xFF333333),
                                     fontWeight: FontWeight.w600,
                                     fontSize: 16,
                                   ),
@@ -231,7 +231,7 @@ class RegisterView extends GetView<RegisterController> {
                                   child: const Text(
                                     'Login',
                                     style: TextStyle(
-                                      color: Color(0xFF0D47A1),
+                                      color: Color(0xFF333333),
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
                                       decoration: TextDecoration.underline,
@@ -290,7 +290,7 @@ class RegisterView extends GetView<RegisterController> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(22),
-          borderSide: const BorderSide(color: Color(0xFF0D47A1), width: 2),
+          borderSide: const BorderSide(color: Color(0xFF4A90E2), width: 2),
         ),
       ),
     );
