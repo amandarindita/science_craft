@@ -10,7 +10,7 @@ class BadgeView extends GetView<ProfileController> {
   Widget build(BuildContext context) {
     return Scaffold(
       // Background Cream lembut sesuai desain
-      backgroundColor: const Color(0xFFFFFBEF), 
+      backgroundColor: const Color(0xFFFFFBEF),
       
       appBar: AppBar(
         title: const Text(
@@ -38,49 +38,30 @@ class BadgeView extends GetView<ProfileController> {
               crossAxisCount: 3, // 3 Kolom ke samping
               crossAxisSpacing: 16,
               mainAxisSpacing: 24,
-              childAspectRatio: 0.85, // Sedikit lebih tinggi biar muat teks
+              childAspectRatio: 0.8, // Sedikit disesuaikan
             ),
             itemBuilder: (context, index) {
               final badge = controller.badges[index];
               
               return Column(
                 children: [
-                  // --- GAMBAR BADGE ---
+                  // --- GAMBAR BADGE (TANPA LINGKARAN) ---
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        // Lingkaran background tipis (opsional)
-                        shape: BoxShape.circle,
-                        color: badge.isOwned 
-                            ? Colors.white 
-                            : Colors.grey.shade300,
-                        boxShadow: badge.isOwned ? [
-                          BoxShadow(
-                            color: Colors.orange.withOpacity(0.2),
-                            blurRadius: 10,
-                            spreadRadius: 2,
-                          )
-                        ] : [],
-                      ),
-                      padding: const EdgeInsets.all(8),
-                      child: badge.isOwned
-                          // KONDISI 1: SUDAH PUNYA (Full Color)
-                          ? Image.asset(badge.imagePath, fit: BoxFit.contain)
-                          
-                          // KONDISI 2: BELUM PUNYA (Hitam Putih + Transparan)
-                          : ColorFiltered(
-                              colorFilter: const ColorFilter.matrix(<double>[
-                                0.2126, 0.7152, 0.0722, 0, 0,
-                                0.2126, 0.7152, 0.0722, 0, 0,
-                                0.2126, 0.7152, 0.0722, 0, 0,
-                                0,      0,      0,      1, 0,
-                              ]),
-                              child: Opacity(
-                                opacity: 0.5, // Bikin agak pudar
-                                child: Image.asset(badge.imagePath, fit: BoxFit.contain),
-                              ),
-                            ),
-                    ),
+                    // Langsung tampilkan gambarnya tanpa Container/Decoration
+                    child: badge.isOwned
+                        // KONDISI 1: SUDAH PUNYA (Full Color)
+                        ? Image.asset(badge.imagePath, fit: BoxFit.contain)
+                        
+                        // KONDISI 2: BELUM PUNYA (Hitam Putih + Transparan)
+                        : ColorFiltered(
+                            colorFilter: const ColorFilter.matrix(<double>[
+                              0.2126, 0.7152, 0.0722, 0, 0,
+                              0.2126, 0.7152, 0.0722, 0, 0,
+                              0.2126, 0.7152, 0.0722, 0, 0,
+                              0,      0,      0,      0.5, 0, // Opacity di sini
+                            ]),
+                            child: Image.asset(badge.imagePath, fit: BoxFit.contain),
+                          ),
                   ),
                   
                   const SizedBox(height: 8),

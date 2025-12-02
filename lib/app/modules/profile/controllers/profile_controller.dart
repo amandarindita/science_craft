@@ -52,11 +52,11 @@ class ProfileController extends GetxController {
 
   // --- DATA BADGE ---
   final badges = <BadgeItem>[
-    BadgeItem(id: 'record', name: "New Record", imagePath: "assets/badge_record.png"),
-    BadgeItem(id: 'first', name: "First Workout", imagePath: "assets/badge_first.png"),
-    BadgeItem(id: '7day', name: "7 Day Streak", imagePath: "assets/badge_7day.png"),
-    BadgeItem(id: '30day', name: "30 Day Streak", imagePath: "assets/badge_30day.png"),
-    BadgeItem(id: '100', name: "100 Workout", imagePath: "assets/badge_100.png"),
+    BadgeItem(id: 'record', name: "New Record", imagePath: "assets/badge/1.png"),
+    BadgeItem(id: 'first', name: "First Workout", imagePath: "assets/badge/2.png"),
+    BadgeItem(id: '7day', name: "7 Day Streak", imagePath: "assets/badge/3.png"),
+    BadgeItem(id: '30day', name: "30 Day Streak", imagePath: "assets/badge/4.png"),
+    BadgeItem(id: '100', name: "100 Workout", imagePath: "assets/badge/5.png"),
   ].obs;
 
   // --- DATA HISTORY ---
@@ -86,7 +86,9 @@ class ProfileController extends GetxController {
       
       if (userData != null) {
         userName.value = userData['username'] ?? 'User';
+        avatarPath.value = userData['avatar'] ?? 'assets/aira.png';
         int xpFromServer = userData['total_xp'] ?? 0;
+        
         
         // 1. Set XP & Level
         currentXp.value = xpFromServer;

@@ -61,7 +61,7 @@ class NotificationView extends GetView<NotificationController> {
     );
   }
 
-  Widget _buildAppBar() {
+ Widget _buildAppBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Row(
@@ -79,13 +79,24 @@ class NotificationView extends GetView<NotificationController> {
               color: Colors.white,
             ),
           ),
-          TextButton(
-            onPressed: () => controller.clearAll(),
-            child: const Text(
-              'Hapus Semua',
-              style: TextStyle(color: Colors.white70),
-            ),
+          
+          // --- UBAH BAGIAN INI ---
+          Row(
+            children: [
+              // Tombol Tes (Lonceng)
+              IconButton(
+                icon: const Icon(Icons.add_alert, color: Colors.yellow),
+                onPressed: () => controller.triggerTestNotification(), // <-- PANGGIL FUNGSI TES
+                tooltip: "Tes Pop-up Notif",
+              ),
+              // Tombol Hapus (Tong Sampah)
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.white70),
+                onPressed: () => controller.clearAll(),
+              ),
+            ],
           )
+          // -----------------------
         ],
       ),
     );

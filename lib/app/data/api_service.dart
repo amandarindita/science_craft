@@ -112,18 +112,22 @@ class ApiService {
   }
 
   // --- 3. UPDATE PROFILE (INI YANG TADI HILANG) ---
-  static Future<bool> updateProfile(String newName) async {
+static Future<bool> updateProfile(String newName, String avatarPath) async {
     if (_token == null) return false;
     
     try {
-      final response = await http.put( // Perhatikan: pakai http.put
+      final response = await http.put(
         Uri.parse('$baseUrl/auth/update-profile'),
         headers: _headers,
-        body: jsonEncode({'username': newName}),
+        // Kirim username DAN avatar
+        body: jsonEncode({
+          'username': newName,
+          'avatar': avatarPath 
+        }),
       );
 
       if (response.statusCode == 200) {
-        print("[API] Update Profile Sukses: $newName");
+        print("[API] Update Profile Sukses: $newName, $avatarPath");
         return true;
       } else {
         print("[API] Gagal Update Profile: ${response.body}");
@@ -133,5 +137,5 @@ class ApiService {
       print("[API] Error updateProfile: $e");
       return false;
     }
-  }
+}
 }

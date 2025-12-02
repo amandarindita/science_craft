@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/dashboard_controller.dart';
-// Pastikan path ini benar menuju widget kartu kamu
+// Import ProfileController untuk ambil data Avatar
+import '../../profile/controllers/profile_controller.dart'; 
 import '../../../widgets/shared_cards.dart'; 
 
 class DashboardView extends GetView<DashboardController> {
@@ -22,16 +23,31 @@ class DashboardView extends GetView<DashboardController> {
 
   // --- HEADER (PROFILE & STREAK) ---
   Widget _buildHeader(BuildContext context) {
+    // Panggil ProfileController
+    final ProfileController profileController = Get.find<ProfileController>();
+
     return Container(
       padding: const EdgeInsets.only(top: 50, left: 20, right: 20, bottom: 130),
       child: Row(
         children: [
-          // Avatar
-          const CircleAvatar(
-            radius: 22,
-            backgroundImage: AssetImage('assets/amanda.png'), 
-            backgroundColor: Colors.grey, 
-          ),
+          // --- AVATAR ---
+          Obx(() => Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.grey[300],
+              image: DecorationImage(
+                image: AssetImage(profileController.avatarPath.value),
+                fit: BoxFit.cover,
+                onError: (exception, stackTrace) {
+                   print("Error loading avatar: ${profileController.avatarPath.value}");
+                }
+              ),
+              border: Border.all(color: Colors.white, width: 2),
+            ),
+          )),
+          
           const SizedBox(width: 12),
           
           // Nama User
@@ -113,14 +129,13 @@ class DashboardView extends GetView<DashboardController> {
               ),
               const SizedBox(height: 30),
 
-              // Bagian 2: Lanjutkan Belajar (LOGIKA BARU)
+              // Bagian 2: Lanjutkan Belajar
               const Text('Lanjutkan Belajar',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
 
               // --- LOGIKA TAMPILAN LIST ---
               Obx(() {
-                // 1. Cek Loading
                 if (controller.isLoading.value) {
                   return const Center(child: Padding(
                     padding: EdgeInsets.all(20.0),
@@ -128,36 +143,31 @@ class DashboardView extends GetView<DashboardController> {
                   ));
                 }
 
-                // 2. KASUS A: Tidak ada materi on-going (List Kosong)
                 if (controller.inProgressMaterials.isEmpty) {
                   return _buildEmptyHistoryCard();
                 }
 
-                // 3. KASUS B: Ada materi on-going (Tampilkan List)
-                // Kita map list dari controller menjadi widget
                 return Column(
                   children: controller.inProgressMaterials.map((item) {
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0), // Jarak antar kartu
+                      padding: const EdgeInsets.only(bottom: 12.0), 
                       child: ContinueLearningCard(
                         title: item.title,
                         progress: item.progress,
                         iconPath: item.iconPath,
-                        // Panggil fungsi continueMaterial di controller baru
                         onTap: () => controller.continueMaterial(item),
                       ),
                     );
                   }).toList(),
                 );
               }),
-              // ------------------------
               
               const SizedBox(height: 20),
             ],
           ),
         ),
 
-        // Kartu "Tahukah Kamu?" (Melayang di atas)
+        // --- KARTU "TAHUKAH KAMU?" (VERSI BERSIH/CLEAN) ---
         Positioned(
           top: -80,
           left: 20,
@@ -167,6 +177,7 @@ class DashboardView extends GetView<DashboardController> {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
+                // Background Kuning
                 Positioned(
                   top: 40, left: 0, right: 0, bottom: 0,
                   child: Container(
@@ -183,6 +194,7 @@ class DashboardView extends GetView<DashboardController> {
                     ),
                   ),
                 ),
+                // Gambar Dekorasi
                 Positioned(
                   top: -50, left: 0, right: 0,
                   child: Image.asset(
@@ -192,25 +204,50 @@ class DashboardView extends GetView<DashboardController> {
                     errorBuilder: (ctx, err, stack) => const SizedBox(), 
                   ),
                 ),
+                // Konten Teks (White Card - Clean Version)
                 Positioned(
                   bottom: 12, left: 12, right: 12,
                   child: Container(
+                    width: double.infinity, // Lebar penuh
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('Tahukah Kamu?',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
-                        SizedBox(height: 4),
-                        Text('Petir lebih panas 5x dari permukaan matahari',
-                            style: TextStyle(fontSize: 14, color: Color(0xFF555555))),
-                      ],
-                    ),
+                    child: Obx(() {
+                      // Cek jika data kosong
+                      if (controller.currentFact.isEmpty) return const SizedBox();
+                      
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Header Saja
+                          const Text(
+                            'Tahukah Kamu?',
+                            style: TextStyle(
+                              fontSize: 18, // Ukuran font pas
+                              fontWeight: FontWeight.bold, 
+                              color: Color(0xFF333333)
+                            )
+                          ),
+                          
+                          const SizedBox(height: 8),
+
+                          // Deskripsi Langsung (Tanpa Judul Kategori)
+                          Text(
+                            controller.currentFact['desc'] ?? '',
+                            style: const TextStyle(
+                              fontSize: 14, 
+                              color: Color(0xFF555555),
+                              height: 1.5, // Spasi baris biar enak dibaca
+                            ),
+                            maxLines: 3, 
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      );
+                    }),
                   ),
                 ),
               ],
@@ -242,7 +279,6 @@ class DashboardView extends GetView<DashboardController> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Pastikan punya gambar ini, atau ganti icon sementara
           Image.asset(
             'assets/rocket_start.png', 
             height: 100,

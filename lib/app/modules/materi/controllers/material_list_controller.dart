@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../../../routes/app_pages.dart';
 import '../../../data/db/database_helper.dart'; 
 import '../../../models/material_model.dart'; 
-// --- IMPORT API SERVICE ---
 import '../../../data/api_service.dart';
 
 class MaterialListController extends GetxController {
@@ -28,7 +27,6 @@ class MaterialListController extends GetxController {
     loadMaterialsHybrid();
   }
 
-  // --- FUNGSI PERBAIKAN: HYBRID LOADING (MERGE LOGIC) ---
   Future<void> loadMaterialsHybrid() async {
     isLoading.value = true;
     print("[ListController] Memulai Hybrid Loading...");
