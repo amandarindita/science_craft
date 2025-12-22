@@ -17,6 +17,7 @@ abstract class Routes {
   static const CHATBOT = _Paths.CHATBOT; 
   static const ROADMAP = _Paths.ROADMAP;
   static const ONBOARDING = _Paths.ONBOARDING;
+  static const ADMIN = _Paths.ADMIN;
 }
 
 abstract class _Paths {
@@ -35,6 +36,7 @@ abstract class _Paths {
   static const QUIZ = '/quiz/:id';
   static const CHATBOT = '/chatbot';
   static const ROADMAP = '/roadmap';
-  static const ONBOARDING = '/onboarding';  
+  static const ONBOARDING = '/onboarding'; 
+  static const ADMIN = '/admin'; 
   }
 // Tambahkan path untuk dashboard

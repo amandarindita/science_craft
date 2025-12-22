@@ -9,6 +9,8 @@ import '../../../models/material_model.dart';
 class DashboardController extends GetxController {
   // --- DATA USER ---
   final userName = 'Sobat Sains'.obs;
+  
+  // STREAK KITA UBAH JADI LOKAL BIAR STABIL & PASTI JALAN
   final userStreak = 0.obs;
 
   // --- DATA "LANJUTKAN BELAJAR" ---
@@ -16,63 +18,124 @@ class DashboardController extends GetxController {
   final isLoading = true.obs;
   final box = GetStorage();
 
-  // --- [BAGIAN FAKTA SAINS] ---
-  // Variabel untuk nampung fakta yang sedang tampil
+  // --- BAGIAN FAKTA SAINS ---
   var currentFact = <String, String>{}.obs;
-
-  // Database Fakta (Versi Clean: Hapus 'title' karena tidak dipakai di UI)
-  final List<Map<String, String>> scienceFacts = [
-    {'desc': 'Petir 5x lebih panas dari permukaan matahari (30.000°C).'},
-    {'desc': 'Jika DNA dibentangkan, panjangnya bisa bolak-balik ke Bulan 6000x.'},
-    {'desc': 'Asam lambung (pH 1-2) cukup kuat untuk melarutkan silet logam.'},
-    {'desc': 'Di Saturnus dan Jupiter, tekanan atmosfer membuat hujan berlian.'},
-    {'desc': 'Seperti sidik jari, setiap orang memiliki pola lidah yang unik.'},
-    {'desc': 'Efek Mpemba: Air panas bisa membeku lebih cepat daripada air dingin.'},
-    {'desc': 'Warna gas oksigen itu bening, tapi oksigen cair berwarna biru pucat.'},
-    {'desc': 'Tulang paha manusia lebih kuat daripada beton dengan ketebalan sama.'},
-    {'desc': 'Cahaya matahari butuh 8 menit 20 detik untuk sampai ke Bumi.'},
-    {'desc': 'Kaca sebenarnya bukan benda padat sejati, melainkan cairan yang sangat lambat.'},
-    {'desc': 'Otakmu menghasilkan listrik 23 watt saat bangun, cukup untuk nyalakan bohlam.'},
-    {'desc': 'Satu sendok teh bintang neutron beratnya setara seluruh manusia di Bumi.'},
-    {'desc': 'Suara tidak bisa merambat di ruang hampa udara (luar angkasa).'},
-    {'desc': 'Kulit adalah organ terbesar di tubuh manusia.'},
-    {'desc': 'Tubuh manusia mengandung sekitar 0.2mg emas, terbanyak di dalam darah.'},
-    {'desc': 'Di Bulan, berat badanmu hanya 16.5% dari beratmu di Bumi.'},
-    {'desc': 'Otot mata adalah otot yang paling cepat bereaksi di seluruh tubuh.'},
-    {'desc': 'Helium cair bisa melawan gravitasi dan memanjat dinding wadahnya.'},
-    {'desc': '99.99% bagian atom adalah ruang kosong.'},
-    {'desc': 'Jumlah bakteri di mulutmu lebih banyak dari jumlah manusia di Bumi.'},
-  ];
+  var allFactsFromDb = <Map<String, dynamic>>[].obs;
+  // Variabel untuk mencegah fakta muncul 2x berturut-turut
+  int _lastFactIndex = -1;
 
   @override
   void onInit() {
     super.onInit();
-    fetchUserProfile();
-    fetchInProgressMaterials();
     
-    // Acak fakta saat aplikasi dibuka
-    randomizeFact();
+    // 1. Cek Streak (Logika Lokal - Pasti Jalan)
+    checkLocalStreak();
+
+    // 2. Ambil Nama User (Dari Backend/Server)
+    fetchUserProfile();
+
+    // 3. Load Materi & Fakta
+    fetchInProgressMaterials();
+    fetchFunFacts();
   }
 
-  // Fungsi Pengacak (Sederhana)
-  void randomizeFact() {
-    if (scienceFacts.isNotEmpty) {
-      int randomIndex = Random().nextInt(scienceFacts.length);
-      currentFact.value = scienceFacts[randomIndex];
+  // ==========================================
+  // 1. LOGIKA BARU: STREAK LOKAL (SOLUSI FINAL)
+  // ==========================================
+  void checkLocalStreak() async {
+    final db = DatabaseHelper.instance;
+    
+    // Ambil tanggal hari ini (Format: 2025-12-09) di HP User
+    String today = DateTime.now().toString().split(' ')[0];
+    
+    // Ambil data history dari SQLite
+    String? lastLoginDate = await db.getSetting('last_login_date');
+    String? savedStreakStr = await db.getSetting('current_streak');
+    int currentStreak = int.parse(savedStreakStr ?? '0');
+
+    // LOGIKA HITUNG STREAK
+    if (lastLoginDate == today) {
+      // User sudah buka app hari ini -> Streak tetap
+      userStreak.value = currentStreak;
+    } else {
+      // Cek selisih hari
+      DateTime dateToday = DateTime.parse(today);
+      // Kalau belum pernah login, anggap kemarin baru install
+      DateTime dateLast = lastLoginDate != null ? DateTime.parse(lastLoginDate) : dateToday.subtract(Duration(days: 2));
+      
+      int difference = dateToday.difference(dateLast).inDays;
+
+      if (difference == 1) {
+        // Login berturut-turut -> Nambah!
+        currentStreak++;
+      } else if (lastLoginDate == null) {
+        // Baru pertama kali install
+        currentStreak = 1;
+      } else {
+        // Bolos lebih dari 1 hari -> Reset
+        currentStreak = 1;
+      }
+      
+      // Simpan Balik ke SQLite (Biar besok diingat)
+      await db.saveSetting('last_login_date', today);
+      await db.saveSetting('current_streak', currentStreak.toString());
+      
+      // Update Tampilan
+      userStreak.value = currentStreak;
     }
   }
 
-  // --- [BAGIAN LOGIKA LAINNYA BIARKAN TETAP SAMA] ---
-  
+  // ==========================================
+  // 2. LOGIKA BARU: FUNFACT (ANTI-KEMBAR)
+  // ==========================================
+  void fetchFunFacts() async {
+    try {
+      final data = await DatabaseHelper.instance.getAllFunFacts();
+      if (data.isNotEmpty) {
+        allFactsFromDb.assignAll(data);
+        randomizeFact();
+      } else {
+        currentFact.value = {'desc': 'Belum ada fakta unik. Admin, tolong isi dong!'};
+      }
+    } catch (e) {
+      print("Error fakta: $e");
+    }
+  }
+
+  void randomizeFact() {
+    if (allFactsFromDb.isNotEmpty) {
+      // Kalau datanya cuma 1, ya mau gimana lagi
+      if (allFactsFromDb.length == 1) {
+        currentFact.value = {'desc': allFactsFromDb[0]['description']};
+        return;
+      }
+
+      int randomIndex;
+      // LOOPING: Cari terus sampai dapat angka yg BEDA dari sebelumnya
+      do {
+        randomIndex = Random().nextInt(allFactsFromDb.length);
+      } while (randomIndex == _lastFactIndex);
+
+      _lastFactIndex = randomIndex; // Kunci index ini
+
+      currentFact.value = {
+        'desc': allFactsFromDb[randomIndex]['description']
+      };
+    }
+  }
+
+  // ==========================================
+  // 3. LOGIKA LAINNYA (USER & MATERI)
+  // ==========================================
   void fetchUserProfile() async {
     try {
       final userData = await ApiService.getUserData();
       if (userData != null) {
         userName.value = userData['username'] ?? 'User';
-        userStreak.value = userData['streak'] ?? 0; 
+        // Note: Kita abaikan streak dari server, kita pakai yg lokal di atas biar aman
       }
     } catch (e) {
-      print("[Dashboard] Gagal ambil data user: $e");
+      print("[Dashboard] Gagal ambil user server, pakai default.");
     }
   }
 
@@ -80,7 +143,11 @@ class DashboardController extends GetxController {
     isLoading.value = true;
     try {
       var allLocalMaterials = await DatabaseHelper.instance.getAllMaterials();
-      var serverProgressMap = await ApiService.getAllProgress();
+      
+      // Tetap Hybrid: Cek server kalau ada progress
+      var serverProgressMap = {};
+      try { serverProgressMap = await ApiService.getAllProgress(); } catch (_) {}
+
       List<MaterialItem> tempResult = [];
 
       for (var item in allLocalMaterials) {
@@ -120,7 +187,7 @@ class DashboardController extends GetxController {
       arguments: item.progress,
     )?.then((value) {
       fetchInProgressMaterials();
-      fetchUserProfile(); 
+      // fetchUserProfile(); // Gak perlu panggil ini lagi buat streak, udh otomatis lokal
     });
   }
   
@@ -144,9 +211,9 @@ class DashboardController extends GetxController {
 
   void navigateToSubject(String subjectName) {
      try {
-       Get.snackbar("Info", "Filter $subjectName dipilih");
+       Get.snackbar("Info", "Menampilkan materi $subjectName");
      } catch (e) {
-       print("RootController belum siap: $e");
+       print("Error navigasi: $e");
      }
   }
 }

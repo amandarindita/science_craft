@@ -28,7 +28,8 @@ import '../modules/chatbot/views/chatbot_view.dart';
 import '../modules/chatbot/bindings/chatbot_binding.dart';
 import '../modules/roadmap/bindings/roadmap_binding.dart';
 import '../modules/roadmap/views/roadmap_view.dart';
-
+import '../modules/admin/bindings/admin_binding.dart  ';
+import '../modules/admin/views/admin_view.dart  ';
 
 
 part 'app_routes.dart';
@@ -120,6 +121,11 @@ class AppPages {
       name: _Paths.ONBOARDING,
       page: () => OnboardingView(),
       // Kita tidak perlu binding khusus karena sudah pakai Get.put di View
+    ),
+    GetPage(
+      name: _Paths.ADMIN,
+      page: () => AdminView(),
+      binding: AdminBinding(),
     ),
   ];
 }

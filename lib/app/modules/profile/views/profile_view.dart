@@ -425,6 +425,15 @@ class ProfileView extends GetView<ProfileController> {
             label: 'Logout',
             onTap: () => controller.logout(),
             isLogout: true),
+        const SizedBox(height: 40), // Jarak agak jauh biar gak kepencet
+        Center(
+          child: TextButton.icon(
+            onPressed: () => controller.deleteAccount(),
+            icon: Icon(Icons.delete_forever, color: Colors.red.shade300, size: 20),
+            label: Text("Hapus Akun Permanen", style: TextStyle(color: Colors.red.shade300, fontSize: 13)),
+          ),
+        ),
+        const SizedBox(height: 20),
       ],
     );
   }

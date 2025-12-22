@@ -45,7 +45,7 @@ dependencies:
   flutter_markdown: ^0.7.3     # Untuk simpan sesi login
   flutter_local_notifications: ^19.5.0
   timezone: ^0.10.0
-  flutter_timezone: ^1.0.8
+  
 
 
 dev_dependencies:

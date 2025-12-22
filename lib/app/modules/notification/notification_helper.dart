@@ -1,31 +1,22 @@
-// 1. KITA PAKAI ALIAS 'fln' SUPAYA TIDAK BINGUNG
 import 'package:flutter_local_notifications/flutter_local_notifications.dart' as fln;
-
-// Import Timezone
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-import 'package:flutter_timezone/flutter_timezone.dart';
 
 class NotificationHelper {
   static final NotificationHelper _instance = NotificationHelper._internal();
   factory NotificationHelper() => _instance;
   NotificationHelper._internal();
 
-  // Tambahkan 'fln.' di depan tipe data
   final fln.FlutterLocalNotificationsPlugin notificationsPlugin =
       fln.FlutterLocalNotificationsPlugin();
 
+  // INIT
   Future<void> initNotification() async {
     tz.initializeTimeZones();
-    
-    try {
-      final String timeZoneName = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timeZoneName));
-    } catch (e) {
-      tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
-    }
 
-    // Tambahkan 'fln.'
+    // Set timezone manual (AMAN, tanpa plugin yg rusak)
+    tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
+
     const fln.AndroidInitializationSettings initializationSettingsAndroid =
         fln.AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -36,29 +27,29 @@ class NotificationHelper {
       requestSoundPermission: true,
     );
 
-    final fln.InitializationSettings initializationSettings = fln.InitializationSettings(
+    final fln.InitializationSettings initializationSettings =
+        fln.InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
     );
 
     await notificationsPlugin.initialize(
       initializationSettings,
-      onDidReceiveNotificationResponse: (fln.NotificationResponse response) async {
+      onDidReceiveNotificationResponse:
+          (fln.NotificationResponse response) async {
         print("Notifikasi diklik payload: ${response.payload}");
       },
     );
   }
 
-  // ==========================================================================
-  // 1. INSTANT NOTIFICATION
-  // ==========================================================================
   Future<void> showInstantNotification({
     required int id,
     required String title,
     required String body,
     String? payload,
   }) async {
-    const fln.AndroidNotificationDetails androidDetails = fln.AndroidNotificationDetails(
+    const fln.AndroidNotificationDetails androidDetails =
+        fln.AndroidNotificationDetails(
       'channel_science_craft',
       'Notifikasi Umum',
       channelDescription: 'Notifikasi instan aplikasi',
@@ -66,14 +57,13 @@ class NotificationHelper {
       priority: fln.Priority.high,
     );
 
-    const fln.NotificationDetails details = fln.NotificationDetails(android: androidDetails);
+    const fln.NotificationDetails details =
+        fln.NotificationDetails(android: androidDetails);
 
-    await notificationsPlugin.show(id, title, body, details, payload: payload);
+    await notificationsPlugin.show(id, title, body, details,
+        payload: payload);
   }
 
-  // ==========================================================================
-  // 2. SCHEDULED DAILY (VERSI 19.5.0 DENGAN ALIAS)
-  // ==========================================================================
   Future<void> scheduleDailyNotification({
     required int id,
     required String title,
@@ -95,27 +85,19 @@ class NotificationHelper {
           priority: fln.Priority.high,
         ),
       ),
-      
-      // PERHATIKAN: Kita pakai 'fln.' di depannya
       androidScheduleMode: fln.AndroidScheduleMode.exactAllowWhileIdle,
-      
-      uiLocalNotificationDateInterpretation:
-          fln.UILocalNotificationDateInterpretation.absoluteTime,
-      
-      matchDateTimeComponents: fln.DateTimeComponents.time, 
+      matchDateTimeComponents: fln.DateTimeComponents.time,
     );
   }
 
-  // ==========================================================================
-  // 3. SCHEDULED FUTURE (VERSI 19.5.0 DENGAN ALIAS)
-  // ==========================================================================
   Future<void> scheduleFutureNotification({
     required int id,
     required String title,
     required String body,
-    required Duration delay, 
+    required Duration delay,
   }) async {
-    final tz.TZDateTime scheduledDate = tz.TZDateTime.now(tz.local).add(delay);
+    final tz.TZDateTime scheduledDate =
+        tz.TZDateTime.now(tz.local).add(delay);
 
     await notificationsPlugin.zonedSchedule(
       id,
@@ -131,16 +113,10 @@ class NotificationHelper {
           priority: fln.Priority.high,
         ),
       ),
-      
-      // Pakai 'fln.' lagi
       androidScheduleMode: fln.AndroidScheduleMode.exactAllowWhileIdle,
-      
-      uiLocalNotificationDateInterpretation:
-          fln.UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
-  // UTILITIES
   tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduledDate =
@@ -155,7 +131,7 @@ class NotificationHelper {
   Future<void> cancelNotification(int id) async {
     await notificationsPlugin.cancel(id);
   }
-  
+
   Future<void> cancelAll() async {
     await notificationsPlugin.cancelAll();
   }

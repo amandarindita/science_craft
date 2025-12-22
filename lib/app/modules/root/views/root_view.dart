@@ -62,7 +62,7 @@ class RootView extends GetView<RootController> {
                 alignment: Alignment.bottomRight,
                 child: FloatingActionButton(
                   onPressed: () => controller.goToChatbot(),
-                  backgroundColor: const Color(0xFF4A90E2),
+                  backgroundColor: const Color(0xFF2196F3),
                   splashColor: Colors.blue.shade300,
                   child: const Icon(
                     Icons.support_agent_rounded, // Ikon Chatbot
@@ -158,7 +158,7 @@ class RootView extends GetView<RootController> {
                     height: circleDiameter,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFF4A90E2),
+                      color: const Color(0xFF2196F3),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.15),

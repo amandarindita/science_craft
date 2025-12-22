@@ -214,6 +214,36 @@ class ProfileController extends GetxController {
   void gotoEditProfile() => Get.toNamed(Routes.EDITPROFILE);
   void goToLevelBenefits() => Get.toNamed(Routes.ROADMAP); 
   void logout() => authService.logout();
+  // --- LOGIKA TOMBOL HAPUS AKUN ---
+  void deleteAccount() {
+    Get.defaultDialog(
+      title: "HAPUS AKUN?",
+      titleStyle: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+      middleText: "PERINGATAN: Semua progress, level, streak, dan badge akan hilang PERMANEN. \n\nTindakan ini tidak bisa dibatalkan.",
+      textConfirm: "Ya, Hapus Permanen",
+      textCancel: "Batal",
+      confirmTextColor: Colors.white,
+      buttonColor: Colors.red,
+      cancelTextColor: Colors.black,
+      onConfirm: () async {
+        // 1. Panggil Server
+        bool success = await ApiService.deleteAccount();
+        
+        // 2. Tutup Dialog
+        Get.back(); 
+        
+        if (success) {
+           // 3. Kalau sukses, Logout paksa & kasih notif
+           authService.logout(); 
+           Get.snackbar("Akun Dihapus", "Sayonara! Akunmu sudah dihapus.", 
+             backgroundColor: Colors.grey, colorText: Colors.white);
+        } else {
+           Get.snackbar("Gagal", "Gagal menghapus akun. Coba lagi nanti.",
+             backgroundColor: Colors.red, colorText: Colors.white);
+        }
+      }
+    );
+  }
 }
 
 // =========================================================

@@ -23,59 +23,61 @@ class MaterialListController extends GetxController {
     ever(selectedCategory, (_) => _filterMaterials());
     ever(searchQuery, (_) => _filterMaterials());
     
-    // Panggil fungsi loading saat controller dibuat
     loadMaterialsHybrid();
   }
 
+  // --- LOGIKA LOAD DATA AMAN (OFFLINE FIRST) ---
   Future<void> loadMaterialsHybrid() async {
     isLoading.value = true;
-    print("[ListController] Memulai Hybrid Loading...");
+    print("[ListController] Memuat data materi...");
 
     try {
-      // 1. Ambil Data Statis dari SQLite (Ini sudah membawa progress lokal yg benar)
+      // 1. Ambil Data dari SQLite (Inputan Admin kamu)
       var localMaterials = await DatabaseHelper.instance.getAllMaterials();
+      
+      // List sementara buat nampung hasil gabungan
+      List<MaterialItem> finalResult = [];
 
-      // 2. Ambil Data Progress dari Server Flask
-      var serverProgressMap = await ApiService.getAllProgress();
+      // 2. Coba Ambil Progress dari Server (Kalo server nyala)
+      Map<dynamic, double> serverProgressMap = {};
+      try {
+        serverProgressMap = await ApiService.getAllProgress();
+      } catch (e) {
+        print("[ListController] Server offline/error, pakai data lokal saja.");
+        // Gak masalah error, kita lanjut pakai data lokal
+      }
 
-      List<MaterialItem> mergedList = [];
-
+      // 3. Gabungkan Data
       for (var item in localMaterials) {
-        // --- PERBAIKAN UTAMA DI SINI ---
-        
-        // Langkah A: Mulai dengan progress yang ada di HP (SQLite)
-        // Jadi kalau HP bilang 1.0 (100%), kita pegang angka itu dulu.
-        double finalProgress = item.progress; 
+        double currentProgress = item.progress;
 
-        // Langkah B: Cek apakah Server punya data untuk ID ini?
-        // Kita cek ID versi int maupun String untuk jaga-jaga
+        // Kalau server punya data progress yg lebih baru, pakai itu
         if (serverProgressMap.containsKey(item.id)) {
-           finalProgress = serverProgressMap[item.id]!;
+           currentProgress = serverProgressMap[item.id]!;
         } else if (serverProgressMap.containsKey(item.id.toString())) {
-           finalProgress = serverProgressMap[item.id.toString()]!;
+           currentProgress = serverProgressMap[item.id.toString()]!;
         }
 
-        // Langkah C: Masukkan data yang sudah digabung ke list
-        mergedList.add(MaterialItem(
+        finalResult.add(MaterialItem(
           id: item.id,
           title: item.title,
           category: item.category,
           iconPath: item.iconPath,
-          progress: finalProgress, // <--- Kita pakai hasil gabungan, bukan 0.0
+          progress: currentProgress,
         ));
       }
 
-      // 3. Simpan ke state dan tampilkan
-      _allMaterials.assignAll(mergedList);
-      _filterMaterials();
+      // 4. Tampilkan ke Layar
+      _allMaterials.assignAll(finalResult);
+      _filterMaterials(); // Refresh filter
 
     } catch (e) {
-      print("[ListController] Error loading materials: $e");
+      print("[ListController] Error fatal: $e");
+      Get.snackbar("Error", "Gagal memuat materi database");
     } finally {
       isLoading.value = false;
     }
   }
-  // --- SELESAI LOGIKA BARU ---
 
   void _filterMaterials() {
     List<MaterialItem> results;
@@ -98,35 +100,15 @@ class MaterialListController extends GetxController {
   }
 
   void openMaterial(MaterialItem item) async { 
-    // Kita tunggu sampai user kembali dari halaman detail
-    final result = await Get.toNamed(
+    // Tunggu user balik dari detail
+    await Get.toNamed(
       "${Routes.MATERIAL_DETAIL.replaceAll(':id', '')}${item.id}",
       arguments: item.progress 
     );
     
-    // --- PERBAIKAN KEDUA: REFRESH TANPA SYARAT ---
-    // Hapus "if (result == true)".
-    // Kenapa? Supaya kalau user tekan 'Back' biasa pun, 
-    // list tetap mengecek database barangkali ada update.
-    print("[ListController] Kembali dari detail, refresh data...");
+    // Refresh otomatis pas balik, biar progress bar update
+    print("[ListController] Refresh data setelah belajar...");
     loadMaterialsHybrid(); 
-  }
-  
-  // Fungsi updateProgress manual (opsional, tapi bagus disimpan)
-  void updateProgress(int id, double newProgress) {
-    final index = _allMaterials.indexWhere((item) => item.id == id);
-    if (index != -1) {
-      final currentItem = _allMaterials[index];
-      final updatedItem = MaterialItem(
-        id: currentItem.id,
-        title: currentItem.title,
-        category: currentItem.category,
-        progress: newProgress.clamp(0.0, 1.0),
-        iconPath: currentItem.iconPath,
-      );
-      _allMaterials[index] = updatedItem;
-      _filterMaterials();
-    }
   }
 
   @override

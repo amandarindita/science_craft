@@ -138,4 +138,29 @@ static Future<bool> updateProfile(String newName, String avatarPath) async {
       return false;
     }
 }
+static Future<bool> deleteAccount() async {
+    final box = GetStorage();
+    final token = box.read('authToken'); // Ambil token biar server tau siapa yg dihapus
+    
+    // Kalau gak ada token, dianggap gagal/sudah logout
+    if (token == null) return false;
+    final String baseUrl = 'http://192.168.0.28:5000'; 
+    final url = Uri.parse('$baseUrl/auth/delete');
+
+    try {
+      final response = await http.delete(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token' // Wajib bawa "KTP" (Token)
+        },
+      );
+      
+      // Kalau server bilang OK (200), berarti berhasil
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Error hapus akun: $e");
+      return false;
+    }
+  }
 }

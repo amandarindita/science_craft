@@ -11,33 +11,45 @@ class QuizView extends GetView<QuizController> {
       backgroundColor: const Color(0xFFF4F6FA),
       body: Stack(
         children: [
-          // LAPISAN 1: Header Biru Melengkung (Paling Belakang)
+          // --- BACKGROUND BIRU (HEADER) ---
           ClipPath(
-            clipper: WaveClipper(), // Gunakan WaveClipper yang sama
+            clipper: WaveClipper(),
             child: Container(
-              height: 200,
+              height: 220, // Sedikit lebih tinggi biar lega
               width: double.infinity,
               decoration: const BoxDecoration(
-                color: Color(0xFF1E3A8A),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                ),
               ),
             ),
           ),
 
-          // LAPISAN 2: Konten Utama
+          // --- KONTEN UTAMA ---
           SafeArea(
             child: Column(
               children: [
-                _buildAppBar(),
+                _buildAppBar(), // Tombol back & Judul
                 Expanded(
                   child: Obx(() {
+                    // 1. CEK LOADING
                     if (controller.isLoading.value) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    // Tampilkan halaman hasil jika kuis selesai
+                    
+                    // 2. CEK JIKA SOAL KOSONG (Admin belum isi)
+                    if (controller.questions.isEmpty) {
+                      return _buildEmptyState();
+                    }
+
+                    // 3. CEK JIKA KUIS SELESAI
                     if (controller.isQuizFinished.value) {
                       return _buildResultView();
                     }
-                    // Tampilkan kuis jika sedang berlangsung
+
+                    // 4. TAMPILKAN SOAL
                     return _buildQuizView();
                   }),
                 ),
@@ -51,8 +63,7 @@ class QuizView extends GetView<QuizController> {
 
   Widget _buildAppBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
-          .copyWith(top: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
           IconButton(
@@ -61,152 +72,198 @@ class QuizView extends GetView<QuizController> {
           ),
           const Expanded(
             child: Text(
-              "Quiz Materi",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-              overflow: TextOverflow.ellipsis,
+              "Kuis Materi",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
+          const SizedBox(width: 48), // Spacer penyeimbang tombol back
         ],
       ),
     );
   }
 
-  /// Tampilan saat kuis sedang berlangsung
+  // --- STATE 1: JIKA ADMIN BELUM ISI SOAL ---
+  Widget _buildEmptyState() {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(30),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0,5))],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.edit_note, size: 80, color: Colors.grey[300]),
+            const SizedBox(height: 20),
+            const Text(
+              "Belum Ada Soal",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black54),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              "Admin belum menambahkan soal untuk materi ini.\nSilakan coba materi lain.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Get.back(),
+              child: const Text("Kembali"),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- STATE 2: TAMPILAN KUIS BERLANGSUNG ---
   Widget _buildQuizView() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          _buildProgressIndicator(),
-          const SizedBox(height: 20),
-          _buildQuestionCard(),
-          const SizedBox(height: 32),
+          // Kartu Soal
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 15, offset: Offset(0,5))],
+            ),
+            child: Obx(() {
+              final qIndex = controller.currentQuestionIndex.value;
+              final question = controller.questions[qIndex];
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header: Soal 1/10
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Pertanyaan ${qIndex + 1}/${controller.questions.length}",
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(color: Colors.orange[100], borderRadius: BorderRadius.circular(10)),
+                        child: const Text("Pilihan Ganda", style: TextStyle(fontSize: 10, color: Colors.deepOrange)),
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Teks Soal
+                  Text(
+                    question.question,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, height: 1.4),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Opsi Jawaban
+                  ...List.generate(question.options.length, (optIndex) {
+                    return Obx(() {
+                      final isSelected = controller.selectedAnswers[qIndex] == optIndex;
+                      return GestureDetector(
+                        onTap: () => controller.selectAnswer(qIndex, optIndex),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey[300]!,
+                              width: isSelected ? 2 : 1
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 30, height: 30,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: isSelected ? Colors.white : Colors.grey[300],
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  String.fromCharCode(65 + optIndex), // A, B, C, D
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey[600]
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  question.options[optIndex],
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? Colors.white : Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    });
+                  }),
+                ],
+              );
+            }),
+          ),
+          
+          const SizedBox(height: 30),
+          
+          // Tombol Navigasi
           _buildNavigationButtons(),
         ],
       ),
     );
   }
 
-  /// Indikator progres soal (misal: "Soal 5 dari 25")
-  Widget _buildProgressIndicator() {
-    return Obx(() => Text(
-          "Soal ${controller.currentQuestionIndex.value + 1} dari ${controller.questions.length}",
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF333333),
-          ),
-        ));
-  }
-
-  /// Kartu yang berisi pertanyaan dan opsi jawaban
-  Widget _buildQuestionCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.07),
-            blurRadius: 25,
-            offset: const Offset(0, 5),
-          )
-        ],
-      ),
-      child: Obx(() {
-        final qIndex = controller.currentQuestionIndex.value;
-        final question = controller.questions[qIndex];
-        final selectedAnswer = controller.selectedAnswers[qIndex];
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Pertanyaan
-            Text(
-              question.question,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Divider(),
-            const SizedBox(height: 10),
-
-            // Opsi Jawaban
-            ...List.generate(question.options.length, (optIndex) {
-              return RadioListTile<int>(
-                title: Text(question.options[optIndex]),
-                value: optIndex,
-                groupValue: selectedAnswer,
-                onChanged: (value) {
-                  if (value != null) {
-                    controller.selectAnswer(qIndex, value);
-                  }
-                },
-                contentPadding: EdgeInsets.zero,
-                activeColor: const Color(0xFF1E3A8A),
-              );
-            }),
-          ],
-        );
-      }),
-    );
-  }
-
-  /// Tombol Navigasi (Kembali, Lanjut, Selesai)
   Widget _buildNavigationButtons() {
     return Obx(() {
-      final isFirstQuestion = controller.currentQuestionIndex.value == 0;
-      final isLastQuestion = controller.currentQuestionIndex.value == controller.questions.length - 1;
+      final isFirst = controller.currentQuestionIndex.value == 0;
+      final isLast = controller.currentQuestionIndex.value == controller.questions.length - 1;
 
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Tombol Kembali
-          if (!isFirstQuestion)
-            TextButton(
+          if (!isFirst)
+            TextButton.icon(
+              icon: const Icon(Icons.arrow_back),
+              label: const Text("Kembali"),
               onPressed: controller.previousQuestion,
-              child: const Text(
-                "<  Kembali",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
             )
           else
-            Container(), // Placeholder agar tombol lanjut tetap di kanan
+            const SizedBox(width: 80), // Spacer
 
-          // Tombol Lanjut atau Selesai
+          // Tombol Lanjut / Selesai
           ElevatedButton(
-            onPressed: isLastQuestion
-                ? controller.finishQuiz // Tampilkan tombol Selesai di soal terakhir
-                : controller.nextQuestion, // Tampilkan tombol Lanjut
             style: ElevatedButton.styleFrom(
-              backgroundColor: isLastQuestion
-                  ? const Color(0xFF1E3A8A) // Warna beda untuk Selesai
-                  : const Color(0xFFFFD166),
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 32),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
+              backgroundColor: isLast ? Colors.green : const Color(0xFFFFD166),
+              foregroundColor: Colors.black87,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             ),
-            child: Text(
-              isLastQuestion ? 'Selesai!' : 'Lanjut  >',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: isLastQuestion ? Colors.white : Colors.black87,
-              ),
+            onPressed: isLast ? controller.finishQuiz : controller.nextQuestion,
+            child: Row(
+              children: [
+                Text(isLast ? "Selesai" : "Lanjut"),
+                const SizedBox(width: 8),
+                Icon(isLast ? Icons.check_circle : Icons.arrow_forward, size: 18),
+              ],
             ),
           ),
         ],
@@ -214,7 +271,7 @@ class QuizView extends GetView<QuizController> {
     });
   }
 
-  /// Tampilan hasil setelah kuis selesai
+  // --- STATE 3: HASIL KUIS ---
   Widget _buildResultView() {
     return Center(
       child: Container(
@@ -223,73 +280,32 @@ class QuizView extends GetView<QuizController> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.07),
-              blurRadius: 25,
-              offset: const Offset(0, 5),
-            )
-          ],
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20)],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              "Kuis Selesai!",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E3A8A),
-              ),
-            ),
+            // Gambar Piala
+            Image.asset('assets/trophy.png', height: 120, errorBuilder: (c,o,s)=> const Icon(Icons.emoji_events, size: 100, color: Colors.amber)),
             const SizedBox(height: 24),
-            Text(
-              "Skor Anda:",
-              style: TextStyle(fontSize: 18, color: Colors.grey.shade700),
-            ),
-            Obx(() => Text(
-                  "${controller.score.value.toStringAsFixed(0)}",
-                  style: const TextStyle(
-                    fontSize: 72,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF333333),
-                  ),
-                )),
-            const SizedBox(height: 40),
             
-            // Tombol Mulai Eksperimen (sesuai permintaan)
+            const Text("Kuis Selesai!", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A))),
+            const SizedBox(height: 10),
+            
+            Text("Skor Kamu:", style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+            Obx(() => Text(
+              "${controller.score.value.toInt()}",
+              style: const TextStyle(fontSize: 60, fontWeight: FontWeight.bold, color: Colors.orangeAccent),
+            )),
+            
+            const SizedBox(height: 30),
+            
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: controller.startExperiment,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFD166),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                child: const Text(
-                  'Mulai Eksperimen!',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            
-            // Tombol kembali
-            TextButton(
-              onPressed: controller.backToMaterial,
-              child: Text(
-                'Kembali ke Materi',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.bold,
-                ),
+                onPressed: controller.backToMaterial,
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), foregroundColor: Colors.white),
+                child: const Text("Kembali ke Materi"),
               ),
             ),
           ],
@@ -299,30 +315,22 @@ class QuizView extends GetView<QuizController> {
   }
 }
 
-// Custom Clipper (Salin dari file MaterialDetailView Anda)
+// --- WAVE CLIPPER (Desain Gelombang Biru Kamu) ---
 class WaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     var path = Path();
-    path.lineTo(0, size.height - 50); // Mulai dari bawah
+    path.lineTo(0, size.height - 50);
     var firstControlPoint = Offset(size.width / 4, size.height);
     var firstEndPoint = Offset(size.width / 2.25, size.height - 30.0);
-    path.quadraticBezierTo(firstControlPoint.dx, firstControlPoint.dy,
-        firstEndPoint.dx, firstEndPoint.dy);
-
-    var secondControlPoint =
-        Offset(size.width - (size.width / 3.25), size.height - 65);
+    path.quadraticBezierTo(firstControlPoint.dx, firstControlPoint.dy, firstEndPoint.dx, firstEndPoint.dy);
+    var secondControlPoint = Offset(size.width - (size.width / 3.25), size.height - 65);
     var secondEndPoint = Offset(size.width, size.height - 40);
-    path.quadraticBezierTo(secondControlPoint.dx, secondControlPoint.dy,
-        secondEndPoint.dx, secondEndPoint.dy);
-
-    path.lineTo(size.width, 0); // Ke sudut kanan atas
+    path.quadraticBezierTo(secondControlPoint.dx, secondControlPoint.dy, secondEndPoint.dx, secondEndPoint.dy);
+    path.lineTo(size.width, 0);
     path.close();
     return path;
   }
-
   @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) {
-    return false;
-  }
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

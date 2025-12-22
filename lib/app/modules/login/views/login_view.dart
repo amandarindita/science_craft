@@ -10,7 +10,7 @@ class LoginView extends GetView<LoginController> {
     // --- KODE UI LOGIN ANDA ---
     // (Saya akan buatkan contoh berdasarkan UI register Anda)
     return Scaffold(
-      backgroundColor: const Color(0xFF0D47A1),
+      backgroundColor: const Color(0xFF2196F3),
       body: SafeArea(
         child: Column(
           children: [
@@ -81,7 +81,7 @@ class LoginView extends GetView<LoginController> {
                               child: const Text(
                                 'Login',
                                 style: TextStyle(
-                                  color: Color(0xFF0D47A1),
+                                  color: Color(0xFF2196F3),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 17,
                                 ),
@@ -155,7 +155,7 @@ class LoginView extends GetView<LoginController> {
                           // --- SAMBUNGKAN KE CONTROLLER ---
                           onPressed: () => controller.login(),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF183C6B),
+                            backgroundColor: const Color(0xFF2196F3),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(24),
                             ),
@@ -226,7 +226,7 @@ class LoginView extends GetView<LoginController> {
                                   child: const Text(
                                     'Daftar yuk!',
                                     style: TextStyle(
-                                      color: Color(0xFF0D47A1),
+                                      color: Color(0xFF2196F3),
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
                                       decoration: TextDecoration.underline,
