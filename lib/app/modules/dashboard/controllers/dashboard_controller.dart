@@ -9,8 +9,6 @@ import '../../../models/material_model.dart';
 class DashboardController extends GetxController {
   // --- DATA USER ---
   final userName = 'Sobat Sains'.obs;
-  
-  // STREAK KITA UBAH JADI LOKAL BIAR STABIL & PASTI JALAN
   final userStreak = 0.obs;
 
   // --- DATA "LANJUTKAN BELAJAR" ---
@@ -21,130 +19,22 @@ class DashboardController extends GetxController {
   // --- BAGIAN FAKTA SAINS ---
   var currentFact = <String, String>{}.obs;
   var allFactsFromDb = <Map<String, dynamic>>[].obs;
-  // Variabel untuk mencegah fakta muncul 2x berturut-turut
   int _lastFactIndex = -1;
 
   @override
   void onInit() {
     super.onInit();
-    
-    // 1. Cek Streak (Logika Lokal - Pasti Jalan)
     checkLocalStreak();
-
-    // 2. Ambil Nama User (Dari Backend/Server)
     fetchUserProfile();
-
-    // 3. Load Materi & Fakta
-    fetchInProgressMaterials();
+    fetchInProgressMaterials(); // Load awal
     fetchFunFacts();
   }
 
-  // ==========================================
-  // 1. LOGIKA BARU: STREAK LOKAL (SOLUSI FINAL)
-  // ==========================================
-  void checkLocalStreak() async {
-    final db = DatabaseHelper.instance;
-    
-    // Ambil tanggal hari ini (Format: 2025-12-09) di HP User
-    String today = DateTime.now().toString().split(' ')[0];
-    
-    // Ambil data history dari SQLite
-    String? lastLoginDate = await db.getSetting('last_login_date');
-    String? savedStreakStr = await db.getSetting('current_streak');
-    int currentStreak = int.parse(savedStreakStr ?? '0');
-
-    // LOGIKA HITUNG STREAK
-    if (lastLoginDate == today) {
-      // User sudah buka app hari ini -> Streak tetap
-      userStreak.value = currentStreak;
-    } else {
-      // Cek selisih hari
-      DateTime dateToday = DateTime.parse(today);
-      // Kalau belum pernah login, anggap kemarin baru install
-      DateTime dateLast = lastLoginDate != null ? DateTime.parse(lastLoginDate) : dateToday.subtract(Duration(days: 2));
-      
-      int difference = dateToday.difference(dateLast).inDays;
-
-      if (difference == 1) {
-        // Login berturut-turut -> Nambah!
-        currentStreak++;
-      } else if (lastLoginDate == null) {
-        // Baru pertama kali install
-        currentStreak = 1;
-      } else {
-        // Bolos lebih dari 1 hari -> Reset
-        currentStreak = 1;
-      }
-      
-      // Simpan Balik ke SQLite (Biar besok diingat)
-      await db.saveSetting('last_login_date', today);
-      await db.saveSetting('current_streak', currentStreak.toString());
-      
-      // Update Tampilan
-      userStreak.value = currentStreak;
-    }
-  }
-
-  // ==========================================
-  // 2. LOGIKA BARU: FUNFACT (ANTI-KEMBAR)
-  // ==========================================
-  void fetchFunFacts() async {
-    try {
-      final data = await DatabaseHelper.instance.getAllFunFacts();
-      if (data.isNotEmpty) {
-        allFactsFromDb.assignAll(data);
-        randomizeFact();
-      } else {
-        currentFact.value = {'desc': 'Belum ada fakta unik. Admin, tolong isi dong!'};
-      }
-    } catch (e) {
-      print("Error fakta: $e");
-    }
-  }
-
-  void randomizeFact() {
-    if (allFactsFromDb.isNotEmpty) {
-      // Kalau datanya cuma 1, ya mau gimana lagi
-      if (allFactsFromDb.length == 1) {
-        currentFact.value = {'desc': allFactsFromDb[0]['description']};
-        return;
-      }
-
-      int randomIndex;
-      // LOOPING: Cari terus sampai dapat angka yg BEDA dari sebelumnya
-      do {
-        randomIndex = Random().nextInt(allFactsFromDb.length);
-      } while (randomIndex == _lastFactIndex);
-
-      _lastFactIndex = randomIndex; // Kunci index ini
-
-      currentFact.value = {
-        'desc': allFactsFromDb[randomIndex]['description']
-      };
-    }
-  }
-
-  // ==========================================
-  // 3. LOGIKA LAINNYA (USER & MATERI)
-  // ==========================================
-  void fetchUserProfile() async {
-    try {
-      final userData = await ApiService.getUserData();
-      if (userData != null) {
-        userName.value = userData['username'] ?? 'User';
-        // Note: Kita abaikan streak dari server, kita pakai yg lokal di atas biar aman
-      }
-    } catch (e) {
-      print("[Dashboard] Gagal ambil user server, pakai default.");
-    }
-  }
-
-  void fetchInProgressMaterials() async {
-    isLoading.value = true;
-    try {
+  Future<void> fetchInProgressMaterials() async {
+        try {
       var allLocalMaterials = await DatabaseHelper.instance.getAllMaterials();
       
-      // Tetap Hybrid: Cek server kalau ada progress
+      // Ambil data server (optional, skip error kalau offline)
       var serverProgressMap = {};
       try { serverProgressMap = await ApiService.getAllProgress(); } catch (_) {}
 
@@ -152,12 +42,15 @@ class DashboardController extends GetxController {
 
       for (var item in allLocalMaterials) {
         double progress = item.progress; 
+        
+        // Prioritas data server jika ada
         if (serverProgressMap.containsKey(item.id)) {
            progress = serverProgressMap[item.id]!;
         } else if (serverProgressMap.containsKey(item.id.toString())) {
            progress = serverProgressMap[item.id.toString()]!; 
         }
 
+        // HANYA ambil yang > 0% dan < 100% (Materi Sedang Berjalan)
         if (progress > 0.0 && progress < 1.0) {
           tempResult.add(MaterialItem(
             id: item.id,
@@ -172,6 +65,7 @@ class DashboardController extends GetxController {
       if (tempResult.length > 3) {
         tempResult = tempResult.sublist(0, 3);
       }
+      
       inProgressMaterials.assignAll(tempResult);
 
     } catch (e) {
@@ -181,39 +75,112 @@ class DashboardController extends GetxController {
     }
   }
 
-  void continueMaterial(MaterialItem item) {
-    Get.toNamed(
-      "${Routes.MATERIAL_DETAIL.replaceAll(':id', '')}${item.id}",
-      arguments: item.progress,
-    )?.then((value) {
-      fetchInProgressMaterials();
-      // fetchUserProfile(); // Gak perlu panggil ini lagi buat streak, udh otomatis lokal
-    });
-  }
-  
   void updateLastLearned(String id, String title, double progress, String iconPath){
+    print("[Dashboard] Updating UI manual untuk ID: $id -> ${(progress*100).toInt()}%");
+
     inProgressMaterials.removeWhere((item) => item.id.toString() == id);
-    if (progress < 1.0 && progress > 0.0) {
+    
+       if (progress < 0.99 && progress > 0.0) {
         final newItem = MaterialItem(
           id: int.parse(id),
           title: title,
-          category: 'Terbaru',
+          category: 'Lanjutkan', 
           iconPath: iconPath,
           progress: progress
         );
+  
         inProgressMaterials.insert(0, newItem);
-        if (inProgressMaterials.length > 3) {
+        
+          if (inProgressMaterials.length > 5) {
           inProgressMaterials.removeLast();
         }
     } 
+    
+    inProgressMaterials.refresh(); 
+  }
+
+  void continueMaterial(MaterialItem item) async {
+    // Tunggu user balik dari detail
+    await Get.toNamed(
+      "${Routes.MATERIAL_DETAIL.replaceAll(':id', '')}${item.id}",
+      arguments: item.progress,
+    );
     fetchInProgressMaterials();
   }
 
+
+  
+  void checkLocalStreak() async {
+    final db = DatabaseHelper.instance;
+    String today = DateTime.now().toString().split(' ')[0];
+    String? lastLoginDate = await db.getSetting('last_login_date');
+    String? savedStreakStr = await db.getSetting('current_streak');
+    int currentStreak = int.parse(savedStreakStr ?? '0');
+
+    if (lastLoginDate == today) {
+      userStreak.value = currentStreak;
+    } else {
+      DateTime dateToday = DateTime.parse(today);
+      DateTime dateLast = lastLoginDate != null ? DateTime.parse(lastLoginDate) : dateToday.subtract(Duration(days: 2));
+      int difference = dateToday.difference(dateLast).inDays;
+
+      if (difference == 1) {
+        currentStreak++;
+      } else if (lastLoginDate == null) {
+        currentStreak = 1;
+      } else {
+        currentStreak = 1;
+      }
+      
+      await db.saveSetting('last_login_date', today);
+      await db.saveSetting('current_streak', currentStreak.toString());
+      userStreak.value = currentStreak;
+    }
+  }
+
+  void fetchFunFacts() async {
+    try {
+      final data = await DatabaseHelper.instance.getAllFunFacts();
+      if (data.isNotEmpty) {
+        allFactsFromDb.assignAll(data);
+        randomizeFact();
+      } else {
+        currentFact.value = {'desc': 'Belum ada fakta unik.'};
+      }
+    } catch (e) {
+      print("Error fakta: $e");
+    }
+  }
+
+  void randomizeFact() {
+    if (allFactsFromDb.isNotEmpty) {
+      if (allFactsFromDb.length == 1) {
+        currentFact.value = {'desc': allFactsFromDb[0]['description']};
+        return;
+      }
+      int randomIndex;
+      do {
+        randomIndex = Random().nextInt(allFactsFromDb.length);
+      } while (randomIndex == _lastFactIndex);
+      _lastFactIndex = randomIndex;
+      currentFact.value = {
+        'desc': allFactsFromDb[randomIndex]['description']
+      };
+    }
+  }
+
+  void fetchUserProfile() async {
+    try {
+      final userData = await ApiService.getUserData();
+      if (userData != null) {
+        userName.value = userData['username'] ?? 'Sobat Sains';
+      }
+    } catch (e) {}
+  }
+
   void navigateToSubject(String subjectName) {
-     try {
-       Get.snackbar("Info", "Menampilkan materi $subjectName");
-     } catch (e) {
-       print("Error navigasi: $e");
-     }
+     // Implementasi navigasi kategori dashboard
+     Get.toNamed(Routes.MATERIAL_LIST); 
+     // Tips: Bisa set filter kategori di MaterialListController di sini jika mau
   }
 }

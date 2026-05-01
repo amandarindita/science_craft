@@ -18,6 +18,9 @@ abstract class Routes {
   static const ROADMAP = _Paths.ROADMAP;
   static const ONBOARDING = _Paths.ONBOARDING;
   static const ADMIN = _Paths.ADMIN;
+  static const LAB = _Paths.LAB;
+  static const SIMULATION = _Paths.SIMULATION;
+  
 }
 
 abstract class _Paths {
@@ -38,5 +41,7 @@ abstract class _Paths {
   static const ROADMAP = '/roadmap';
   static const ONBOARDING = '/onboarding'; 
   static const ADMIN = '/admin'; 
+  static const LAB = '/lab';
+  static const SIMULATION = '/simulation';
   }
 // Tambahkan path untuk dashboard

@@ -1,9 +1,7 @@
-// --- GANTI SEMUA ISI FILE material_detail_controller.dart KAMU DENGAN INI ---
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/db/database_helper.dart';
-import '../../../models/material_model.dart';
+import '../../../models/material_model.dart'; // Pastikan path ini sesuai struktur folder kamu
 import '../../../routes/app_pages.dart';
 import '../../../data/api_service.dart';
 
@@ -20,6 +18,7 @@ class MaterialDetailController extends GetxController {
   late String materialId;
 
   // --- 2. TEMUKAN PROFILE CONTROLLER ---
+  // Pastikan ProfileController SUDAH dipanggil/di-put di main binding atau dashboard binding
   final ProfileController profileController = Get.find<ProfileController>();
 
   // --- 3. UBAH LOGIKA 'SAVING' ---
@@ -30,8 +29,11 @@ class MaterialDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // Ambil parameter ID dari URL/Routing
     materialId = Get.parameters['id'] ?? '1';
-    initialProgress = (Get.arguments as double?) ?? 0.0;
+    
+    // Ambil arguments progress awal (jika dikirim dari halaman list)
+    initialProgress = (Get.arguments is double) ? Get.arguments as double : 0.0;
     currentProgress.value = initialProgress;
 
     fetchMaterialContent(materialId);
@@ -42,7 +44,7 @@ class MaterialDetailController extends GetxController {
     // kita nyalakan 'saklar' _hasProgressChanged
     ever(currentProgress, (double newProgress) {
       if (newProgress > initialProgress && !_hasProgressChanged) {
-        print("Progress baru terdeteksi!");
+        // print("Progress baru terdeteksi!"); // Uncomment buat debug
         _hasProgressChanged = true;
       }
     });
@@ -50,7 +52,7 @@ class MaterialDetailController extends GetxController {
     scrollController.addListener(_onScroll);
   }
 
- void _onScroll() {
+  void _onScroll() {
     if (!scrollController.hasClients) return;
 
     final maxScroll = scrollController.position.maxScrollExtent;
@@ -72,35 +74,42 @@ class MaterialDetailController extends GetxController {
     if (progress > currentProgress.value) {
       currentProgress.value = progress;
       // Debugging: Cek di console apakah angka jalan
-      print("Scroll Progress: ${(progress * 100).toStringAsFixed(1)}%"); 
+      // print("Scroll Progress: ${(progress * 100).toStringAsFixed(1)}%"); 
     }
   }
 
   Future<void> fetchMaterialContent(String id) async {
-    final dataFromDb =
-        await DatabaseHelper.instance.getMaterialById(int.parse(id));
+    try {
+      final dataFromDb = await DatabaseHelper.instance.getMaterialById(int.parse(id));
 
-    if (dataFromDb != null) {
-      materialContent.value = dataFromDb;
-      // Set progress awal dari DB
-      initialProgress = dataFromDb.progress;
-      currentProgress.value = initialProgress;
-    } else {
-      // Data dummy jika error
-      materialContent.value = MaterialContent(
-          title: "Error: Data Tidak Ditemukan",
-          introduction:
-              "Data untuk materi dengan ID $id tidak ditemukan di database.",
-          theorySections: [],
-          progress: 0.0,
-          iconPath: 'assets/chemistry.png');
+      if (dataFromDb != null) {
+        materialContent.value = dataFromDb;
+        // Opsional: Jika mau sync progress dari DB local lagi (takut argument salah)
+        // initialProgress = dataFromDb.progress;
+        // currentProgress.value = initialProgress;
+      } else {
+        // Data dummy jika error
+        _loadDummyData(id, "Data tidak ditemukan di DB");
+      }
+    } catch (e) {
+      print("Error fetch material: $e");
+      _loadDummyData(id, "Error: $e");
     }
   }
 
-  // --- 5. FUNGSI 'goToQuiz' DENGAN LOGIKA XP ---
+  void _loadDummyData(String id, String message) {
+    materialContent.value = MaterialContent(
+        id: int.parse(id), // Pastikan model support field id
+        title: "Error Memuat Data",
+        introduction: message,
+        theorySections: [],
+        progress: 0.0,
+        iconPath: 'assets/chemistry.png');
+  }
+
   void goToQuiz() async {
-    // Cek dulu, apakah materi ini SEBELUMNYA sudah 100%?
-    bool wasAlreadyCompleted = (initialProgress == 1.0);
+
+    bool wasAlreadyCompleted = (initialProgress >= 0.99); // Pakai 0.99 untuk toleransi double
 
     if (!wasAlreadyCompleted) {
       print("Materi selesai! Memberikan XP...");
@@ -118,7 +127,8 @@ class MaterialDetailController extends GetxController {
         "Kamu mendapatkan 50 XP!",
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.green,
-        colorText: Colors.white
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
       );
 
     } else {
@@ -131,7 +141,8 @@ class MaterialDetailController extends GetxController {
     await _saveData(forceSave: true);
 
     // 4. Lanjut navigasi ke Kuis
-    Get.toNamed("${Routes.QUIZ.replaceAll(':id', '')}$materialId");
+    // Pastikan route QUIZ di AppPages formatnya '/quiz/:id' atau '/quiz' dengan arguments
+    Get.toNamed(Routes.QUIZ, arguments: materialId);
   }
 
 
@@ -161,26 +172,27 @@ class MaterialDetailController extends GetxController {
       await db.saveSetting('lastLearnedProgress', progressToSave.toString());
       await db.saveSetting('lastLearnedIconPath', iconPath);
       
-      print("History terakhir disimpan (ID: $materialId, Icon: $iconPath).");
+      print("History terakhir disimpan (ID: $materialId).");
 
+      // Update Dashboard UI secara realtime jika controllernya ada
       if (Get.isRegistered<DashboardController>()) {
         final dashController = Get.find<DashboardController>();
         dashController.updateLastLearned(materialId, title, progressToSave, iconPath);
       }
       
-      // --- BAGIAN B: SIMPAN PROGRESS MATERI ---
-      // (Kita hapus 'if (progressToSave > initialProgress)' 
-      //  karena sudah ditangani 'saklar' _hasProgressChanged)
-      
+      // --- BAGIAN B: SIMPAN PROGRESS MATERI KE DB UTAMA ---
       await db.updateMaterialProgress(int.parse(materialId), progressToSave);
-      await ApiService.syncProgress(int.parse(materialId), progressToSave);
+      
+      // Sync ke API (optional, jalankan di background biar gak bikin lemot UI)
+      ApiService.syncProgress(int.parse(materialId), progressToSave).then((_) {
+         print("Sync API berhasil");
+      }).catchError((e) {
+         print("Sync API gagal (tidak fatal): $e");
+      });
       
       // Reset state setelah berhasil simpan
       initialProgress = progressToSave;
       _hasProgressChanged = false; // Matikan saklar, progress sudah 'up-to-date'
-
-      // Hapus 'teriakan' ke MaterialListController, kita tidak pakai lagi
-      // if (Get.isRegistered<MaterialListController>()) { ... }
 
     } catch (e) {
       print("Error saat _saveData: $e");
@@ -191,7 +203,7 @@ class MaterialDetailController extends GetxController {
 
   // --- 7. FUNGSI 'saveAndReturn' YANG BARU ---
   void saveAndReturn() async {
-    // Ambil status saklar SEBELUM disimpan
+    // Ambil status saklar SEBELUM disimpan untuk return value
     bool didChange = _hasProgressChanged;
 
     // 1. Simpan semua data (history dan progress)
@@ -199,13 +211,14 @@ class MaterialDetailController extends GetxController {
     
     // 2. Kembali dengan mengirim "surat balasan"
     //    (Kirim 'true' JIKA TADI ADA perubahan, 'false' jika tidak)
+    //    Ini berguna kalau Halaman List mau refresh diri sendiri
     Get.back(result: didChange); 
   }
 
   // --- 8. FUNGSI 'onClose' YANG BARU ---
   @override
   void onClose() {
-    print("MaterialDetailController onClose dipanggil.");
+    // print("MaterialDetailController onClose dipanggil.");
     
     // Panggil save DI SINI juga untuk jaga-jaga
     // jika user pakai tombol back fisik (system back button)

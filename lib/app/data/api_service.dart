@@ -3,22 +3,17 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class ApiService {
-  // Ganti dengan IP Flask kamu yang aktif
-  static const String baseUrl = 'http://192.168.0.28:5000'; 
+
+  static const String baseUrl = 'http://192.168.56.35:5000';
   static final _storage = GetStorage();
 
-  // --- HELPER: Ambil Token ---
   static String? get _token => _storage.read('authToken');
 
-  // --- HELPER: Header Standar ---
   static Map<String, String> get _headers => {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer $_token',
   };
 
-  // --- 1. PROGRESS ---
-
-  // Simpan satu progress (Dipakai di Detail Materi)
   static Future<bool> syncProgress(int materialId, double progress) async {
     if (_token == null) return false;
     try {
@@ -34,7 +29,6 @@ class ApiService {
     }
   }
 
-  // Ambil SEMUA progress user (Dipakai di List Materi)
   static Future<Map<int, double>> getAllProgress() async {
     if (_token == null) return {};
     try {
@@ -57,9 +51,6 @@ class ApiService {
     return {}; 
   }
 
-  // --- 2. GAMIFICATION (XP & USER DATA) ---
-
-  // Tambah XP
   static Future<void> addXp(int amount) async {
     if (_token == null) return;
     try {
@@ -74,7 +65,6 @@ class ApiService {
     }
   }
 
-  // Ambil Data Profil
   static Future<Map<String, dynamic>?> getUserData() async {
     if (_token == null) return null;
     try {
@@ -91,7 +81,6 @@ class ApiService {
     return null;
   }
   
-  // Unlock Badge
   static Future<bool> unlockBadge(String badgeCode) async {
     if (_token == null) return false;
     try {
@@ -111,7 +100,6 @@ class ApiService {
     return false;
   }
 
-  // --- 3. UPDATE PROFILE (INI YANG TADI HILANG) ---
 static Future<bool> updateProfile(String newName, String avatarPath) async {
     if (_token == null) return false;
     
@@ -144,7 +132,7 @@ static Future<bool> deleteAccount() async {
     
     // Kalau gak ada token, dianggap gagal/sudah logout
     if (token == null) return false;
-    final String baseUrl = 'http://192.168.0.28:5000'; 
+    final String baseUrl = 'http://192.168.56.35:5000'; 
     final url = Uri.parse('$baseUrl/auth/delete');
 
     try {

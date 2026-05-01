@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/material_list_controller.dart';
 import '../../root/controllers/root_controler.dart';
-// --- 1. IMPORT MODEL BARU ---
 import '../../../models/material_model.dart'; 
 
 class MaterialListView extends GetView<MaterialListController> {
@@ -10,7 +9,7 @@ class MaterialListView extends GetView<MaterialListController> {
 
   @override
   Widget build(BuildContext context) {
-    // Karena ini adalah "ruangan" di dalam RootView, kita tidak perlu Scaffold.
+    Get.put(MaterialListController());
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

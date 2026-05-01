@@ -22,39 +22,28 @@ class AuthService extends GetxService {
     return _storage.hasData('authToken');
   }
 
-  // --- FUNGSI LOGOUT ---
   void logout() async {
-    // 1. Hapus Token Server
     await _storage.remove('authToken');
-    
-    // 2. Sign out juga dari Google agar nanti bisa pilih akun lagi
-    // (Opsional, tapi bagus untuk kebersihan sesi)
     try {
       await _googleSignIn.signOut(); 
     } catch (e) {
       print("Error google sign out: $e");
     }
-    
-    // 3. Hapus Data Lokal (PENTING: Supaya data user lama hilang)
-    await DatabaseHelper.instance.clearUserData(); 
 
-    // 4. Kembali ke Login
+    await DatabaseHelper.instance.clearUserData(); 
     Get.offAllNamed(Routes.LOGIN);
   }
 
-  // --- FUNGSI LOGIN GOOGLE (DIPERBAIKI) ---
+
   Future<void> loginWithGoogle() async {
     try {
       Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
-      
-      // --- 1. TAMBAHAN PENTING: PAKSA LOGOUT GOOGLE DULU ---
-      // Ini akan memaksa dialog "Pilih Akun" muncul lagi
       await _googleSignIn.signOut(); 
       // -----------------------------------------------------
       
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        Get.back(); // User batal login (klik back/luar dialog)
+        Get.back();
         return;
       }
       
@@ -66,24 +55,20 @@ class AuthService extends GetxService {
         Get.snackbar('Login Gagal', 'Gagal mendapatkan token Google.');
         return;
       }
-
-      // Kirim token ke Flask
       final response = await http.post(
         Uri.parse('${ApiService.baseUrl}/auth/google'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'token': idToken}),
       );
       
-      Get.back(); // Tutup loading
+      Get.back(); 
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final myAppToken = data['access_token']; 
         
-        // Simpan token aplikasi kita
         await _storage.write('authToken', myAppToken);
         
-        // Masuk aplikasi
         Get.offAllNamed(Routes.ROOT);
       } else {
         final data = jsonDecode(response.body);
@@ -92,13 +77,12 @@ class AuthService extends GetxService {
 
     } catch (e) {
       Get.back();
-      // Print error ke console biar tau kenapa (misal: network error)
       print("Error Login Google: $e"); 
       Get.snackbar('Login Gagal', 'Terjadi kesalahan koneksi.');
     }
   }
 
-  // --- FUNGSI LOGIN EMAIL ---
+
   Future<void> login(String email, String password) async {
     try {
       Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
@@ -126,7 +110,6 @@ class AuthService extends GetxService {
     }
   }
 
-  // --- FUNGSI REGISTER ---
   Future<void> register(String username, String email, String password) async {
     try {
       Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);

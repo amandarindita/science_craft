@@ -24,8 +24,6 @@ class ProfileView extends GetView<ProfileController> {
           const SizedBox(height: 30),
           _buildBadgesSection(),
           const SizedBox(height: 30),
-          _buildHistorySection(),
-          const SizedBox(height: 30),
           _buildSettingsSection(),
           const SizedBox(height: 40),
         ],
@@ -373,32 +371,6 @@ class ProfileView extends GetView<ProfileController> {
       ],
     );
   }
-
-  Widget _buildHistorySection() {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('History Belajar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            GestureDetector(
-              onTap: () => controller.viewAllHistory(),
-              child: const Text('View all', style: TextStyle(fontSize: 14, color: Colors.blueAccent, fontWeight: FontWeight.w600)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Obx(() => ContinueLearningCard(
-              title: controller.lastLearnedTitle.value,
-              progress: controller.lastLearnedProgress.value,
-              iconPath: controller.lastLearnedIcon.value.isEmpty 
-                  ? 'assets/chemistry.png' 
-                  : controller.lastLearnedIcon.value,
-            )),
-      ],
-    );
-  }
-
   Widget _buildSettingsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,9 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-// --- 1. PASTIKAN IMPORT CONTROLLER BENAR ---
+import 'package:flutter_quill/flutter_quill.dart';
+
+// Pastikan import ini sesuai dengan lokasi file kamu
 import '../controllers/materi_controller.dart';
-// --- 2. IMPORT MODEL BARU ---
-import '../../../models/material_model.dart';
+import '../../../models/material_model.dart'; 
 
 class MaterialDetailView extends GetView<MaterialDetailController> {
   const MaterialDetailView({super.key});
@@ -11,82 +14,91 @@ class MaterialDetailView extends GetView<MaterialDetailController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA), // Warna dasar abu-abu pattern
       body: Stack(
         children: [
-          // LAPISAN 1: Header Biru Melengkung (Paling Belakang)
-          ClipPath(
-            clipper: WaveClipper(), // Clipper untuk bentuk melengkung
-            child: Container(
-              height: 200, // Tinggi area biru
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                color: Color(0xFF1E3A8A),
+          // 1. BACKGROUND PATTERN & BASE COLOR
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              color: Color(0xFFF4F6FA), // Base background color
+              image: DecorationImage(
+                image: AssetImage('assets/pattern.png'),
+                repeat: ImageRepeat.repeat,
+                opacity: 0.05, // Dibikin lebih soft dikit biar konten lebih menonjol
+                scale: 1.0,
               ),
             ),
           ),
 
-          // LAPISAN 2: Konten Utama
-          SafeArea(
-            child: Column(
+          // 2. KONTEN UTAMA (Scrollable)
+          SingleChildScrollView(
+            controller: controller.scrollController,
+            child: Stack(
               children: [
-                _buildAppBar(),
-                Expanded(
-                  child: Obx(() {
-                    if (controller.materialContent.value == null) {
-                      // Tampilkan loading di tengah area putih
-                      return Container(
-                         width: double.infinity,
-                         margin: const EdgeInsets.only(top: 10),
-                         decoration: const BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(30),
-                              topRight: Radius.circular(30),
-                            ),
-                         ),
-                         child: const Center(child: CircularProgressIndicator())
-                      );
-                    }
-                    final content = controller.materialContent.value!;
-                    return Container(
-                      // Container ini untuk background pattern putih
-                      width: double.infinity,
-                      margin: const EdgeInsets.only(top: 10), 
-                      decoration: const BoxDecoration(
-                        color: Colors.white, 
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(30),
-                          topRight: Radius.circular(30),
-                        ),
-                        image: DecorationImage(
-                          image: AssetImage('assets/pattern.png'),
-                          repeat: ImageRepeat.repeat,
-                          scale: 5.0,
-                          opacity: 0.05, // Opacity pattern
-                        ),
-                      ),
-                      // --- 3. SAMBUNGKAN SCROLL CONTROLLER ---
-                      child: SingleChildScrollView(
-                        controller: controller.scrollController, // <-- INI DIA
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
+                // BACKGROUND BIRU HEADER (Dibikin melengkung dan tingginya pas biar numpuk di card kuning)
+                Container(
+                  height: 240, 
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF4285F4), Color(0xFF3B82F6)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(40),
+                      bottomRight: Radius.circular(40),
+                    ),
+                  ),
+                ),
+
+                // ISI KONTEN
+                SafeArea(
+                  child: Column(
+                    children: [
+                      // Header (Back button & Title)
+                      _buildHeader(),
+                      const SizedBox(height: 15), // Jarak antara judul dan card kuning
+                      
+                      Obx(() {
+                        if (controller.materialContent.value == null) {
+                          return _buildLoading();
+                        }
+
+                        final content = controller.materialContent.value!;
+                        return Column(
                           children: [
-                            _buildIntroductionCard(content.introduction),
+                            // Card Intro Kuning (Numpuk di garis batas biru)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: _buildIntroductionCard(content.introduction),
+                            ),
                             const SizedBox(height: 24),
-                            ...content.theorySections
-                                .map((section) => _buildTheoryCard(section))
-                                .toList(),
                             
-                            // --- 4. KARTU KUIS DIHAPUS DARI SINI ---
+                            // List Theory Cards (Materi)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: Column(
+                                children: content.theorySections
+                                    .map((section) => TheoryCardWidget(section: section))
+                                    .toList(),
+                              ),
+                            ),
                             
                             const SizedBox(height: 32),
-                            _buildActionButtons(),
+                            
+                            // Tombol Aksi Bawah
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24),
+                              child: _buildActionButtons(),
+                            ),
+                            const SizedBox(height: 50),
                           ],
-                        ),
-                      ),
-                    );
-                  }),
+                        );
+                      }),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -95,167 +107,101 @@ class MaterialDetailView extends GetView<MaterialDetailController> {
       ),
     );
   }
-  
- Widget _buildAppBar() {
+
+  // --- WIDGET HELPER ---
+
+  Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8).copyWith(top: 16),
+      // Layout Row persis seperti desain (Icon kiri, teks tengah rata)
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28), 
             onPressed: () => controller.saveAndReturn(),
           ),
           Expanded(
-            child: Column( // Gunakan Column untuk menampilkan Judul & Progress
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Obx(() => Text(
-                      controller.materialContent.value?.title ?? "Memuat...",
-                      style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-                      overflow: TextOverflow.ellipsis,
-                    )),
-                // --- TEKS DEBUG (HAPUS NANTI KALAU SUDAH FIX) ---
-                Obx(() => Text(
-                      "Progress: ${(controller.currentProgress.value * 100).toStringAsFixed(0)}%",
-                      style: const TextStyle(color: Colors.yellow, fontSize: 12),
-                    )),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8.0), 
+              child: Obx(() => Text(
+                controller.materialContent.value?.title ?? "",
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22, 
+                  fontWeight: FontWeight.bold,
+                  height: 1.3,
+                ),
+              )),
             ),
           ),
+          const SizedBox(width: 48), // Ruang kosong biar teks beneran pas di tengah
         ],
       ),
     );
   }
 
-  // ... (sisa kode _buildIntroductionCard dan _buildTheoryCard tetap sama)
   Widget _buildIntroductionCard(String text) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEF), 
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFFFD166).withOpacity(0.8), width: 2), 
+        border: Border.all(color: const Color(0xFFFFD700), width: 3), // Border Kuning mirip figma
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1), 
-            blurRadius: 20,
-            offset: const Offset(0, 5),
-          )
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            spreadRadius: 2,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
       child: Text(
         text,
-        textAlign: TextAlign.center,
-        style:
-            const TextStyle(fontSize: 16, color: Colors.black87, height: 1.5),
+        textAlign: TextAlign.justify,
+        // Ini kuncinya biar ga kepanjangan: maksimal 6 baris, lebih dari itu jadi "..."
+        maxLines: 6,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Color(0xFF374151),
+          fontSize: 14,
+          height: 1.6,
+        ),
       ),
     );
   }
 
-  Widget _buildTheoryCard(TheorySection section) {
+  Widget _buildLoading() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(20),
+      height: 200,
+      margin: const EdgeInsets.only(top: 20, left: 24, right: 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08), 
-            blurRadius: 25,
-            spreadRadius: 1,
-            offset: const Offset(0, 6),
-          )
-        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            section.title,
-            style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF333333)),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Image.asset(
-                section.imagePath, 
-                height: 80, 
-                width: 80,
-                fit: BoxFit.cover, 
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  section.content,
-                  style: const TextStyle(
-                      fontSize: 15, height: 1.5, color: Colors.black54),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            "Contoh gampang:",
-            style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: Color(0xFF333333)),
-          ),
-          const SizedBox(height: 8),
-          ...section.examples
-              .map((example) => Padding(
-                    padding: const EdgeInsets.only(left: 8.0, bottom: 4.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text("• ",
-                            style:
-                                TextStyle(fontSize: 15, color: Colors.black54)),
-                        Expanded(
-                            child: Text(example,
-                                style: const TextStyle(
-                                    fontSize: 15, color: Colors.black54))),
-                      ],
-                    ),
-                  ))
-              .toList(),
-        ],
-      ),
+      child: const Center(child: CircularProgressIndicator()),
     );
   }
 
-  // --- WIDGET KUIS DIHAPUS ---
-  // Widget _buildQuizCard(QuizSection quiz) { ... }
-
-  // --- 6. TOMBOL DIPERBARUI ---
   Widget _buildActionButtons() {
     return Column(
       children: [
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () => controller.goToQuiz(), // <-- PANGGIL FUNGSI BARU
+            onPressed: () => controller.goToQuiz(),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFFD166),
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              elevation: 4,
             ),
             child: const Text(
-              'Lanjut ke Kuis!', // <-- UBAH TEKS TOMBOL
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
+              'Lanjut ke Kuis!',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
           ),
         ),
@@ -264,10 +210,7 @@ class MaterialDetailView extends GetView<MaterialDetailController> {
           onPressed: () => controller.saveAndReturn(),
           child: Text(
             'Simpan dan Kembali',
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold),
           ),
         ),
       ],
@@ -275,27 +218,166 @@ class MaterialDetailView extends GetView<MaterialDetailController> {
   }
 }
 
-// ... (WaveClipper tetap sama) ...
-class WaveClipper extends CustomClipper<Path> {
+// =========================================================
+// WIDGET TERPISAH: THEORY CARD (Tetap Sama, Aman!)
+// =========================================================
+class TheoryCardWidget extends StatefulWidget {
+  final TheorySection section;
+
+  const TheoryCardWidget({super.key, required this.section});
+
   @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 50); 
-    var firstControlPoint = Offset(size.width * 0.25, size.height);
-    var firstEndPoint = Offset(size.width * 0.5, size.height - 30);
-    path.quadraticBezierTo(firstControlPoint.dx, firstControlPoint.dy,
-        firstEndPoint.dx, firstEndPoint.dy);
-    var secondControlPoint = Offset(size.width * 0.75, size.height - 60);
-    var secondEndPoint = Offset(size.width, size.height - 40);
-    path.quadraticBezierTo(secondControlPoint.dx, secondControlPoint.dy,
-        secondEndPoint.dx, secondEndPoint.dy);
-    path.lineTo(size.width, 0); 
-    path.close();
-    return path;
-  }
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) {
-    return false;
-  }
+  State<TheoryCardWidget> createState() => _TheoryCardWidgetState();
 }
 
+class _TheoryCardWidgetState extends State<TheoryCardWidget> {
+  late QuillController _quillController;
+  final FocusNode _focusNode = FocusNode(); 
+
+  @override
+  void initState() {
+    super.initState();
+    _quillController = _jsonToQuillController(widget.section.content);
+  }
+
+  @override
+  void dispose() {
+    _quillController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  QuillController _jsonToQuillController(String jsonString) {
+    try {
+      final json = jsonDecode(jsonString);
+      return QuillController(
+        document: Document.fromJson(json),
+        selection: const TextSelection.collapsed(offset: 0),
+        readOnly: true,
+      );
+    } catch (e) {
+      return QuillController(
+        document: Document()..insert(0, jsonString),
+        selection: const TextSelection.collapsed(offset: 0),
+        readOnly: true,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    bool hasImage = widget.section.imagePath != null && widget.section.imagePath!.isNotEmpty;
+    File? imageFile = hasImage ? File(widget.section.imagePath!) : null;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04), // Shadow ditipisin dikit biar lebih elegan
+            blurRadius: 15,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          )
+        ],
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.science, color: Colors.blue, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  widget.section.title,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          if (hasImage && imageFile!.existsSync()) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                imageFile,
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (ctx, err, stack) => Container(
+                  height: 100,
+                  color: Colors.grey[100],
+                  child: const Center(child: Text("Gambar gagal dimuat")),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: Text(
+                "Ilustrasi: ${widget.section.title}",
+                style: TextStyle(fontSize: 12, color: Colors.grey[600], fontStyle: FontStyle.italic),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          QuillEditor.basic(
+            controller: _quillController,
+            focusNode: _focusNode,
+            configurations: const QuillEditorConfigurations(
+              scrollable: false, 
+              autoFocus: false,
+              expands: false,
+              padding: EdgeInsets.zero,
+              showCursor: false, 
+              enableInteractiveSelection: false, 
+            ),
+          ),
+
+          if (widget.section.examples != null && widget.section.examples!.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F9FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFBAE6FD)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.lightbulb_outline, size: 18, color: Color(0xFF0284C7)),
+                      SizedBox(width: 8),
+                      Text("Contoh Nyata:", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.section.examples!,
+                    style: const TextStyle(color: Colors.black87, height: 1.4),
+                  ),
+                ],
+              ),
+            )
+          ]
+        ],
+      ),
+    );
+  }
+}

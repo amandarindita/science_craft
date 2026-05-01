@@ -26,22 +26,22 @@ class QuizController extends GetxController {
   late int materialId;
 
   @override
-  void onInit() {
-    super.onInit();
-    // 1. Ambil ID Materi dari URL Parameter (dikirim dari Detail Materi)
-    // Pastikan routingnya: "/quiz/:id"
-    String? idParam = Get.parameters['id'];
-    
-    if (idParam != null) {
-      materialId = int.parse(idParam);
-      loadQuizData();
-    } else {
-      // Fallback buat testing kalau error
-      print("Error: Parameter ID tidak ditemukan!");
-      isLoading.value = false; 
-    }
+void onInit() {
+  super.onInit();
+  
+  // Ambil dari arguments, bukan parameters
+  var arg = Get.arguments;
+  
+  if (arg != null) {
+    // Jika materialId di detail adalah String, pakai int.parse
+    // Jika sudah int, tinggal masukkan langsung
+    materialId = (arg is int) ? arg : int.parse(arg.toString());
+    loadQuizData();
+  } else {
+    print("Error: Tidak ada ID yang dikirim lewat arguments!");
+    isLoading.value = false;
   }
-
+}
   // --- LOAD DATA DARI SQLITE ---
   Future<void> loadQuizData() async {
     isLoading(true);

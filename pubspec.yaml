@@ -45,7 +45,9 @@ dependencies:
   flutter_markdown: ^0.7.3     # Untuk simpan sesi login
   flutter_local_notifications: ^19.5.0
   timezone: ^0.10.0
-  
+  image_picker: ^1.0.7
+  flutter_quill: ^10.7.0
+  flutter_unity_widget: ^2022.2.0
 
 
 dev_dependencies:

@@ -30,7 +30,7 @@ class ChatbotController extends GetxController {
 
   // <-- TAMBAH: Alamat IP Backend kamu -->
   // !! GANTI IP INI DENGAN IP DARI TERMINAL FLASK KAMU !!
-  final String _baseUrl = 'http://192.168.0.28:5000'; 
+  final String _baseUrl = 'http://192.168.56.35:5000'; 
 
   @override
   void onInit() {

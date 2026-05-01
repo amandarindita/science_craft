@@ -30,7 +30,9 @@ import '../modules/roadmap/bindings/roadmap_binding.dart';
 import '../modules/roadmap/views/roadmap_view.dart';
 import '../modules/admin/bindings/admin_binding.dart  ';
 import '../modules/admin/views/admin_view.dart  ';
-
+import '../modules/lab/bindings/lab_binding.dart';
+import '../modules/lab/views/lab_view.dart';
+import '../modules/lab/views/simulation_view.dart';
 
 part 'app_routes.dart';
 
@@ -126,6 +128,17 @@ class AppPages {
       name: _Paths.ADMIN,
       page: () => AdminView(),
       binding: AdminBinding(),
+    ),
+    GetPage(
+      name: _Paths.LAB, // atau rute Simulation kamu
+      page: () => LabView(),
+      binding: LabBinding(), // <--- JANGAN LUPA INI
+    ),
+// Kalau SimulationView punya rute sendiri:
+    GetPage(
+      name: '/simulation',
+      page: () => SimulationView(),
+      binding: LabBinding(), // Pakai binding yang sama biar controllernya nyambung
     ),
   ];
 }

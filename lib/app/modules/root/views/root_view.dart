@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../root/controllers/root_controler.dart';
-
+import '../../root/controllers/root_controler.dart'; // Pastikan nama file sesuai (controler vs controller)
 
 class RootView extends GetView<RootController> {
   const RootView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Daftar item navigasi, sama seperti sebelumnya
+    // Daftar item navigasi
     final List<Map<String, dynamic>> navItems = [
       {'icon': Icons.home_rounded, 'label': 'Home'},
       {'icon': Icons.science_outlined, 'label': 'Lab'},
@@ -17,9 +16,14 @@ class RootView extends GetView<RootController> {
     ];
 
     return Scaffold(
+      // --- PERBAIKAN DI SINI ---
+      // Set false agar body tidak terdorong naik saat keyboard muncul
+      resizeToAvoidBottomInset: false, 
+      // -------------------------
+
       body: Stack(
         children: [
-          // Background pattern yang menutupi seluruh layar
+          // Background pattern
           Container(
             width: double.infinity,
             height: double.infinity,
@@ -34,11 +38,13 @@ class RootView extends GetView<RootController> {
             ),
           ),
 
-          // Obx akan otomatis mengganti "ruangan" (halaman)
-          // berdasarkan `selectedNavIndex` di controller
+          // Halaman Utama
           Obx(() => controller.currentPage),
+
+          // Tombol Chatbot
           _buildFloatingChatButton(),
-          // Bottom Navigation Bar yang permanen
+
+          // Bottom Navigation Bar Custom
           Align(
             alignment: Alignment.bottomCenter,
             child: _buildCustomBottomNavBar(context, navItems),
@@ -47,16 +53,14 @@ class RootView extends GetView<RootController> {
       ),
     );
   }
+
   Widget _buildFloatingChatButton() {
     return Obx(() => AnimatedOpacity(
-          // Tampilkan hanya jika di halaman Dashboard (indeks 0)
           opacity: controller.selectedNavIndex.value == 0 ? 1.0 : 0.0,
           duration: const Duration(milliseconds: 200),
-          // IgnorePointer mencegah tombol diklik saat disembunyikan
           child: IgnorePointer(
             ignoring: controller.selectedNavIndex.value != 0,
             child: Padding(
-              // Posisikan 90px dari bawah (di atas nav bar) dan 24px dari kanan
               padding: const EdgeInsets.only(bottom: 90.0, right: 24.0),
               child: Align(
                 alignment: Alignment.bottomRight,
@@ -65,7 +69,7 @@ class RootView extends GetView<RootController> {
                   backgroundColor: const Color(0xFF2196F3),
                   splashColor: Colors.blue.shade300,
                   child: const Icon(
-                    Icons.support_agent_rounded, // Ikon Chatbot
+                    Icons.support_agent_rounded,
                     color: Colors.white,
                   ),
                 ),
@@ -75,8 +79,7 @@ class RootView extends GetView<RootController> {
         ));
   }
 
-
-  // --- WIDGET CUSTOM NAVIGATION BAR (Lengkap dengan animasi geser) ---
+  // --- WIDGET CUSTOM NAVIGATION BAR ---
   Widget _buildCustomBottomNavBar(
       BuildContext context, List<Map<String, dynamic>> navItems) {
     const double navBarHeight = 65.0;
@@ -87,7 +90,6 @@ class RootView extends GetView<RootController> {
       final screenWidth = MediaQuery.of(context).size.width;
       final double itemWidth = screenWidth / navItems.length;
 
-      // Tentukan titik AWAL dan AKHIR animasi dari controller
       final double beginPosition =
           (itemWidth * controller.previousNavIndex.value) + (itemWidth / 2);
       final double endPosition =
@@ -104,7 +106,7 @@ class RootView extends GetView<RootController> {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // LAPISAN 1: Bar Biru dengan lekukan
+                // LAPISAN 1: Bar Biru
                 Positioned(
                   bottom: 0,
                   child: ClipPath(
@@ -214,8 +216,7 @@ class RootView extends GetView<RootController> {
   }
 }
 
-
-// --- KELAS "RESEP RAHASIA" NAVBARCLIPPER SEKARANG ADA DI SINI ---
+// --- NAVBARCLIPPER ---
 class NavBarClipper extends CustomClipper<Path> {
   NavBarClipper({required this.position, required this.holeRadius});
 
@@ -225,7 +226,7 @@ class NavBarClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();
-    const rounding = 15.0; // Radius untuk sudut yang halus
+    const rounding = 15.0;
 
     path.moveTo(0, rounding);
     path.quadraticBezierTo(0, 0, rounding, 0);
@@ -251,4 +252,3 @@ class NavBarClipper extends CustomClipper<Path> {
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => true;
 }
-

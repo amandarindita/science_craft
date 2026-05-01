@@ -52,7 +52,7 @@ class MyApp extends StatelessWidget {
   }
 
   /// Fungsi pintar untuk menentukan user harus masuk ke mana
-  String _determineInitialRoute() {
+ String _determineInitialRoute() {
     final box = GetStorage();
     
     // 1. CEK LOGIN: Apakah user sudah login sebelumnya?
@@ -61,17 +61,9 @@ class MyApp extends StatelessWidget {
       return Routes.ROOT; 
     }
 
-    // 2. CEK ONBOARDING: Apakah user sudah pernah melihat onboarding?
-    // Variabel 'hasSeenOnboarding' ini disimpan di OnboardingController saat tombol 'Selesai/Lewati' ditekan.
-    bool hasSeenOnboarding = box.read('hasSeenOnboarding') ?? false;
-    
-    if (hasSeenOnboarding) {
-      // Jika sudah pernah lihat -> Langsung ke Login
-      return Routes.LOGIN; 
-    }
-
-    // 3. KASUS BARU: Belum login & Belum pernah lihat onboarding
-    // Ini pasti pengguna baru yang baru install -> Masuk Onboarding
+    // 2. JIKA BELUM LOGIN ATAU HABIS LOGOUT:
+    // Selalu paksa masuk ke Onboarding dulu. 
+    // (Nanti dari Onboarding, tombol "Selesai/Mulai" yang akan ngarahin ke Login)
     return Routes.ONBOARDING;
   }
 }

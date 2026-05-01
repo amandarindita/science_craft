@@ -25,10 +25,14 @@ android {
         applicationId = "com.amanda.sciencecraft"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 22
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        ndk {
+            // Perintah ini memaksa aplikasi pakai mode 32-bit
+            abiFilters.add("armeabi-v7a")
+        }
     }
 
     buildTypes {
@@ -46,4 +50,6 @@ flutter {
 dependencies {
     // Pakai kurung () dan kutip dua ""
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    implementation(project(":unityLibrary"))
+    implementation(fileTree(mapOf("dir" to "../unityLibrary/libs", "include" to listOf("*.jar"))))
 }

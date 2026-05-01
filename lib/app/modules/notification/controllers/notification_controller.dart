@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart'; // Tambahan buat simpan data
 import 'dart:math'; // Buat logika random (opsional)
-
-// Import helper yang sudah diedit tadi
 import '../notification_helper.dart'; 
 
-// Model tetap sama
 class NotificationItem {
   final int id;
   final String title;
