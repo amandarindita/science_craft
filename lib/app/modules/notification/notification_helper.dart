@@ -16,6 +16,11 @@ class NotificationHelper {
 
     // Set timezone manual (AMAN, tanpa plugin yg rusak)
     tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
+    // Minta izin notifikasi buat Android 13+ biar pop-up nya beneran keluar
+final fln.AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+    notificationsPlugin.resolvePlatformSpecificImplementation<
+        fln.AndroidFlutterLocalNotificationsPlugin>();
+await androidImplementation?.requestNotificationsPermission();
 
     const fln.AndroidInitializationSettings initializationSettingsAndroid =
         fln.AndroidInitializationSettings('@mipmap/ic_launcher');

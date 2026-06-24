@@ -44,19 +44,11 @@ class EditProfileView extends GetView<EditProfileController> {
                       _buildEmailTextField(),
                       const SizedBox(height: 30),
                       _buildAvatarGrid(), // Ini sudah punya title sendiri
-                      const SizedBox(height: 30),
-                      _buildSectionTitle('Ubah Password'),
-                      const SizedBox(height: 16),
-                      _buildCurrentPasswordField(),
-                      const SizedBox(height: 16),
-                      _buildNewPasswordField(),
-                      const SizedBox(height: 16),
-                      _buildConfirmPasswordField(),
-                      const SizedBox(height: 24),
-                      _buildChangePasswordButton(),
-                      const SizedBox(height: 40),
-                      _buildSaveButton(), // Tombol simpan utama
-                    ],
+                       const SizedBox(height: 30),
+                        _buildPasswordSection(),
+                        const SizedBox(height: 40),
+                        _buildSaveButton(),   
+                      ],
                   ),
                 ),
               ),
@@ -182,6 +174,58 @@ class EditProfileView extends GetView<EditProfileController> {
       readOnly: true, // Email biasanya tidak bisa diubah
     );
   }
+  Widget _buildPasswordSection() {
+  return Obx(() {
+    final hasPassword = controller.profileController.hasPassword.value;
+
+    if (!hasPassword) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.orange.shade200),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.info_outline,
+              color: Colors.orange.shade700,
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Akun ini login menggunakan Google, sehingga password tidak dapat diubah melalui aplikasi.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Ubah Password'),
+        const SizedBox(height: 16),
+        _buildCurrentPasswordField(),
+        const SizedBox(height: 16),
+        _buildNewPasswordField(),
+        const SizedBox(height: 16),
+        _buildConfirmPasswordField(),
+        const SizedBox(height: 24),
+        _buildChangePasswordButton(),
+      ],
+    );
+  });
+}
 
   Widget _buildCurrentPasswordField() {
     return Obx(

@@ -30,7 +30,7 @@ class RootController extends GetxController {
 
   Widget get currentPage => pages[selectedNavIndex.value];
 
-  void changeNavIndex(int index) {
+void changeNavIndex(int index) {
     if (index == selectedNavIndex.value) return;
 
     previousNavIndex.value = selectedNavIndex.value;
@@ -41,7 +41,8 @@ class RootController extends GetxController {
       if (Get.isRegistered<DashboardController>()) {
         final dashController = Get.find<DashboardController>();
         dashController.fetchInProgressMaterials();
-        dashController.checkLocalStreak();
+        // dashController.checkLocalStreak(); <-- HAPUS ATAU COMMENT BARIS INI
+        dashController.fetchUserProfile(); // <-- Ganti jadi ini biar sinkron ke Flask
       }
     }
   }

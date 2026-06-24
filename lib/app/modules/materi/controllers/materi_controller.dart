@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:science_craft/app/modules/notification/notification_helper.dart';
 import '../../../data/db/database_helper.dart';
-import '../../../models/material_model.dart'; // Pastikan path ini sesuai struktur folder kamu
+import '../../../models/material_model.dart'; 
 import '../../../routes/app_pages.dart';
 import '../../../data/api_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-// --- 1. IMPORT CONTROLLER YANG DIBUTUHKAN ---
 import '../../dashboard/controllers/dashboard_controller.dart';
-import '../../profile/controllers/profile_controller.dart'; // Untuk 'addXp()'
+import '../../profile/controllers/profile_controller.dart'; 
 
 class MaterialDetailController extends GetxController {
   final ScrollController scrollController = ScrollController();
@@ -17,34 +19,30 @@ class MaterialDetailController extends GetxController {
   final Rx<MaterialContent?> materialContent = Rx<MaterialContent?>(null);
   late String materialId;
 
-  // --- 2. TEMUKAN PROFILE CONTROLLER ---
-  // Pastikan ProfileController SUDAH dipanggil/di-put di main binding atau dashboard binding
   final ProfileController profileController = Get.find<ProfileController>();
 
-  // --- 3. UBAH LOGIKA 'SAVING' ---
   bool _isSaving = false;
-  // 'Saklar' untuk melacak apakah ada perubahan yang BELUM DISIMPAN
   bool _hasProgressChanged = false;
+  bool _hasRecordedReadMaterialQuest = false;
 
   @override
   void onInit() {
     super.onInit();
-    // Ambil parameter ID dari URL/Routing
     materialId = Get.parameters['id'] ?? '1';
-    
-    // Ambil arguments progress awal (jika dikirim dari halaman list)
     initialProgress = (Get.arguments is double) ? Get.arguments as double : 0.0;
-    currentProgress.value = initialProgress;
+    
+    // Modal Awal
+    if (initialProgress <= 0.0) {
+      currentProgress.value = 0.05; 
+      _hasProgressChanged = true;
+    } else {
+      currentProgress.value = initialProgress;
+    }
 
     fetchMaterialContent(materialId);
 
-    // --- 4. 'ever' UNTUK MENYALAKAN SAKLAR ---
-    // 'ever' akan mendengarkan 'currentProgress'
-    // Jika nilainya berubah dan lebih besar dari progress awal,
-    // kita nyalakan 'saklar' _hasProgressChanged
     ever(currentProgress, (double newProgress) {
       if (newProgress > initialProgress && !_hasProgressChanged) {
-        // print("Progress baru terdeteksi!"); // Uncomment buat debug
         _hasProgressChanged = true;
       }
     });
@@ -58,48 +56,70 @@ class MaterialDetailController extends GetxController {
     final maxScroll = scrollController.position.maxScrollExtent;
     final currentScroll = scrollController.offset;
 
-    // --- PERBAIKAN: Jika materi pendek (tidak bisa discroll), anggap langsung 100% ---
+    // TRIK 1: Kalau materi pendek banget (nggak bisa discroll)
     if (maxScroll <= 0) {
-      if (currentProgress.value < 1.0) {
-         print("Materi pendek terdeteksi, set progress 100%");
-         currentProgress.value = 1.0;
-      }
+      currentProgress.value = 1.0;
+      _hasProgressChanged = true;
       return;
     }
-    // -----------------------------------------------------------------------------
+
+    // TRIK 2: Toleransi Scroll (Kalau kurang 50 pixel nyentuh bawah, anggap aja 100% tamat)
+    if (currentScroll >= (maxScroll - 50)) {
+       currentProgress.value = 1.0;
+       _hasProgressChanged = true;
+       return;
+    }
 
     double progress = (currentScroll / maxScroll).clamp(0.0, 1.0);
-
-    // Hanya update jika progress bertambah (biar tidak turun saat scroll ke atas)
     if (progress > currentProgress.value) {
       currentProgress.value = progress;
-      // Debugging: Cek di console apakah angka jalan
-      // print("Scroll Progress: ${(progress * 100).toStringAsFixed(1)}%"); 
+      _hasProgressChanged = true; // Nyalakan saklar kalau progress nambah
+    }
+  }
+  Future<void> _recordReadMaterialQuest() async {
+    if (_hasRecordedReadMaterialQuest) return;
+
+    _hasRecordedReadMaterialQuest = true;
+
+    await ApiService.updateDailyQuestProgress('read_material');
+
+    if (Get.isRegistered<DashboardController>()) {
+      Get.find<DashboardController>().fetchDailyQuest();
     }
   }
 
-  Future<void> fetchMaterialContent(String id) async {
+ Future<void> fetchMaterialContent(String id) async {
     try {
-      final dataFromDb = await DatabaseHelper.instance.getMaterialById(int.parse(id));
+      final response = await http.get(
+        Uri.parse('${ApiService.baseUrl}/admin/material/$id'),
+        headers: {'Authorization': 'Bearer ${profileController.authService.token}'},
+      );
 
-      if (dataFromDb != null) {
-        materialContent.value = dataFromDb;
-        // Opsional: Jika mau sync progress dari DB local lagi (takut argument salah)
-        // initialProgress = dataFromDb.progress;
-        // currentProgress.value = initialProgress;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        data['progress'] = initialProgress; 
+        materialContent.value = MaterialContent.fromMap(data);
+        await _recordReadMaterialQuest();
+
+        // TRIK 3: Pengecekan otomatis setelah materi selesai di-load di layar
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (scrollController.hasClients && scrollController.position.maxScrollExtent <= 0) {
+            currentProgress.value = 1.0;
+            _hasProgressChanged = true;
+          }
+        });
+
       } else {
-        // Data dummy jika error
-        _loadDummyData(id, "Data tidak ditemukan di DB");
+        _loadDummyData(id, "Materi tidak ditemukan di server");
       }
     } catch (e) {
-      print("Error fetch material: $e");
-      _loadDummyData(id, "Error: $e");
+      _loadDummyData(id, "Kesalahan koneksi ke server");
     }
   }
 
   void _loadDummyData(String id, String message) {
     materialContent.value = MaterialContent(
-        id: int.parse(id), // Pastikan model support field id
+        id: int.parse(id), 
         title: "Error Memuat Data",
         introduction: message,
         theorySections: [],
@@ -107,58 +127,46 @@ class MaterialDetailController extends GetxController {
         iconPath: 'assets/chemistry.png');
   }
 
-  void goToQuiz() async {
-
-    bool wasAlreadyCompleted = (initialProgress >= 0.99); // Pakai 0.99 untuk toleransi double
-
-    if (!wasAlreadyCompleted) {
-      print("Materi selesai! Memberikan XP...");
-      
-      // 1. Paksa progress jadi 100%
-      currentProgress.value = 1.0; 
-      _hasProgressChanged = true; // Nyalakan saklar manual
-
-      // 2. Beri 50 XP (panggil fungsi dari ProfileController)
-      //    Ini akan OTOMATIS memanggil pop-up Level Up jika XP-nya cukup!
-      profileController.addXp(50); 
-      
-      Get.snackbar(
-        "Materi Selesai!", 
-        "Kamu mendapatkan 50 XP!",
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
-      );
-
+  String _levelTitle(int level) {
+    if (level == 1) {
+      return "Level 1: Siswa Baru 🔬";
+    } else if (level == 2) {
+      return "Level 2: Peneliti Junior 🧪";
+    } else if (level == 3) {
+      return "Level 3: Asisten Lab 🧬";
+    } else if (level == 4) {
+      return "Level 4: Ahli Sains 🌌";
     } else {
-      print("Materi ini sudah selesai sebelumnya. Tidak ada XP diberikan.");
+      return "Level $level: Professor Madya 🧠";
     }
-
-    // 3. Simpan data (termasuk progress 100% jika ada)
-    //    'forceSave: true' memastikan data TETAP tersimpan
-    //    walaupun user tidak scroll (misal materi sangat pendek)
-    await _saveData(forceSave: true);
-
-    // 4. Lanjut navigasi ke Kuis
-    // Pastikan route QUIZ di AppPages formatnya '/quiz/:id' atau '/quiz' dengan arguments
-    Get.toNamed(Routes.QUIZ, arguments: materialId);
   }
 
+  void goToQuiz() async {
+    bool wasAlreadyCompleted = (initialProgress >= 0.99);
 
-  // --- 6. FUNGSI '_saveData' YANG LEBIH CERDAS ---
-  Future<void> _saveData({bool forceSave = false}) async {
-    // Cek agar tidak menyimpan dua kali (misal dari back + onClose)
-    if (_isSaving) return;
-    
-    // HANYA simpan jika 'saklar' nyala, ATAU jika 'dipaksa' (dari goToQuiz)
-    if (!_hasProgressChanged && !forceSave) {
-      print("[SaveData] Tidak ada progress baru, tidak perlu simpan.");
-      return; // Langsung keluar
+    if (!wasAlreadyCompleted) {
+      currentProgress.value = 1.0;
+      _hasProgressChanged = true;
     }
+
+    await _saveData(forceSave: true);
+
+    if (!wasAlreadyCompleted) {
+      Get.snackbar(
+        "Materi Selesai!",
+        "Progress materi berhasil disimpan dan XP diperbarui.",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    }
+
+    Get.toNamed(Routes.QUIZ, arguments: materialId);
+  }
+Future<void> _saveData({bool forceSave = false}) async {
+    if (_isSaving) return;
+    if (!_hasProgressChanged && !forceSave) return; 
     
-    _isSaving = true; // Tandai sedang menyimpan
-    print("[SaveData] Menyimpan progress...");
+    _isSaving = true; 
 
     try {
       double progressToSave = currentProgress.value;
@@ -166,67 +174,235 @@ class MaterialDetailController extends GetxController {
       final iconPath = materialContent.value?.iconPath ?? 'assets/default_icon.png';
       final db = DatabaseHelper.instance;
 
-      // --- BAGIAN A: SIMPAN HISTORY "LAST LEARNED" ---
       await db.saveSetting('lastLearnedId', materialId);
       await db.saveSetting('lastLearnedTitle', title);
       await db.saveSetting('lastLearnedProgress', progressToSave.toString());
       await db.saveSetting('lastLearnedIconPath', iconPath);
-      
-      print("History terakhir disimpan (ID: $materialId).");
 
-      // Update Dashboard UI secara realtime jika controllernya ada
       if (Get.isRegistered<DashboardController>()) {
         final dashController = Get.find<DashboardController>();
         dashController.updateLastLearned(materialId, title, progressToSave, iconPath);
       }
       
-      // --- BAGIAN B: SIMPAN PROGRESS MATERI KE DB UTAMA ---
       await db.updateMaterialProgress(int.parse(materialId), progressToSave);
       
-      // Sync ke API (optional, jalankan di background biar gak bikin lemot UI)
-      ApiService.syncProgress(int.parse(materialId), progressToSave).then((_) {
-         print("Sync API berhasil");
-      }).catchError((e) {
-         print("Sync API gagal (tidak fatal): $e");
-      });
+      // 🌟 PERBAIKAN UTAMA: Tembak API pake format List<String> yang baru! 🌟
+      final result = await ApiService.syncProgressDetail(
+        int.parse(materialId),
+        progressToSave,
+      );
+
+      final List<String> pialaBaru = ((result?['new_badges_unlocked'] ?? []) as List)
+          .map((e) => e.toString())
+          .toList();
+
+      final xpAdded = int.tryParse(
+        (result?['xp_added'] ?? 0).toString(),
+      ) ?? 0;
+
+      final levelUp = result?['level_up'] == true ||
+          result?['level_up'].toString() == 'true';
+
+      final level = int.tryParse(
+        (result?['level'] ?? 1).toString(),
+      ) ?? 1;
+      print("Data 100% masuk ke Flask cok! Piala didapat: $pialaBaru");
+     
+      // 🌟 REFRESH PROFIL BIAR API JADI IJO HABIS BACA MATERI! 🌟
+      if (Get.isRegistered<ProfileController>()) {
+        Get.find<ProfileController>().fetchUserProfile();
+      }
+      if (xpAdded > 0) {
+        await ApiService.updateDailyQuestProgress(
+          'collect_xp',
+          amount: xpAdded,
+        );
+
+        if (Get.isRegistered<DashboardController>()) {
+          Get.find<DashboardController>().fetchDailyQuest();
+        }
+      }
+
+      if (levelUp) {
+        Get.dialog(
+          LevelUpPopup(newLevel: _levelTitle(level)),
+          barrierDismissible: false,
+        );
+      }
+
+      // 🚀 JEDARRR! Kalau baca materi ini bikin dapet piala, keluarin pop-up!
+      if (pialaBaru.isNotEmpty) {
+        for (var badgeName in pialaBaru) {
+          
+          // Push Notif Lokal
+          NotificationHelper().showInstantNotification(
+            id: badgeName.hashCode, 
+            title: "Badge Baru Terbuka! 🎉",
+            body: "Selamat! Kamu berhasil mendapatkan pencapaian '$badgeName'.",
+          );
+          
+          // Pop-up UI yang bersih (Sesuai artstyle lu)
+          Get.dialog(
+            BadgeUnlockedPopup(badgeName: badgeName),
+            barrierDismissible: false,
+          );
+        }
+      }
       
-      // Reset state setelah berhasil simpan
       initialProgress = progressToSave;
-      _hasProgressChanged = false; // Matikan saklar, progress sudah 'up-to-date'
+      _hasProgressChanged = false; 
 
     } catch (e) {
       print("Error saat _saveData: $e");
     } finally {
-      _isSaving = false; // Selesai mencoba simpan
+      _isSaving = false; 
     }
   }
-
-  // --- 7. FUNGSI 'saveAndReturn' YANG BARU ---
   void saveAndReturn() async {
-    // Ambil status saklar SEBELUM disimpan untuk return value
     bool didChange = _hasProgressChanged;
-
-    // 1. Simpan semua data (history dan progress)
+    // Tungguin proses save beneran kelar sebelum nutup halaman
     await _saveData(); 
-    
-    // 2. Kembali dengan mengirim "surat balasan"
-    //    (Kirim 'true' JIKA TADI ADA perubahan, 'false' jika tidak)
-    //    Ini berguna kalau Halaman List mau refresh diri sendiri
     Get.back(result: didChange); 
   }
 
-  // --- 8. FUNGSI 'onClose' YANG BARU ---
   @override
   void onClose() {
-    // print("MaterialDetailController onClose dipanggil.");
-    
-    // Panggil save DI SINI juga untuk jaga-jaga
-    // jika user pakai tombol back fisik (system back button)
-    // JANGAN 'await' di sini agar tidak memblokir penutupan halaman
     _saveData();
-
     scrollController.removeListener(_onScroll);
     scrollController.dispose();
     super.onClose();
+  }
+}
+// =========================================================
+// 🏆 WIDGET CUSTOM: POPUP LOGO BADGE DENGAN EFEK GLOW (NO LOTTIE)
+// =========================================================
+class BadgeUnlockedPopup extends StatelessWidget {
+  final String badgeName;
+  const BadgeUnlockedPopup({Key? key, required this.badgeName}) : super(key: key);
+
+  // Helper pintar untuk mencocokkan nama badge dengan file gambar lu
+  String _getBadgeImagePath(String name) {
+    switch (name) {
+      case "Darwin’s Successor": return "assets/badge/1.png";
+      case "Quantum Overlord": return "assets/badge/2.png";
+      case "The Modern Alchemist": return "assets/badge/3.png";
+      case "Virtual Researcher": return "assets/badge/4.png";
+      case "Mad Scientist": return "assets/badge/5.png";
+      case "Grand Analyst": return "assets/badge/6.png";
+      case "Lab Regular": return "assets/badge/7.png";
+      case "First Spark": return "assets/badge/8.png";
+      case "Trivia Rover": return "assets/badge/9.png";
+      case "Night Owl": return "assets/badge/10.png";
+      case "Flawless Victory": return "assets/badge/11.png";
+      default: return "assets/badge/8.png"; // Default fallback
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String imagePath = _getBadgeImagePath(badgeName);
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: [
+          // 1. KOTAK DIALOG UTAMA
+          Container(
+            margin: const EdgeInsets.only(top: 60),
+            padding: const EdgeInsets.only(top: 80, left: 20, right: 20, bottom: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "PENCAPAIAN BARU!",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF6C63FF),
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 50, height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.amber,
+                    borderRadius: BorderRadius.circular(10)
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  "Selamat! Kamu berhasil membuka lencana:\n\n$badgeName",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16, 
+                    color: Color(0xFF374151), 
+                    height: 1.4, 
+                    fontWeight: FontWeight.bold
+                  ),
+                ),
+                const SizedBox(height: 25),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Get.back(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6C63FF),
+                      foregroundColor: Colors.white,
+                      elevation: 3,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    ),
+                    child: const Text("MANTAP!", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 2. LOGO BADGE DENGAN EFEK GLOW DI ATAS CARD 🎉
+          Positioned(
+            top: -10,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                boxShadow: [
+                  // INI RAHASIA EFEK GLOW-NYA COK!
+                  BoxShadow(
+                    color: const Color(0xFFFFD700).withOpacity(0.6), // Warna Gold neon
+                    blurRadius: 35,  // Tingkat pendaran cahaya glow
+                    spreadRadius: 8, // Luas pancaran cahaya glow
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0), // Jarak logo di dalam lingkaran putih
+                child: Image.asset(
+                  imagePath,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

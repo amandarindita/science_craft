@@ -1,22 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart'; // Wajib ada
+import 'package:get_storage/get_storage.dart';
 import 'app/routes/app_pages.dart';
 import 'app/data/db/database_helper.dart'; 
 import 'app/data/auth_service.dart'; 
 
 void main() async {
-  // 1. Wajib: Pastikan binding Flutter siap sebelum akses storage/db
   WidgetsFlutterBinding.ensureInitialized(); 
   
-  // 2. Init Penyimpanan Lokal (GetStorage)
-  // Ini penting untuk menyimpan status 'hasSeenOnboarding' dan 'authToken'
   await GetStorage.init();
 
-  // 3. Inject AuthService (Otak Login) agar siap dipakai di mana saja
   Get.put(AuthService()); 
 
-  // 4. Init Database SQLite
   try {
     await DatabaseHelper.instance.database;
     print("✅ Database SQLite lokal siap.");
@@ -25,7 +20,6 @@ void main() async {
     print("Error: $e");
   }
 
-  // 5. Jalankan Aplikasi
   runApp(const MyApp());
 }
 
@@ -39,31 +33,26 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        useMaterial3: true, // Desain modern
+        useMaterial3: true,
       ),
-      
-      // --- BAGIAN PENTING: LOGIKA PENENTU HALAMAN AWAL ---
-      // Kita tidak langsung tulis Routes.LOGIN atau Routes.ONBOARDING
-      // Tapi kita panggil fungsi pintar ini:
       initialRoute: _determineInitialRoute(),
-      
       getPages: AppPages.routes,
     );
   }
 
-  /// Fungsi pintar untuk menentukan user harus masuk ke mana
- String _determineInitialRoute() {
+  String _determineInitialRoute() {
     final box = GetStorage();
     
-    // 1. CEK LOGIN: Apakah user sudah login sebelumnya?
-    // Jika ada token, berarti sudah login -> Langsung ke Dashboard (ROOT)
     if (box.hasData('authToken')) {
-      return Routes.ROOT; 
+      // --- LOGIKA BARU: CEK PANGKAT PAS AUTO-LOGIN ---
+      String role = box.read('userRole') ?? 'user';
+      if (role == 'admin') {
+        return Routes.ADMIN; 
+      } else {
+        return Routes.ROOT; 
+      }
     }
 
-    // 2. JIKA BELUM LOGIN ATAU HABIS LOGOUT:
-    // Selalu paksa masuk ke Onboarding dulu. 
-    // (Nanti dari Onboarding, tombol "Selesai/Mulai" yang akan ngarahin ke Login)
     return Routes.ONBOARDING;
   }
 }

@@ -140,7 +140,7 @@ class LoginView extends GetView<LoginController> {
                     children: [
                       const SizedBox(height: 18),
                       _buildTextFieldLabel('Username'),
-                      _buildTextField(controller.usernameController),
+                      _buildTextField(controller.emailController),
                       const SizedBox(height: 16),
                       _buildTextFieldLabel('Password'),
                       _buildTextField(

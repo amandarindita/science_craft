@@ -1,14 +1,15 @@
-// ----- GANTI SEMUA ISI FILE ChatbotController.dart KAMU DENGAN INI -----
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'dart:convert'; // <-- TAMBAH: Untuk JSON
-import 'package:http/http.dart' as http; // <-- TAMBAH: Untuk HTTP
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-// Model sederhana untuk satu pesan chat
+// --- IMPORT BARU KITA ---
+import '../../../data/api_service.dart';
+import '../../../data/auth_service.dart'; // Opsional, kalau endpoint chat butuh token login
+
 class ChatMessage {
   final String text;
-  final bool isUser; // true jika dari user, false jika dari bot
+  final bool isUser; 
   final DateTime timestamp;
 
   ChatMessage({
@@ -20,22 +21,13 @@ class ChatMessage {
 
 class ChatbotController extends GetxController {
   final textController = TextEditingController();
-  final scrollController = ScrollController(); // Untuk auto-scroll
-
-  // Daftar semua pesan
+  final scrollController = ScrollController(); 
   final messages = <ChatMessage>[].obs;
-
-  // State untuk menandai bot sedang "berpikir"
   final isBotTyping = false.obs;
-
-  // <-- TAMBAH: Alamat IP Backend kamu -->
-  // !! GANTI IP INI DENGAN IP DARI TERMINAL FLASK KAMU !!
-  final String _baseUrl = 'http://192.168.56.35:5000'; 
 
   @override
   void onInit() {
     super.onInit();
-    // Tambahkan pesan sambutan dari bot saat halaman dibuka
     messages.add(
       ChatMessage(
         text: 'Hai! Aku SENA (Science Education Navigator Assistant) 🧪 Si teman sains ceria yang siap bantu kamu jelajahi dunia sains dengan cara seru dan mudah! Mau bahas apa hari ini?',
@@ -45,82 +37,56 @@ class ChatbotController extends GetxController {
     );
   }
 
-  // Fungsi untuk mengirim pesan
   void sendMessage() {
     final text = textController.text.trim();
     if (text.isEmpty) return;
 
-    // 1. Tampilkan pesan user di layar
-    messages.add(
-      ChatMessage(
-        text: text,
-        isUser: true,
-        timestamp: DateTime.now(),
-      ),
-    );
-
-    // 2. Kosongkan text field
+    // 1. Tampilkan pesan user
+    messages.add(ChatMessage(text: text, isUser: true, timestamp: DateTime.now()));
     textController.clear();
-    // 3. Auto-scroll ke pesan terbaru
     _scrollToBottom();
 
-    // 4. Tampilkan indikator "bot sedang mengetik"
+    // 2. Tampilkan indikator "berpikir"
     isBotTyping.value = true;
 
-    // 5. Panggil API backend (bukan lagi simulasi delay)
+    // 3. Panggil API backend
     _getBotResponse(text);
   }
 
-  // <-- UBAH: Logika ini diubah total untuk memanggil API -->
   Future<void> _getBotResponse(String userMessage) async {
     String responseText;
 
     try {
-      // Kirim pesan user ke backend
+      // Kita pakai ApiService.baseUrl biar dinamis!
+      // Pastikan endpoint di Flask kamu namanya '/chat' (atau sesuaikan jika '/chat-gemini')
       final response = await http.post(
-        Uri.parse('$_baseUrl/chat-gemini'), // Panggil endpoint /chat-gemini
+        Uri.parse('${ApiService.baseUrl}/chat'), 
         headers: {
           'Content-Type': 'application/json',
+          // Jika backend Flask kamu pasang @jwt_required() di route chat, nyalakan baris di bawah ini:
+          // 'Authorization': 'Bearer ${Get.find<AuthService>().token}'
         },
-        body: jsonEncode({
-          'message': userMessage, // Kirim pesan dalam format JSON
-        }),
+        body: jsonEncode({'message': userMessage}),
       );
 
-      // Cek apakah server membalas dengan sukses (status code 200)
       if (response.statusCode == 200) {
-        // Ambil balasan 'reply' dari JSON
         final data = jsonDecode(response.body);
-        responseText = data['reply'];
+        responseText = data['reply'] ?? data['response'] ?? 'Maaf, SENA tidak mengerti format balasan ini.'; 
       } else {
-        // Tampilkan pesan error jika server gagal memproses
         responseText = 'Oops! Server lagi ada gangguan nih. Coba lagi ya. (Error: ${response.statusCode})';
       }
     } catch (e) {
-      // Tampilkan pesan error jika HP gagal terhubung ke server
-      // (misal: WiFi mati, IP salah, server mati)
-      responseText = 'Gagal terhubung ke server. Cek koneksi internet/WiFi kamu dan pastikan IP-nya benar ya. (Error: $e)';
+      responseText = 'Gagal terhubung ke server. Cek koneksi internet/WiFi kamu dan pastikan server menyala ya.';
     }
 
-    // 6. Matikan "bot sedang mengetik"
+    // 4. Matikan indikator "berpikir" & tampilkan pesan
     isBotTyping.value = false;
-
-    // 7. Tampilkan balasan DARI SERVER di layar
-    messages.add(
-      ChatMessage(
-        text: responseText,
-        isUser: false,
-        timestamp: DateTime.now(),
-      ),
-    );
-
-    // 8. Scroll ke bawah
+    messages.add(ChatMessage(text: responseText, isUser: false, timestamp: DateTime.now()));
     _scrollToBottom();
   }
 
-  // Fungsi untuk otomatis scroll ke pesan paling bawah
   void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 50), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (scrollController.hasClients) {
         scrollController.animateTo(
           scrollController.position.maxScrollExtent,

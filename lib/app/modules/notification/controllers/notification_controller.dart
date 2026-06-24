@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart'; // Tambahan buat simpan data
-import 'dart:math'; // Buat logika random (opsional)
-import '../notification_helper.dart'; 
+import 'package:get_storage/get_storage.dart';
+import '../notification_helper.dart'; // Pastikan path helper-mu benar
+import '../../../data/api_service.dart'; // 🌟 Import ApiService Flask kita cok
 
 class NotificationItem {
   final int id;
@@ -26,41 +26,84 @@ class NotificationItem {
 
 class NotificationController extends GetxController {
   final NotificationHelper _notifHelper = NotificationHelper();
-  final box = GetStorage(); // Database lokal
+  final box = GetStorage(); 
 
-  // Daftar notifikasi untuk tampilan UI (History)
-  final notifications = <NotificationItem>[
-    // Data dummy awal (Boleh dihapus kalau mau bersih)
-    NotificationItem(
-      id: 1,
-      title: 'Streak Harian Tercapai!',
-      body: 'Kerja bagus! Kamu telah menyelesaikan 3 materi berturut-turut.',
-      time: 'Baru saja',
-      icon: Icons.local_fire_department_rounded,
-      iconColor: Colors.orange,
-    ),
-  ].obs;
+  final notifications = <NotificationItem>[].obs; // Mulai dengan list kosong
+  final isLoading = false.obs; // 🌟 Indikator loading data dari Flask
 
   @override
   void onInit() {
     super.onInit();
     _notifHelper.initNotification();
     
-    // Cek logika otomatis saat aplikasi dibuka
-    _checkDailyLogin(); // (Fitur Streak)
-    _scheduleWeekendPromo(); // (Fitur Weekend)
+    // 1. Jalankan logikasi alarm/push lokal harian bawaanmu
+    _checkDailyLogin(); 
+    _scheduleWeekendPromo(); 
+    
+    // 2. 🌟 LANGSUNG TARIK RIWAYAT NOTIFIKASI DARI SERVER FLASK!
+    fetchServerNotifications();
   }
 
   // ========================================================================
-  // FUNGSI BANTUAN (PRIVATE)
-  // Biar setiap ada notifikasi, otomatis masuk ke List di layar juga
+  // 🔄 SYNC ENGINE: AMBIL DATA DARI SERVER FLASK
+  // ========================================================================
+  Future<void> fetchServerNotifications() async {
+    try {
+      isLoading.value = true;
+      
+      // Ambil list notifikasi mentah dari Flask
+      final List<dynamic>? serverData = await ApiService.getNotifications();
+      
+      if (serverData != null) {
+        // Map data dari Flask JSON ke dalam Model NotificationItem UI lu
+        List<NotificationItem> mappedItems = serverData.map((notif) {
+          final String title = notif['title'] ?? '';
+          
+          // 💡 PILIHAN IKON DINAMIS BERDASARKAN JENIS NOTIFIKASI FLASK
+          IconData iconData = Icons.notifications_active;
+          Color iconColor = Colors.blue;
+
+          if (title.contains("Badge")) {
+            iconData = Icons.emoji_events; // Ikon Piala 🏆
+            iconColor = Colors.amber;
+          } else if (title.contains("Level")) {
+            iconData = Icons.rocket_launch; // Ikon Roket 🚀
+            iconColor = Colors.purple;
+          } else if (title.contains("Streak")) {
+            iconData = Icons.local_fire_department_rounded; // Ikon Api 🔥
+            iconColor = Colors.orange;
+          }
+
+          return NotificationItem(
+            id: notif['id'] ?? DateTime.now().millisecondsSinceEpoch,
+            title: title,
+            body: notif['message'] ?? '',
+            time: notif['created_at'] ?? 'Baru saja',
+            icon: iconData,
+            iconColor: iconColor,
+            isRead: notif['is_read'] ?? false,
+          );
+        }).toList();
+
+        // Masukkan semua data dari server ke list UI
+        notifications.assignAll(mappedItems);
+      }
+    } catch (e) {
+      print("[NotificationController] Gagal fetch server: $e");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ========================================================================
+  // Biar fungsi instan lokal lu tetep bisa nyelip ke dalam list layar
   // ========================================================================
   void _addToHistory(String title, String body, IconData icon, Color color) {
     notifications.insert(0, NotificationItem(
       id: DateTime.now().millisecondsSinceEpoch,
       title: title,
       body: body,
-      time: "Baru Saja", // Bisa dikembangin pake library intl/date format
+      time: "Baru Saja", 
       icon: icon,
       iconColor: color,
       isRead: false
@@ -68,21 +111,18 @@ class NotificationController extends GetxController {
   }
 
   // ========================================================================
-  // KATEGORI A: INSTANT TRIGGERS (Langsung Muncul Pop-up + Masuk History)
+  // KATEGORI A: INSTANT TRIGGERS (Lokal + Tetap Berjalan)
   // ========================================================================
 
-  // [Test] Fungsi Tes Manual
   void triggerTestNotification() {
     _notifHelper.showInstantNotification(
       id: 99, 
       title: "Halo Peneliti Muda! 🧪", 
       body: "Jangan lupa cek materi Biologi hari ini ya!"
     );
-    // Masukkan ke history layar
-    _addToHistory("Halo Peneliti Muda!", "Jangan lupa cek materi...", Icons.notifications_active, Colors.green);
+    _addToHistory("Halo Peneliti Muda! 🧪", "Jangan lupa cek materi Biologi hari ini ya!", Icons.notifications_active, Colors.green);
   }
 
-  // [4] Milestone XP
   void checkXPMilestone(int currentXP) {
     if (currentXP > 0 && currentXP % 500 == 0) {
       String title = "Level Up! XP Tembus $currentXP! 🚀";
@@ -93,7 +133,6 @@ class NotificationController extends GetxController {
     }
   }
 
-  // [5] Badge Unlocked
   void unlockBadge(String badgeName) {
     String title = "Lencana Baru: $badgeName! 🏅";
     String body = "Cek koleksi lencana barumu di profil.";
@@ -102,7 +141,6 @@ class NotificationController extends GetxController {
     _addToHistory(title, body, Icons.military_tech, Colors.amber);
   }
 
-  // [6] Content Unlocked (Bab Baru)
   void unlockNewChapter(String chapterName) {
     String title = "Bab Terbuka: $chapterName 🔓";
     String body = "Siap melanjutkan petualangan sains? Yuk mulai!";
@@ -112,10 +150,9 @@ class NotificationController extends GetxController {
   }
 
   // ========================================================================
-  // KATEGORI B: SCHEDULED TRIGGERS (Hanya Pop-up Nanti, Tidak masuk History skrg)
+  // KATEGORI B: SCHEDULED TRIGGERS (Alarm Lokal Latar Belakang)
   // ========================================================================
 
-  // [1] Daily Reminder (Dari Settings)
   void setDailyReminder(int hour, int minute) {
     _notifHelper.scheduleDailyNotification(
       id: 100,
@@ -124,16 +161,12 @@ class NotificationController extends GetxController {
       hour: hour,
       minute: minute,
     );
-    // Simpan preferensi user
     box.write('reminder_hour', hour);
     box.write('reminder_minute', minute);
-    
     Get.snackbar("Pengingat", "Diatur setiap jam $hour:$minute");
   }
 
-  // [2] Review Materi (Spaced Repetition)
   void scheduleReviewReminder(String topicName) {
-    // Dijadwalkan 24 jam lagi
     _notifHelper.scheduleFutureNotification(
       id: topicName.hashCode, 
       title: "Ingat materi $topicName? 🧠",
@@ -142,10 +175,8 @@ class NotificationController extends GetxController {
     );
   }
 
-  // [7] Remedial (Penyemangat saat nilai jelek)
   void checkQuizResult(int score, String subject) {
     if (score < 60) {
-      // Jadwalkan 2 jam lagi
       _notifHelper.scheduleFutureNotification(
         id: 700,
         title: "Jangan Menyerah di $subject! 💪",
@@ -155,16 +186,10 @@ class NotificationController extends GetxController {
     }
   }
 
-  // [3] & [8] Streak Rescue (Otomatis jalan di onInit)
   void _checkDailyLogin() {
-    // 1. Simpan waktu login sekarang
     box.write('last_login', DateTime.now().toString());
-
-    // 2. Batalkan notifikasi "Streak Warning" yang lama
     _notifHelper.cancelNotification(888); 
 
-    // 3. Buat jadwal baru buat BESOK MALAM jam 20:00
-    // Kalau besok user gak buka app, notif ini akan muncul.
     _notifHelper.scheduleDailyNotification(
       id: 888,
       title: "Streak-mu dalam bahaya! 🔥",
@@ -174,10 +199,9 @@ class NotificationController extends GetxController {
     );
   }
 
-  // [9] Weekend Warrior (Otomatis jalan di onInit)
   void _scheduleWeekendPromo() {
     int weekday = DateTime.now().weekday;
-    if (weekday == 6 || weekday == 7) { // Sabtu/Minggu
+    if (weekday == 6 || weekday == 7) { 
        _notifHelper.scheduleDailyNotification(
         id: 900,
         title: "Weekend Mode 🍃",
@@ -189,10 +213,6 @@ class NotificationController extends GetxController {
       _notifHelper.cancelNotification(900);
     }
   }
-
-  // ========================================================================
-  // FUNGSI BAWAAN LAMA (TIDAK BERUBAH)
-  // ========================================================================
 
   void markAsRead(int id) {
     final index = notifications.indexWhere((item) => item.id == id);

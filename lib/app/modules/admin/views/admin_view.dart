@@ -12,8 +12,6 @@ class AdminView extends GetView<AdminController> {
 
   @override
   Widget build(BuildContext context) {
-    // Pastikan controller ter-inject
-    Get.put(AdminController());
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -93,9 +91,12 @@ class AdminView extends GetView<AdminController> {
         bool isActive = controller.currentTab.value == index;
         return GestureDetector(
           onTap: () {
-             controller.currentTab.value = index;
-             // Reset form kalau pindah tab, biar bersih
-             if (index == 0) controller.resetMaterialForm(); 
+            final oldTab = controller.currentTab.value;
+            controller.currentTab.value = index;
+
+            if (index == 0 && oldTab != 0 && !controller.isEditMode.value) {
+              controller.resetMaterialForm();
+            }
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
@@ -171,8 +172,65 @@ class AdminView extends GetView<AdminController> {
           }
           return const SizedBox.shrink();
         }),
+        Obx(() => Card(
+          color: Colors.blue[50],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.blue.shade200),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.upload_file, color: Colors.indigo),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        "Import banyak materi dari CSV. Kolom image, Unity Scene, dan petunjuk praktikum tetap bisa diedit manual setelah import.",
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: controller.isImportingCsv.value
+                      ? null
+                      : controller.importMaterialsCsv,
+                  icon: controller.isImportingCsv.value
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.file_upload, color: Colors.white),
+                  label: Text(
+                    controller.isImportingCsv.value
+                        ? "Mengimport..."
+                        : "IMPORT CSV MATERI",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigo,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )),
+        const SizedBox(height: 20),
 
-        // --- B. FORM INPUT UTAMA ---
+ // --- B. FORM INPUT UTAMA ---
         Card(
           elevation: 4,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -182,6 +240,25 @@ class AdminView extends GetView<AdminController> {
               children: [
                 TextField(controller: controller.titleController, decoration: _inputDecor("Judul Materi")),
                 const SizedBox(height: 15),
+                
+                // === INI DIA KOTAK INPUT ID SCENE UNITY COK! 🎮 ===
+                TextField(
+                  controller: controller.unitySceneController, 
+                  decoration: InputDecoration(
+                    labelText: 'ID Scene Unity (Opsional)',
+                    hintText: 'Contoh: LabBiologi01 (Kosongkan jika materi biasa)',
+                    prefixIcon: const Icon(Icons.gamepad, color: Colors.indigo), 
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.indigo, width: 2)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                // ==================================================
+
                 InputDecorator(
                   decoration: _inputDecor("Kategori"),
                   child: DropdownButtonHideUnderline(
@@ -197,12 +274,19 @@ class AdminView extends GetView<AdminController> {
                 ),
                 const SizedBox(height: 15),
                 TextField(controller: controller.introController, decoration: _inputDecor("Intro Singkat"), maxLines: 2),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: controller.instructionsController,
+                  decoration: _inputDecor(
+                    "Petunjuk Praktikum",
+                    hint: "Contoh: Tujuan, alat, bahan, dan langkah praktikum",
+                  ),
+                  maxLines: 5,
+                ),
               ],
             ),
           ),
         ),
-        
-        const SizedBox(height: 20),
         
         // --- C. DYNAMIC SECTIONS (SUB-BAB Loop) ---
         Obx(() => Column(
@@ -252,56 +336,82 @@ class AdminView extends GetView<AdminController> {
                         ),
                         const SizedBox(height: 15),
 
-                        // --- UPLOAD GAMBAR SUB-BAB ---
+                        // --- UPLOAD GAMBAR SUB-BAB ---),
                         Obx(() {
-                          String? imagePath = controller.sections[i]['image_path'];
-                          bool hasImage = imagePath != null && imagePath.isNotEmpty;
-                          bool isUrl = hasImage && (imagePath.startsWith('http') || imagePath.contains('assets'));
-                          File? imageFile = (hasImage && !isUrl) ? File(imagePath) : null;
+                            String imagePath = controller.sections[i]['image_path'] ?? '';
 
-                          return Container(
-                            width: double.infinity,
-                            height: 160,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[50],
-                              border: Border.all(color: Colors.grey.shade300),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: hasImage
-                              ? Stack(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(11),
-                                      child: isUrl 
-                                        ? Image.asset("assets/placeholder.png", width: double.infinity, height: double.infinity, fit: BoxFit.cover) // Ganti placeholder kalau URL
-                                        : Image.file(imageFile!, width: double.infinity, height: double.infinity, fit: BoxFit.cover),
-                                    ),
-                                    Positioned(
-                                      top: 8, right: 8,
-                                      child: CircleAvatar(
-                                        backgroundColor: Colors.white,
-                                        radius: 18,
-                                        child: IconButton(
-                                          icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                                          onPressed: () => controller.removeImageFromSection(i),
+                            // imagePath = preview lokal yang baru dipilih
+                            // currentImageUrl = gambar lama dari server
+                            String serverImageUrl = i == 0 ? controller.currentImageUrl.value : '';
+
+                            bool hasLocalImage = imagePath.isNotEmpty;
+                            bool hasServerImage = !hasLocalImage && serverImageUrl.isNotEmpty;
+
+                            return Container(
+                              width: double.infinity,
+                              height: 160,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[50],
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: hasLocalImage || hasServerImage
+                                  ? Stack(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(11),
+                                          child: hasLocalImage
+                                              ? Image.file(
+                                                  File(imagePath),
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                  fit: BoxFit.cover,
+                                                )
+                                              : Image.network(
+                                                  controller.buildImageUrl(serverImageUrl),
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return Center(
+                                                      child: Text(
+                                                        "Gambar gagal dimuat",
+                                                        style: TextStyle(color: Colors.grey[600]),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
                                         ),
+                                        Positioned(
+                                          top: 8,
+                                          right: 8,
+                                          child: CircleAvatar(
+                                            backgroundColor: Colors.white,
+                                            radius: 18,
+                                            child: IconButton(
+                                              icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                              onPressed: () => controller.removeImageFromSection(i),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : InkWell(
+                                      onTap: () => controller.pickImageForSection(i),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.add_photo_alternate_outlined,
+                                              size: 40, color: Colors.grey[400]),
+                                          const SizedBox(height: 8),
+                                          Text("Tambah Gambar",
+                                              style: TextStyle(color: Colors.grey[600])),
+                                        ],
                                       ),
                                     ),
-                                  ],
-                                )
-                              : InkWell(
-                                  onTap: () => controller.pickImageForSection(i),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.add_photo_alternate_outlined, size: 40, color: Colors.grey[400]),
-                                      const SizedBox(height: 8),
-                                      Text("Tambah Gambar", style: TextStyle(color: Colors.grey[600])),
-                                    ],
-                                  ),
-                                ),
-                          );
-                        }),
+                            );
+                          }),
+                      
                         const SizedBox(height: 15),
 
                         // --- TEXT EDITOR (Quill) ---
@@ -331,6 +441,12 @@ class AdminView extends GetView<AdminController> {
                         ),
                         const SizedBox(height: 15),
                         TextField(
+                          controller: TextEditingController(text: controller.sections[i]['examples'])
+                            ..selection = TextSelection.fromPosition(
+                              TextPosition(
+                                offset: controller.sections[i]['examples']?.length ?? 0,
+                              ),
+                            ),
                           decoration: _inputDecor("Contoh (Opsional)"),
                           onChanged: (v) => controller.updateSection(i, 'examples', v),
                         ),
@@ -575,7 +691,11 @@ class AdminView extends GetView<AdminController> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: ListTile(
                 leading: const Icon(Icons.star, color: Colors.amber),
-                title: Text(item['description'], maxLines: 2, overflow: TextOverflow.ellipsis),
+                title: Text(
+                  item['fact_text'] ?? '-',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -604,6 +724,45 @@ class AdminView extends GetView<AdminController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Card(
+          elevation: 2,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                labelText: "Kategori Soal",
+                icon: Icon(Icons.category, color: Colors.indigo),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: Obx(() => DropdownButton<String>(
+                  isExpanded: true,
+                  value: controller.selectedQuizCategory.value,
+                  items: controller.categories.map((cat) {
+                    return DropdownMenuItem<String>(
+                      value: cat,
+                      child: Text(
+                        cat,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    if (v != null) {
+                      controller.changeQuizCategory(v);
+                    }
+                  },
+                )),
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 15),
         // --- DROPDOWN PEMILIH MATERI ---
         Card(
           elevation: 2,
@@ -618,16 +777,25 @@ class AdminView extends GetView<AdminController> {
                 icon: Icon(Icons.book, color: Colors.indigo),
               ),
               child: DropdownButtonHideUnderline(
-                child: Obx(() => DropdownButton<int>(
-                  isExpanded: true,
-                  hint: const Text("Pilih Materi yang mau dibuatkan soal..."),
-                  value: controller.selectedMaterialId.value,
-                  items: controller.materialsList.map((e) => DropdownMenuItem<int>(
-                    value: e['id'], 
-                    child: Text(e['title'], style: const TextStyle(fontWeight: FontWeight.bold))
-                  )).toList(),
-                  onChanged: (v) => controller.selectedMaterialId.value = v,
-                )),
+                child: Obx(() {
+                    final filteredMaterials = controller.quizMaterialsByCategory;
+
+                    return DropdownButton<int>(
+                      isExpanded: true,
+                      hint: const Text("Pilih Materi yang mau dibuatkan soal..."),
+                      value: filteredMaterials.any((e) => e['id'] == controller.selectedMaterialId.value)
+                          ? controller.selectedMaterialId.value
+                          : null,
+                      items: filteredMaterials.map((e) => DropdownMenuItem<int>(
+                        value: e['id'],
+                        child: Text(
+                          e['title'],
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      )).toList(),
+                      onChanged: (v) => controller.selectedMaterialId.value = v,
+                    );
+                  }),
               ),
             ),
           ),
@@ -694,6 +862,28 @@ class AdminView extends GetView<AdminController> {
                       ),
                       const Divider(),
                       const SizedBox(height: 10),
+                      InputDecorator(
+                        decoration: _inputDecor("Tipe Soal"),
+                        child: DropdownButtonHideUnderline(
+                          child: Obx(() => DropdownButton<String>(
+                            isDense: true,
+                            isExpanded: true,
+                            value: controller.questionType.value,
+                            items: controller.questionTypes.map((type) {
+                              return DropdownMenuItem<String>(
+                                value: type['value'],
+                                child: Text(type['label'] ?? ''),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                controller.questionType.value = val;
+                              }
+                            },
+                          )),
+                        ),
+                      ),
+                      const SizedBox(height: 15),
 
                       TextField(controller: controller.questionController, decoration: _inputDecor("Pertanyaan", hint: "Contoh: Apa satuan gaya?"), maxLines: 2),
                       const SizedBox(height: 15),
@@ -803,19 +993,53 @@ class AdminView extends GetView<AdminController> {
                           backgroundColor: Colors.indigo[50], 
                           child: Text("${i+1}", style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold))
                         ),
-                        title: Text(item['question'], style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 6.0),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(color: Colors.green[100], borderRadius: BorderRadius.circular(4)),
-                                child: Text("Kunci: ${item['correct_answer']}", style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.bold, fontSize: 12)),
-                              ),
-                            ],
+                        title: Text(
+                            item['question_text'] ?? '-',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
+                        subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 6.0),
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue[100],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    controller.getQuestionTypeLabel(
+                                      item['question_type']?.toString() ?? 'pemahaman',
+                                    ),
+                                    style: TextStyle(
+                                      color: Colors.blue[800],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green[100],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    "Kunci: ${item['correct_answer']}",
+                                    style: TextStyle(
+                                      color: Colors.green[800],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

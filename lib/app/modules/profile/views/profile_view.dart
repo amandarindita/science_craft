@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/profile_controller.dart';
-import '../../../widgets/shared_cards.dart'; 
 import 'badge_view.dart'; 
 
 class ProfileView extends GetView<ProfileController> {
@@ -201,13 +200,20 @@ class ProfileView extends GetView<ProfileController> {
                 // 1. Header Streak
                 Row(
                   children: [
-                    const Icon(Icons.local_fire_department, 
-                        color: Colors.orange, size: 24),
+                    // 🌟 INI DIA SULAPNYA: API HIJAU VS KUNING 🌟
+                    Obx(() => Icon(
+                          Icons.local_fire_department,
+                          // Kalau 'active' hijau, kalau baru 'login' amber/kuning
+                          color: controller.dailyStatus.value == 'active'
+                              ? Colors.green
+                              : Colors.amber,
+                          size: 24,
+                        )),
                     const SizedBox(width: 6),
                     Obx(() => Text(
                           "${controller.dailyStreak.value} Day Streak",
                           style: const TextStyle(
-                            fontSize: 18, // Font agak kecil dikit biar muat
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,
                           ),
@@ -215,17 +221,17 @@ class ProfileView extends GetView<ProfileController> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                // 2. Subtitle Motivasi
-                Text(
-                  "Kamu on fire! Pertahankan 🔥",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade500,
-                  ),
-                ),
                 
-                const SizedBox(height: 16),
-                
+                // 2. Subtitle Motivasi (Sekalian dibikin dinamis cok!)
+                Obx(() => Text(
+                      controller.dailyStatus.value == 'active'
+                          ? "Mantap! Kamu on fire hari ini 🔥"
+                          : "Kamu sudah absen. Yuk mulai belajar! 📚",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade500,
+                      ),
+                    )),
                 // 3. Row Bubble Hari
                 Obx(() {
                   if (controller.weeklyStreak.isEmpty) {
@@ -237,7 +243,8 @@ class ProfileView extends GetView<ProfileController> {
                       return _buildDayBubble(
                         day.label,
                         day.isCompleted,
-                        isToday: day.isToday
+                        isToday: day.isToday,
+                        isActiveToday: controller.dailyStatus.value == 'active',
                       );
                     }).toList(),
                   );
@@ -261,65 +268,103 @@ class ProfileView extends GetView<ProfileController> {
 
   // Helper untuk memilih gambar maskot
   Widget _buildMascotImage(int streak) {
-    String imageAsset;
-    
-    // LOGIKA GANTI GAMBAR (Contoh)
-    // Kamu bisa sesuaikan nama file asset kamu di sini
-    if (streak == 0) {
-      // Kalau 0, maskot sedih/tidur
-      imageAsset = 'assets/chara_login.png'; 
-      return const Icon(Icons.sentiment_dissatisfied, size: 60, color: Colors.grey);
-    } else if (streak >= 7) {
-      // Kalau > 7, maskot berapi-api
-      imageAsset = 'assets/fire.png';
-      return const Icon(Icons.whatshot, size: 60, color: Colors.orange);
-    } else {
-      // Normal
-      imageAsset = 'assets/ice.png';
-      return const Icon(Icons.sentiment_very_satisfied, size: 60, color: Colors.green);
-    }
+  String imageAsset;
 
-    // JIKA SUDAH ADA GAMBAR ASLI, PAKAI INI:
-    return Image.asset(imageAsset, height: 70, fit: BoxFit.contain);
+  if (streak == 0) {
+    imageAsset = 'assets/chara_login.png';
+  } else if (streak >= 7) {
+    imageAsset = 'assets/fire.png';
+  } else {
+    imageAsset = 'assets/ice.png';
   }
 
+  return Image.asset(
+    imageAsset,
+    height: 70,
+    fit: BoxFit.contain,
+    errorBuilder: (context, error, stackTrace) {
+      if (streak == 0) {
+        return const Icon(
+          Icons.sentiment_dissatisfied,
+          size: 60,
+          color: Colors.grey,
+        );
+      } else if (streak >= 7) {
+        return const Icon(
+          Icons.whatshot,
+          size: 60,
+          color: Colors.orange,
+        );
+      } else {
+        return const Icon(
+          Icons.sentiment_very_satisfied,
+          size: 60,
+          color: Colors.green,
+        );
+      }
+    },
+  );
+}
+
   // Widget Helper Bubble Hari (Diperkecil sedikit agar muat)
-  Widget _buildDayBubble(String day, bool isCompleted, {bool isToday = false}) {
-    Color bgColor = Colors.transparent;
-    Color borderColor = Colors.grey.shade300;
-    Color textColor = Colors.grey.shade400;
-    Widget content = Text(day, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 10));
+Widget _buildDayBubble(
+  String day,
+  bool isCompleted, {
+  bool isToday = false,
+  bool isActiveToday = false,
+}) {
+  final activeColor = isActiveToday ? Colors.green : Colors.amber;
 
-    if (isCompleted) {
-      bgColor = Colors.orange;
-      borderColor = Colors.orange;
-      content = const Icon(Icons.check, color: Colors.white, size: 14);
-    } else if (isToday) {
-      borderColor = Colors.orange;
-      textColor = Colors.orange;
-      content = Text(day, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 10));
-    }
+  Color bgColor = Colors.transparent;
+  Color borderColor = Colors.grey.shade300;
+  Color textColor = Colors.grey.shade400;
 
-    return Column(
-      children: [
-        // Hapus label hari atas biar hemat tempat, kan di dalam bubble udh ada (kalau mau)
-        // Atau biarkan kecil
-        Container(
-          width: 28, // Ukuran diperkecil biar muat di Row sebelah gambar
-          height: 28,
-          decoration: BoxDecoration(
-            color: bgColor,
-            shape: BoxShape.circle,
-            border: Border.all(color: borderColor, width: 2),
-          ),
-          child: Center(child: content),
-        ),
-        const SizedBox(height: 4),
-        Text(day, style: TextStyle(fontSize: 8, color: Colors.grey.shade400)),
-      ],
+  Widget content = Text(
+    day,
+    style: TextStyle(
+      color: textColor,
+      fontWeight: FontWeight.bold,
+      fontSize: 10,
+    ),
+  );
+
+  if (isCompleted) {
+    bgColor = activeColor;
+    borderColor = activeColor;
+    content = const Icon(Icons.check, color: Colors.white, size: 14);
+  } else if (isToday) {
+    borderColor = activeColor;
+    textColor = activeColor;
+    content = Text(
+      day,
+      style: TextStyle(
+        color: textColor,
+        fontWeight: FontWeight.bold,
+        fontSize: 10,
+      ),
     );
   }
 
+  return Column(
+    children: [
+      Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: bgColor,
+          shape: BoxShape.circle,
+          border: Border.all(color: borderColor, width: 2),
+        ),
+        child: Center(child: content),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        day,
+        style: TextStyle(fontSize: 8, color: Colors.grey.shade400),
+      ),
+    ],
+  );
+}
   // --- 3, 4, 5 (BAGIAN LAIN TETAP SAMA) ---
   Widget _buildBadgesSection() {
     return Column(

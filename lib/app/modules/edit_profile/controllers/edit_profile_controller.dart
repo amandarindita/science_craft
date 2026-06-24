@@ -41,9 +41,9 @@ class EditProfileController extends GetxController {
     
     // Set avatar awal sesuai yang ada di profil sekarang
     selectedAvatar.value = profileController.avatarPath.value;
-
-    emailController = TextEditingController(text: "siswa@sciencecraft.id");
-    
+    emailController = TextEditingController(
+      text: profileController.userEmail.value,
+    );
     currentPasswordController = TextEditingController();
     newPasswordController = TextEditingController();
     confirmPasswordController = TextEditingController();
@@ -116,20 +116,82 @@ class EditProfileController extends GetxController {
   }
 
   // ... (Sisa fungsi biarkan sama) ...
-  
-  void changePassword() {
-    // ... code change password kamu ...
-     if (currentPasswordController.text.isEmpty ||
-        newPasswordController.text.isEmpty ||
-        confirmPasswordController.text.isEmpty) {
-      Get.snackbar('Gagal', 'Semua field password harus diisi',
-        backgroundColor: Colors.red, colorText: Colors.white);
-      return;
-    }
-    // ... validasi lainnya ...
-    Get.snackbar('Berhasil', 'Password berhasil diubah (Simulasi)',
-      backgroundColor: Colors.green, colorText: Colors.white);
+  void changePassword() async {
+  if (!profileController.hasPassword.value) {
+    Get.snackbar(
+      'Info',
+      'Akun ini login menggunakan Google, sehingga password tidak dapat diubah melalui aplikasi.',
+      backgroundColor: Colors.orange,
+      colorText: Colors.white,
+    );
+    return;
   }
+
+  if (currentPasswordController.text.isEmpty ||
+      newPasswordController.text.isEmpty ||
+      confirmPasswordController.text.isEmpty) {
+    Get.snackbar(
+      'Gagal',
+      'Semua field password harus diisi',
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
+    return;
+  }
+
+  if (newPasswordController.text != confirmPasswordController.text) {
+    Get.snackbar(
+      'Gagal',
+      'Konfirmasi password baru tidak sesuai',
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
+    return;
+  }
+
+  if (newPasswordController.text.length < 6) {
+    Get.snackbar(
+      'Gagal',
+      'Password baru minimal 6 karakter',
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
+    return;
+  }
+
+  Get.dialog(
+    const Center(child: CircularProgressIndicator()),
+    barrierDismissible: false,
+  );
+
+  final result = await ApiService.changePassword(
+    oldPassword: currentPasswordController.text,
+    newPassword: newPasswordController.text,
+    confirmPassword: confirmPasswordController.text,
+  );
+
+  Get.back();
+
+  if (result['success'] == true) {
+    currentPasswordController.clear();
+    newPasswordController.clear();
+    confirmPasswordController.clear();
+
+    Get.snackbar(
+      'Berhasil',
+      result['message'],
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+    );
+  } else {
+    Get.snackbar(
+      'Gagal',
+      result['message'],
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
+  }
+}
 
   void pickImageFromGallery() {
     Get.snackbar('Fitur', 'Belum tersedia', snackPosition: SnackPosition.BOTTOM);

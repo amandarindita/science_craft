@@ -30,8 +30,15 @@ class NotificationView extends GetView<NotificationController> {
                     opacity: 0.05,
                   ),
                 ),
-                child: Obx(
-                  () {
+              child: Obx(
+                    () {
+                    // 🌟 TAMBAHAN: Jika sedang loading data dari Flask backend
+                    if (controller.isLoading.value) {
+                      return const Center(
+                        child: CircularProgressIndicator(color: Color(0xFF1E3A8A)),
+                      );
+                    }
+
                     if (controller.notifications.isEmpty) {
                       return const Center(
                         child: Text(
@@ -40,6 +47,7 @@ class NotificationView extends GetView<NotificationController> {
                         ),
                       );
                     }
+                    
                     return ListView.builder(
                       padding: const EdgeInsets.all(20),
                       itemCount: controller.notifications.length,

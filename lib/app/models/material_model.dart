@@ -6,6 +6,9 @@ class MaterialItem {
   final String category;
   final double progress;
   final String iconPath;
+  final String? unitySceneId;
+  final String? instructions;
+  final String? imageUrl; // Tambahkan ini
 
   MaterialItem({
     required this.id,
@@ -13,26 +16,23 @@ class MaterialItem {
     required this.category,
     required this.progress,
     required this.iconPath,
+    this.unitySceneId,
+    this.instructions,
+    this.imageUrl,
+
   });
 
   factory MaterialItem.fromMap(Map<String, dynamic> map) {
     return MaterialItem(
       id: map['id'],
-      title: map['title'],
-      category: map['category'],
+      title: map['title'] ?? '',
+      category: map['category'] ?? '',
       progress: (map['progress'] ?? 0.0).toDouble(), 
-      iconPath: map['iconPath'] ?? 'assets/default.png',
+      iconPath: map['iconPath'] ?? 'assets/chemistry.png',
+      unitySceneId: map['unity_scene_id'],
+      instructions: map['instructions'],
+      imageUrl: map['image_url'],
     );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'title': title,
-      'category': category,
-      'progress': progress,
-      'iconPath': iconPath,
-    };
   }
 }
 
@@ -43,6 +43,9 @@ class MaterialContent {
   final List<TheorySection> theorySections;
   final String iconPath;
   final double progress;
+  final String? unitySceneId;
+  final String? instructions; 
+  final String? imageUrl;// Tambahkan ini
 
   MaterialContent({
     this.id, 
@@ -51,32 +54,36 @@ class MaterialContent {
     required this.theorySections,
     required this.iconPath,
     required this.progress,
+    this.unitySceneId,
+    this.instructions,
+    this.imageUrl,
   });
 
   factory MaterialContent.fromMap(Map<String, dynamic> map) {
-    return MaterialContent(
-      id: map['id'], // Ambil ID
-      title: map['title'] ?? '',
-      introduction: map['introduction'] ?? '',
-      // Parsing JSON String menjadi List<TheorySection>
-      theorySections: map['sections'] != null 
-          ? List<TheorySection>.from(
-              jsonDecode(map['sections']).map((x) => TheorySection.fromMap(x)))
-          : [],
-      iconPath: map['iconPath'] ?? 'assets/default.png',
-      progress: (map['progress'] ?? 0.0).toDouble(),
-    );
-  }
+    // --- PROSES UNBOXING: Membongkar JSON dari Flask ---
+    Map<String, dynamic> innerData = {};
+    if (map['content'] != null) {
+      try {
+        innerData = jsonDecode(map['content']);
+      } catch (e) {
+        print("Error decoding content: $e");
+      }
+    }
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'title': title,
-      'introduction': introduction,
-      'sections': jsonEncode(theorySections.map((x) => x.toMap()).toList()),
-      'iconPath': iconPath,
-      'progress': progress,
-    };
+    return MaterialContent(
+      id: map['id'], 
+      title: map['title'] ?? '',
+      introduction: innerData['intro'] ?? '', // Ambil dari hasil bongkar
+      theorySections: innerData['sections'] != null 
+          ? List<TheorySection>.from(
+              (innerData['sections'] as List).map((x) => TheorySection.fromMap(x)))
+          : [],
+      iconPath: map['iconPath'] ?? 'assets/chemistry.png',
+      progress: (map['progress'] ?? 0.0).toDouble(),
+      unitySceneId: map['unity_scene_id'],
+      instructions: map['instructions'],
+      imageUrl: map['image_url'],
+    );
   }
 }
 
@@ -97,17 +104,9 @@ class TheorySection {
     return TheorySection(
       title: map['title'] ?? '',
       content: map['content'] ?? '',
-      imagePath: map['image_path'], 
+      imagePath: map['image_path'],
+      examples: map['examples'], 
     );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'title': title,
-      'content': content,
-      'image_path': imagePath,
-      'examples': examples,
-    };
   }
 }
 

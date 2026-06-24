@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "amanda.science_craft"
     compileSdk = 35
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "21.3.6528147"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -30,8 +30,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         ndk {
-            // Perintah ini memaksa aplikasi pakai mode 32-bit
-            abiFilters.add("armeabi-v7a")
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
         }
     }
 
