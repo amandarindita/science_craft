@@ -50,5 +50,4 @@ dependencies {
     // Pakai kurung () dan kutip dua ""
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation(project(":unityLibrary"))
-    implementation(fileTree(mapOf("dir" to "../unityLibrary/libs", "include" to listOf("*.jar"))))
 }

@@ -271,7 +271,7 @@ if (matId != null) {
   print("[LabController] Mengirim scene ke Unity: $sceneId");
 
   unityWidgetController!.postMessage(
-    'GameManager',
+    'FlutterBridge',
     'LoadContent',
     sceneId,
   );

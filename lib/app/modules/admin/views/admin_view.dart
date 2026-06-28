@@ -800,7 +800,64 @@ class AdminView extends GetView<AdminController> {
             ),
           ),
         ),
+        const SizedBox(height: 15),
 
+        Obx(() => Card(
+          color: Colors.purple[50],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.purple.shade200),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.upload_file, color: Colors.purple),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        "Import banyak soal dari CSV untuk banyak materi sekaligus. Pastikan material_title sama dengan judul materi.",
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: controller.isImportingCsv.value
+                      ? null
+                      : controller.importQuestionsCsv,
+                  icon: controller.isImportingCsv.value
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.file_upload, color: Colors.white),
+                  label: Text(
+                    controller.isImportingCsv.value
+                        ? "Mengimport..."
+                        : "IMPORT CSV SOAL",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.purple,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )),
         const SizedBox(height: 20),
 
         // --- FORM INPUT ---

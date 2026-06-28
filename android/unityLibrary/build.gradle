@@ -2,15 +2,14 @@ apply plugin: 'com.android.library'
 
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation(name: 'unity-classes', ext:'jar')
 
 }
 
 android {
-    namespace 'com.unity3d.player'
+    namespace 'com.sciencecraft.unity'
     compileSdkVersion 30
     buildToolsVersion '30.0.2'
-    ndkVersion '21.3.6528147'
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -84,6 +83,7 @@ def BuildIl2Cpp(String workingDir, String configuration, String architecture, St
 }
 
 android {
+    namespace 'com.sciencecraft.unity'
     task BuildIl2CppTask {
         doLast {
               BuildIl2Cpp(projectDir.toString().replaceAll('\\\\', '/'), 'Release', 'armv7', 'armeabi-v7a', [  ] as String[]);

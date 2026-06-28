@@ -193,7 +193,7 @@ class DashboardView extends GetView<DashboardController> {
           left: 20,
           right: 20,
           child: SizedBox(
-            height: 215,
+            height: 250,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -233,7 +233,7 @@ class DashboardView extends GetView<DashboardController> {
 
                 // Konten teks
                 Positioned(
-                  bottom: 0,
+                  bottom: 10,
                   left: 12,
                   right: 12,
                   child: Container(
@@ -301,7 +301,7 @@ class DashboardView extends GetView<DashboardController> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 28),
+          const SizedBox(height: 45),
           // Header Daily Quest
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

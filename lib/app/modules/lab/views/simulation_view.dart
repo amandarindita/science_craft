@@ -2,39 +2,62 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_unity_widget/flutter_unity_widget.dart';
 import '../controllers/lab_controller.dart';
-
-// Kita pakai GetView biar langsung dapet akses ke LabController
-class SimulationView extends GetView<LabController> {
+import 'package:flutter/services.dart';
+class SimulationView extends StatefulWidget {
   const SimulationView({super.key});
+
+  @override
+  State<SimulationView> createState() => _SimulationViewState();
+}
+
+class _SimulationViewState extends State<SimulationView> {
+  final LabController controller = Get.find<LabController>();
+
+  @override
+  void initState() {
+    super.initState();
+
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Stack dipakai buat numpuk Tombol Back di atas Unity
       body: Stack(
         children: [
-          // LAYER 1: Unity Engine
           UnityWidget(
             onUnityCreated: controller.onUnityCreated,
             onUnityMessage: controller.onUnityMessage,
             onUnitySceneLoaded: controller.onUnitySceneLoaded,
-            useAndroidViewSurface: true, // Wajib TRUE buat Android
-            fullscreen: true,            // Set TRUE biar full layar
+            useAndroidViewSurface: true,
+            fullscreen: true,
             borderRadius: BorderRadius.zero,
           ),
 
-          // LAYER 2: Tombol Back (Pojok Kiri Atas)
           Positioned(
-            top: 50, // Sesuaikan jarak dari atas (biar ga ketabrak poni HP)
+            top: 30,
             left: 20,
             child: CircleAvatar(
               backgroundColor: Colors.white.withOpacity(0.8),
               child: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.black),
                 onPressed: () {
-                  // PENTING: Pake Get.back() buat keluar dari halaman ini
-                  // dan balik ke menu list eksperimen
-                  Get.back(); 
+                  Get.back();
                 },
               ),
             ),

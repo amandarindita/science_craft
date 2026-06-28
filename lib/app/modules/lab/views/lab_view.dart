@@ -111,10 +111,11 @@ class LabView extends GetView<LabController> {
                                 
                                 // Lanjut terbang ke Unity bawa data scene-nya
                                 Get.toNamed(
-                                  Routes.SIMULATION, 
+                                  Routes.SIMULATION,
                                   arguments: {
-                                    'sceneID': item.unitySceneId, 
-                                    'sceneName': item.title
+                                    'sceneID': item.unitySceneId,
+                                    'sceneName': item.title,
+                                    'materialId': item.id,
                                   },
                                 );
                               },
