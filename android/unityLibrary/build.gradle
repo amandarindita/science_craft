@@ -7,9 +7,10 @@ dependencies {
 }
 
 android {
-    namespace 'com.sciencecraft.unity'
+    namespace 'com.unity3d.player'
     compileSdkVersion 30
     buildToolsVersion '30.0.2'
+    ndkVersion '21.3.6528147'
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

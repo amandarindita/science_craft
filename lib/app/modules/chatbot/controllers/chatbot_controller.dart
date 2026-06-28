@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 
 // --- IMPORT BARU KITA ---
 import '../../../data/api_service.dart';
-import '../../../data/auth_service.dart'; // Opsional, kalau endpoint chat butuh token login
+ // Opsional, kalau endpoint chat butuh token login
 
 class ChatMessage {
   final String text;
