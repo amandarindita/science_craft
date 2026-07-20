@@ -4,7 +4,7 @@ import 'dart:convert';
 
 class ApiService {
   // --- PASTIKAN IP INI SAMA DENGAN TERMINAL FLASK KAMU ---
-  static const String baseUrl = 'https://dangling-unpainted-manhole.ngrok-free.dev';
+  static const String baseUrl = 'https://sciencecraft-app.my.id';
   static final _storage = GetStorage();
 
   static String? get _token => _storage.read('authToken');

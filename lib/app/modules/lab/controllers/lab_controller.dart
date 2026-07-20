@@ -260,254 +260,269 @@ class LabController extends GetxController {
     }
   }
 
-  Future<void> _showUnityExperimentHistory(
-    Map<String, dynamic> payload,
-  ) async {
-    final String displayName =
-        payload['displayName']?.toString().isNotEmpty == true
-            ? payload['displayName'].toString()
-            : currentMaterialName.value.isNotEmpty
-                ? currentMaterialName.value
-                : "Hasil Eksperimen";
+Future<void> _showUnityExperimentHistory(
+  Map<String, dynamic> payload,
+) async {
+  final String displayName =
+      payload['displayName']?.toString().isNotEmpty == true
+          ? payload['displayName'].toString()
+          : currentMaterialName.value.isNotEmpty
+              ? currentMaterialName.value
+              : "Hasil Eksperimen";
 
-    final int elapsedSeconds = int.tryParse(
-          payload['elapsedSeconds']?.toString() ?? '0',
-        ) ??
-        0;
+  final int elapsedSeconds = int.tryParse(
+        payload['elapsedSeconds']?.toString() ?? '0',
+      ) ??
+      0;
 
-    final int durationSeconds = int.tryParse(
-          payload['durationSeconds']?.toString() ?? '0',
-        ) ??
-        0;
+  final int durationSeconds = int.tryParse(
+        payload['durationSeconds']?.toString() ?? '0',
+      ) ??
+      0;
 
-    final List<dynamic> activities =
-        payload['activities'] is List ? payload['activities'] as List : [];
+  final List<dynamic> activities =
+      payload['activities'] is List ? payload['activities'] as List : [];
 
-    final Map<String, dynamic> summary = _parseSummaryJson(payload);
+  final Map<String, dynamic> summary = _parseSummaryJson(payload);
 
-    await Get.bottomSheet(
-      Container(
-        constraints: BoxConstraints(
-          maxHeight: Get.height * 0.85,
-        ),
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(24),
+  await Get.bottomSheet(
+    DraggableScrollableSheet(
+      initialChildSize: 0.85,
+      minChildSize: 0.55,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(24),
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 45,
-                height: 5,
-                margin: const EdgeInsets.only(bottom: 18),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-            ),
-
-            Row(
-              children: [
-                const Icon(
-                  Icons.science,
-                  color: Colors.blue,
-                  size: 28,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    displayName,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+          child: Column(
+            children: [
+              Center(
+                child: Container(
+                  width: 45,
+                  height: 5,
+                  margin: const EdgeInsets.only(bottom: 18),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              durationSeconds > 0
-                  ? "Durasi: $elapsedSeconds detik / $durationSeconds detik"
-                  : "Durasi: $elapsedSeconds detik",
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade700,
-              ),
-            ),
-
-            const SizedBox(height: 18),
-
-            if (summary.isNotEmpty) ...[
-              const Text(
-                "Ringkasan Eksperimen",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
               ),
 
-              const SizedBox(height: 8),
-
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: Colors.blue.withOpacity(0.15),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: summary.entries.map((entry) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        "${_formatKey(entry.key)}: ${entry.value}",
-                        style: const TextStyle(fontSize: 13),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.science,
+                            color: Colors.blue,
+                            size: 28,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              displayName,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    );
-                  }).toList(),
-                ),
-              ),
 
-              const SizedBox(height: 18),
-            ],
+                      const SizedBox(height: 8),
 
-            const Text(
-              "Riwayat Aktivitas",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Expanded(
-              child: activities.isEmpty
-                  ? const Center(
-                      child: Text(
-                        "Belum ada riwayat aktivitas.",
-                        style: TextStyle(color: Colors.grey),
+                      Text(
+                        durationSeconds > 0
+                            ? "Durasi: $elapsedSeconds detik / $durationSeconds detik"
+                            : "Durasi: $elapsedSeconds detik",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade700,
+                        ),
                       ),
-                    )
-                  : ListView.separated(
-                      itemCount: activities.length,
-                      separatorBuilder: (_, __) => const Divider(height: 18),
-                      itemBuilder: (context, index) {
-                        final activity = activities[index];
 
-                        final timeLabel =
-                            activity is Map
+                      const SizedBox(height: 18),
+
+                      if (summary.isNotEmpty) ...[
+                        const Text(
+                          "Ringkasan Eksperimen",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.blue.withOpacity(0.15),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: summary.entries.map((entry) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 6),
+                                child: Text(
+                                  "${_formatKey(entry.key)}: ${entry.value}",
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+
+                        const SizedBox(height: 18),
+                      ],
+
+                      const Text(
+                        "Riwayat Aktivitas",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      if (activities.isEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          alignment: Alignment.center,
+                          child: const Text(
+                            "Belum ada riwayat aktivitas.",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        )
+                      else
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: activities.length,
+                          separatorBuilder: (_, __) =>
+                              const Divider(height: 18),
+                          itemBuilder: (context, index) {
+                            final activity = activities[index];
+
+                            final timeLabel = activity is Map
                                 ? activity['timeLabel']?.toString() ?? "--:--"
                                 : "--:--";
 
-                        final actionKey =
-                            activity is Map
+                            final actionKey = activity is Map
                                 ? activity['actionKey']?.toString() ?? "-"
                                 : "-";
 
-                        final description =
-                            activity is Map
+                            final description = activity is Map
                                 ? activity['description']?.toString() ?? "-"
                                 : activity.toString();
 
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 62,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                timeLabel,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(width: 10),
-
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    description,
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 62,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    timeLabel,
+                                    textAlign: TextAlign.center,
                                     style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
+                                ),
 
-                                  const SizedBox(height: 3),
+                                const SizedBox(width: 10),
 
-                                  Text(
-                                    actionKey,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade600,
-                                    ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        description,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 3),
+
+                                      Text(
+                                        actionKey,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-            ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
 
-            const SizedBox(height: 12),
-
-            SizedBox(
-              width: double.infinity,
-              height: 46,
-              child: ElevatedButton(
-                onPressed: () {
-                  Get.back();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                      const SizedBox(height: 20),
+                    ],
                   ),
                 ),
-                child: const Text(
-                  "Tutup",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton(
+                  onPressed: () => Get.back(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    "Tutup",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-      isDismissible: true,
-      enableDrag: true,
-    );
-  }
+            ],
+          ),
+        );
+      },
+    ),
+    isScrollControlled: true,
+    isDismissible: true,
+    enableDrag: true,
+  );
+}
 
   Map<String, dynamic> _parseSummaryJson(Map<String, dynamic> payload) {
     try {
