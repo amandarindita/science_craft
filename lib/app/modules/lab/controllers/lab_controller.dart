@@ -1,83 +1,164 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_unity_widget/flutter_unity_widget.dart';
+
 import '../../dashboard/controllers/dashboard_controller.dart';
-import '../../../data/api_service.dart'; 
+import '../../../data/api_service.dart';
 import '../../profile/controllers/profile_controller.dart';
-import '../../notification/notification_helper.dart'; // 🌟 Pastikan path ini bener ke lokasi helper lu
+import '../../notification/notification_helper.dart';
 
 
 class LabController extends GetxController {
   UnityWidgetController? unityWidgetController;
-  
-  var currentSceneId = ''.obs; 
+
+  var currentSceneId = ''.obs;
   var currentMaterialName = ''.obs;
   var currentMaterialId = Rxn<int>();
 
-@override
-void onInit() {
-  super.onInit();
+  bool _isSubmittingExperiment = false;
 
-  print("[LabController] Arguments masuk: ${Get.arguments}");
+  @override
+  void onInit() {
+    super.onInit();
 
-  if (Get.arguments != null && Get.arguments is Map) {
-    final args = Get.arguments as Map;
+    print("[LabController] Arguments masuk: ${Get.arguments}");
 
-    final sceneValue =
-        args['sceneId'] ??
-        args['sceneID'] ??
-        args['unity_scene_id'] ??
-        args['unitySceneId'] ??
-        '';
+    if (Get.arguments != null && Get.arguments is Map) {
+      final args = Get.arguments as Map;
 
-    final nameValue =
-        args['sceneName'] ??
-        args['materialName'] ??
-        args['title'] ??
-        '';
+      final sceneValue =
+          args['sceneId'] ??
+          args['sceneID'] ??
+          args['unity_scene_id'] ??
+          args['unitySceneId'] ??
+          '';
 
-    final materialIdValue =
-        args['materialId'] ??
-        args['material_id'] ??
-        args['id'];
+      final nameValue =
+          args['sceneName'] ??
+          args['materialName'] ??
+          args['title'] ??
+          '';
 
-    currentSceneId.value = sceneValue.toString().trim();
-    currentMaterialName.value = nameValue.toString();
+      final materialIdValue =
+          args['materialId'] ??
+          args['material_id'] ??
+          args['id'];
 
-    if (materialIdValue is int) {
-      currentMaterialId.value = materialIdValue;
-    } else {
-      currentMaterialId.value = int.tryParse(materialIdValue?.toString() ?? '');
+      currentSceneId.value = sceneValue.toString().trim();
+      currentMaterialName.value = nameValue.toString();
+
+      if (materialIdValue is int) {
+        currentMaterialId.value = materialIdValue;
+      } else {
+        currentMaterialId.value =
+            int.tryParse(materialIdValue?.toString() ?? '');
+      }
     }
-  }
 
     print("[LabController] Scene ID: ${currentSceneId.value}");
     print("[LabController] Material ID: ${currentMaterialId.value}");
     print("[LabController] Material Name: ${currentMaterialName.value}");
   }
-  void onUnityCreated(controller) {
-  unityWidgetController = controller;
 
-  print("Unity Created! Scene ID yang akan dikirim: ${currentSceneId.value}");
+  void onUnityCreated(UnityWidgetController controller) {
+    unityWidgetController = controller;
 
-  Future.delayed(const Duration(milliseconds: 500), () {
-    loadUnityScene(currentSceneId.value);
-   });
+    print(
+      "Unity Created! Scene ID yang akan dikirim: ${currentSceneId.value}",
+    );
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      loadUnityScene(currentSceneId.value);
+    });
   }
 
-  void onUnityMessage(message) async {
-    print('Pesan mentah dari Unity: ${message.toString()}');
-    String msg = message.toString();
+  void onUnitySceneLoaded(SceneLoaded? scene) {
+    print('Scene Loaded: ${scene?.name}');
+  }
 
-    // 🎯 LOGIKA PERTAMA KALI BUKA LAB
-    if (msg == "EXPERIMENTAL_DONE") {
-      print("[Unity->Flutter] Eksperimen selesai! Sinkronisasi lab...");
+  void loadUnityScene(String id) {
+    final sceneId = id.trim();
 
-      List<String> pialaBaru = [];
+    if (sceneId.isEmpty) {
+      print("[LabController] Scene ID kosong. Unity tidak akan load scene.");
+
+      Get.snackbar(
+        "Eksperimen belum tersedia",
+        "Materi ini belum memiliki praktikum virtual.",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+
+      return;
+    }
+
+    if (unityWidgetController == null) {
+      print("[LabController] Unity controller belum siap.");
+      return;
+    }
+
+    print("[LabController] Mengirim scene ke Unity: $sceneId");
+
+    unityWidgetController!.postMessage(
+      'FlutterBridge',
+      'LoadContent',
+      sceneId,
+    );
+  }
+
+  void onUnityMessage(dynamic message) async {
+    final String rawMessage = message.toString();
+
+    print('Pesan mentah dari Unity: $rawMessage');
+
+    String? eventType;
+    Map<String, dynamic>? unityPayload;
+
+    try {
+      final decoded = jsonDecode(rawMessage);
+
+      if (decoded is Map<String, dynamic>) {
+        unityPayload = decoded;
+        eventType = decoded['eventType']?.toString();
+      }
+    } catch (e) {
+      // Fallback kalau Unity hanya kirim string biasa.
+      eventType = rawMessage;
+    }
+
+    print("[LabController] Event Type dari Unity: $eventType");
+
+    if (eventType == "EXPERIMENTAL_DONE") {
+      await _handleExperimentDone(unityPayload);
+    }
+  }
+
+  Future<void> _handleExperimentDone(
+    Map<String, dynamic>? unityPayload,
+  ) async {
+    if (_isSubmittingExperiment) {
+      print("[LabController] Submit experiment sedang berjalan, skip duplikat.");
+      return;
+    }
+
+    _isSubmittingExperiment = true;
+
+    try {
+      print("[Unity->Flutter] Eksperimen selesai. Sinkronisasi lab...");
+
       final matId = currentMaterialId.value;
 
       if (matId == null) {
         print("[LabController] Material ID kosong, lab tidak disinkronkan.");
+
+        Get.snackbar(
+          "Gagal Sinkronisasi",
+          "Material ID tidak ditemukan.",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+
         return;
       }
 
@@ -90,24 +171,27 @@ void onInit() {
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
+
         return;
       }
 
       final rawBadges = result['new_badges_unlocked'] ?? [];
-      pialaBaru = rawBadges.map<String>((e) => e.toString()).toList();
+      final List<String> pialaBaru =
+          rawBadges.map<String>((e) => e.toString()).toList();
 
       final xpAdded = int.tryParse(
-        (result['xp_added'] ?? 0).toString(),
-      ) ?? 0;
+            (result['xp_added'] ?? 0).toString(),
+          ) ??
+          0;
 
       final levelUp = result['level_up'] == true ||
           result['level_up'].toString() == 'true';
 
       final level = int.tryParse(
-        (result['level'] ?? 1).toString(),
-      ) ?? 1;
+            (result['level'] ?? 1).toString(),
+          ) ??
+          1;
 
-      // Daily Quest lab
       await ApiService.updateDailyQuestProgress('open_lab');
 
       if (xpAdded > 0) {
@@ -135,102 +219,332 @@ void onInit() {
       );
 
       if (levelUp) {
-        Get.dialog(
+        await Get.dialog(
           LevelUpPopup(newLevel: _levelTitle(level)),
           barrierDismissible: false,
         );
       }
 
       if (pialaBaru.isNotEmpty) {
-        for (var badgeName in pialaBaru) {
+        for (final badgeName in pialaBaru) {
           NotificationHelper().showInstantNotification(
             id: badgeName.hashCode,
             title: "Badge Baru Terbuka! 🎉",
-            body: "Selamat! Kamu berhasil mendapatkan pencapaian '$badgeName'.",
+            body:
+                "Selamat! Kamu berhasil mendapatkan pencapaian '$badgeName'.",
           );
 
-          Get.dialog(
+          await Get.dialog(
             _LabBadgeUnlockedPopup(badgeName: badgeName),
             barrierDismissible: false,
           );
         }
       }
-    }
-    // 🌟 LOGIKA EKSPERIMEN SELESAI (JEDARRR!) 🌟
-    if (msg == "EXPERIMENTAL_DONE") {
-      print("[Unity->Flutter] Eksperimen selesai! Sinkronisasi & Cek Badge...");
-      
-      // 1. Tambah XP di server
-      List<String> pialaBaru = [];
 
-final matId = currentMaterialId.value;
-
-if (matId != null) {
-  final result = await ApiService.completeLab(matId);
-
-  if (result != null) {
-    final rawBadges = result['new_badges_unlocked'] ?? [];
-    pialaBaru = rawBadges.map<String>((e) => e.toString()).toList();
-
-    final xpAdded = int.tryParse(
-      (result['xp_added'] ?? 0).toString(),
-    ) ?? 0;
-
-    if (xpAdded > 0 && Get.isRegistered<DashboardController>()) {
-      final dash = Get.find<DashboardController>();
-      dash.completeDailyQuest('collect_xp', amount: xpAdded);
-    }
-
-        Get.snackbar(
-          "Eksperimen Selesai!",
-          xpAdded > 0
-              ? "Kamu mendapatkan +$xpAdded XP."
-              : "Eksperimen sudah pernah diselesaikan sebelumnya.",
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-        );
+      if (unityPayload != null) {
+        await _showUnityExperimentHistory(unityPayload);
+      } else {
+        print("[LabController] Unity payload kosong. History tidak ditampilkan.");
       }
-    } else {
-      print("[LabController] Material ID kosong, lab tidak disinkronkan.");
-    }
+    } catch (e) {
+      print("[LabController] Error handle experiment done: $e");
 
-      // 4. Kalau dapet piala, tembak Pop-Up & Push Notif!
-      if (pialaBaru.isNotEmpty) {
-        for (var badgeName in pialaBaru) {
-          
-          // A. Munculin Notifikasi Latar (Push Notif)
-          NotificationHelper().showInstantNotification(
-            id: badgeName.hashCode, // Biar ID unik gak ketimpa
-            title: "Badge Baru Terbuka! 🎉",
-            body: "Selamat! Kamu berhasil mendapatkan pencapaian '$badgeName'.",
-          );
-          
-          // B. Munculin Pop-up UI yang bersih & simpel (gak too much)
-          Get.dialog(
-            AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              title: const Text("Pencapaian Baru! 🏆"),
-              content: Text(
-                "Kamu berhasil membuka lencana:\n\n$badgeName", 
-                style: const TextStyle(fontSize: 16)
+      Get.snackbar(
+        "Lab selesai",
+        "Eksperimen selesai, tapi sinkronisasi gagal.",
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+      );
+    } finally {
+      _isSubmittingExperiment = false;
+    }
+  }
+
+  Future<void> _showUnityExperimentHistory(
+    Map<String, dynamic> payload,
+  ) async {
+    final String displayName =
+        payload['displayName']?.toString().isNotEmpty == true
+            ? payload['displayName'].toString()
+            : currentMaterialName.value.isNotEmpty
+                ? currentMaterialName.value
+                : "Hasil Eksperimen";
+
+    final int elapsedSeconds = int.tryParse(
+          payload['elapsedSeconds']?.toString() ?? '0',
+        ) ??
+        0;
+
+    final int durationSeconds = int.tryParse(
+          payload['durationSeconds']?.toString() ?? '0',
+        ) ??
+        0;
+
+    final List<dynamic> activities =
+        payload['activities'] is List ? payload['activities'] as List : [];
+
+    final Map<String, dynamic> summary = _parseSummaryJson(payload);
+
+    await Get.bottomSheet(
+      Container(
+        constraints: BoxConstraints(
+          maxHeight: Get.height * 0.85,
+        ),
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(24),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 45,
+                height: 5,
+                margin: const EdgeInsets.only(bottom: 18),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Get.back(), 
-                  child: const Text("Mantap!", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))
+            ),
+
+            Row(
+              children: [
+                const Icon(
+                  Icons.science,
+                  color: Colors.blue,
+                  size: 28,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    displayName,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
-            barrierDismissible: false, // Wajib diklik 'Mantap!' baru ilang
-          );
+
+            const SizedBox(height: 8),
+
+            Text(
+              durationSeconds > 0
+                  ? "Durasi: $elapsedSeconds detik / $durationSeconds detik"
+                  : "Durasi: $elapsedSeconds detik",
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade700,
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            if (summary.isNotEmpty) ...[
+              const Text(
+                "Ringkasan Eksperimen",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Colors.blue.withOpacity(0.15),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: summary.entries.map((entry) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        "${_formatKey(entry.key)}: ${entry.value}",
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+            ],
+
+            const Text(
+              "Riwayat Aktivitas",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            Expanded(
+              child: activities.isEmpty
+                  ? const Center(
+                      child: Text(
+                        "Belum ada riwayat aktivitas.",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: activities.length,
+                      separatorBuilder: (_, __) => const Divider(height: 18),
+                      itemBuilder: (context, index) {
+                        final activity = activities[index];
+
+                        final timeLabel =
+                            activity is Map
+                                ? activity['timeLabel']?.toString() ?? "--:--"
+                                : "--:--";
+
+                        final actionKey =
+                            activity is Map
+                                ? activity['actionKey']?.toString() ?? "-"
+                                : "-";
+
+                        final description =
+                            activity is Map
+                                ? activity['description']?.toString() ?? "-"
+                                : activity.toString();
+
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 62,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                timeLabel,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(width: 10),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    description,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 3),
+
+                                  Text(
+                                    actionKey,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+            ),
+
+            const SizedBox(height: 12),
+
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: ElevatedButton(
+                onPressed: () {
+                  Get.back();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text(
+                  "Tutup",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+    );
+  }
+
+  Map<String, dynamic> _parseSummaryJson(Map<String, dynamic> payload) {
+    try {
+      final rawSummary =
+          payload['summaryJson'] ??
+          payload['summary_json'] ??
+          payload['summary'];
+
+      if (rawSummary == null) {
+        return {};
+      }
+
+      if (rawSummary is Map<String, dynamic>) {
+        return rawSummary;
+      }
+
+      if (rawSummary is String && rawSummary.trim().isNotEmpty) {
+        final decoded = jsonDecode(rawSummary);
+
+        if (decoded is Map<String, dynamic>) {
+          return decoded;
         }
       }
-      
-      // 5. Langsung update UI profil biar pialanya nampil di layar
-      if (Get.isRegistered<ProfileController>()) {
-        Get.find<ProfileController>().fetchUserProfile();
-      }
+    } catch (e) {
+      print("[LabController] Gagal parsing summaryJson: $e");
     }
+
+    return {};
+  }
+
+  String _formatKey(String key) {
+    return key
+        .replaceAll('_', ' ')
+        .replaceAllMapped(
+          RegExp(r'([a-z])([A-Z])'),
+          (match) => '${match.group(1)} ${match.group(2)}',
+        );
   }
 
   String _levelTitle(int level) {
@@ -246,38 +560,7 @@ if (matId != null) {
       return "Level $level: Professor Madya 🧠";
     }
   }
-
-  void onUnitySceneLoaded(SceneLoaded? scene) {
-    print('Scene Loaded: ${scene?.name}');
-  }
-  void loadUnityScene(String id) {
-  final sceneId = id.trim();
-
-  if (sceneId.isEmpty) {
-    print("[LabController] Scene ID kosong. Unity tidak akan load scene.");
-    Get.snackbar(
-      "Eksperimen belum tersedia",
-      "Materi ini belum memiliki praktikum virtual.",
-      snackPosition: SnackPosition.BOTTOM,
-    );
-    return;
-  }
-
-  if (unityWidgetController == null) {
-    print("[LabController] Unity controller belum siap.");
-    return;
-  }
-
-  print("[LabController] Mengirim scene ke Unity: $sceneId");
-
-  unityWidgetController!.postMessage(
-    'FlutterBridge',
-    'LoadContent',
-    sceneId,
-  );
-  }
 }
-
 class _LabBadgeUnlockedPopup extends StatelessWidget {
   final String badgeName;
 
@@ -357,7 +640,9 @@ class _LabBadgeUnlockedPopup extends StatelessWidget {
                     letterSpacing: 1,
                   ),
                 ),
+
                 const SizedBox(height: 8),
+
                 Container(
                   width: 50,
                   height: 4,
@@ -366,7 +651,9 @@ class _LabBadgeUnlockedPopup extends StatelessWidget {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
+
                 const SizedBox(height: 20),
+
                 Text(
                   "Selamat! Kamu berhasil membuka lencana:\n\n$badgeName",
                   textAlign: TextAlign.center,
@@ -377,7 +664,9 @@ class _LabBadgeUnlockedPopup extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+
                 const SizedBox(height: 25),
+
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -400,6 +689,7 @@ class _LabBadgeUnlockedPopup extends StatelessWidget {
               ],
             ),
           ),
+
           Positioned(
             top: -10,
             child: Container(

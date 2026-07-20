@@ -4,6 +4,9 @@ abstract class Routes {
   Routes._();
   static const LOGIN = _Paths.LOGIN;
   static const REGISTER = _Paths.REGISTER;
+  static const FORGOT_PASSWORD = _Paths.FORGOT_PASSWORD;
+  static const OTP_VERIFICATION = _Paths.OTP_VERIFICATION;
+  static const RESET_PASSWORD = _Paths.RESET_PASSWORD;
   static const DASHBOARD = _Paths.DASHBOARD;
   static const MATERIAL_LIST = _Paths.MATERIAL_LIST; 
   static const ROOT = _Paths.ROOT;
@@ -27,6 +30,9 @@ abstract class _Paths {
   _Paths._();
   static const LOGIN = '/login';
   static const REGISTER = '/register';
+  static const FORGOT_PASSWORD = '/forgot-password';
+  static const OTP_VERIFICATION = '/otp-verification';
+  static const RESET_PASSWORD = '/reset-password';
   static const DASHBOARD = '/dashboard'; 
   static const MATERIAL_LIST = '/material-list';
   static const ROOT = '/root';

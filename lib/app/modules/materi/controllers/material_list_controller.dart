@@ -15,6 +15,7 @@ class MaterialListController extends GetxController {
   final _allMaterials = <MaterialItem>[].obs; 
   final filteredMaterials = <MaterialItem>[].obs;
   final searchQuery = ''.obs;
+  final labMaterials = <MaterialItem>[].obs;
 
   @override
   void onInit() {
@@ -71,7 +72,8 @@ Map<int, double> progressMap = {};
     }
   }
   void _filterMaterials() {
-    List<MaterialItem> results;
+  List<MaterialItem> results;
+
     if (searchQuery.isEmpty) {
       results = _allMaterials
           .where((item) => item.category == selectedCategory.value)
@@ -83,8 +85,24 @@ Map<int, double> progressMap = {};
               item.title.toLowerCase().contains(searchQuery.value.toLowerCase()))
           .toList();
     }
+
     filteredMaterials.assignAll(results);
+    _filterLabMaterials();
   }
+
+  void _filterLabMaterials() {
+  final labs = _allMaterials.where((item) {
+    final sceneId = item.unitySceneId?.trim() ?? '';
+    return sceneId.isNotEmpty;
+  }).toList();
+
+  labMaterials.assignAll(labs);
+
+  print("[MaterialListController] Jumlah lab aktif: ${labMaterials.length}");
+  for (final item in labMaterials) {
+    print("[LAB] ${item.id} | ${item.title} | ${item.unitySceneId}");
+  }
+}
 
   void changeCategory(String category) {
     selectedCategory.value = category;

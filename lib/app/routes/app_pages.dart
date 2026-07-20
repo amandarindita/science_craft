@@ -9,6 +9,10 @@ import '../modules/login/bindings/login_binding.dart';
 import '../modules/login/views/login_view.dart';
 import '../modules/register/bindings/register_binding.dart';
 import '../modules/register/views/register_view.dart';
+import '../modules/password_recovery/bindings/password_recovery_binding.dart';
+import '../modules/password_recovery/views/forgot_password_view.dart';
+import '../modules/password_recovery/views/otp_verification_view.dart';
+import '../modules/password_recovery/views/reset_password_view.dart';
 import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
 import '../modules/profile/bindings/profile_binding.dart';
@@ -34,6 +38,7 @@ import '../modules/lab/bindings/lab_binding.dart';
 import '../modules/lab/views/lab_view.dart';
 import '../modules/lab/views/simulation_view.dart';
 
+
 part 'app_routes.dart';
 
 class AppPages {
@@ -52,6 +57,22 @@ class AppPages {
       name: _Paths.REGISTER,
       page: () => const RegisterView(),
       binding: RegisterBinding(),
+    ),
+
+    GetPage(
+      name: _Paths.FORGOT_PASSWORD,
+      page: () => const ForgotPasswordView(),
+      binding: PasswordRecoveryBinding(), 
+    ),
+
+    GetPage(
+      name: _Paths.OTP_VERIFICATION,
+      page: () => const OtpVerificationView(),
+    ),
+
+    GetPage(
+      name: _Paths.RESET_PASSWORD,
+      page: () => const ResetPasswordView(),
     ),
     
     // Ini adalah "rumah" utama aplikasi setelah login
@@ -136,10 +157,11 @@ class AppPages {
     ),
 // Kalau SimulationView punya rute sendiri:
     GetPage(
-      name: '/simulation',
+      name: _Paths.SIMULATION,
       page: () => SimulationView(),
-      binding: LabBinding(), // Pakai binding yang sama biar controllernya nyambung
+      binding: LabBinding(),
     ),
+
   ];
 }
 

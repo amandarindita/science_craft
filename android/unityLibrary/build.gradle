@@ -7,10 +7,10 @@ dependencies {
 }
 
 android {
-    namespace 'com.unity3d.player'
+    namespace 'com.sciencecraft.unity'
     compileSdkVersion 30
     buildToolsVersion '30.0.2'
-    ndkVersion '21.3.6528147'
+    ndkVersion "21.3.6528147"   
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -48,7 +48,11 @@ def getSdkDir() {
     local.load(new FileInputStream("${rootDir}/local.properties"))
     return local.getProperty('sdk.dir')
 }
-
+def getNdkDir() {
+    Properties local = new Properties()
+    local.load(new FileInputStream("${rootDir}/local.properties"))
+    return local.getProperty('ndk.dir').replace("\\", "/")
+}
 def BuildIl2Cpp(String workingDir, String configuration, String architecture, String abi, String[] staticLibraries) {
     def commandLineArgs = []
     commandLineArgs.add("--compile-cpp")
@@ -65,7 +69,7 @@ def BuildIl2Cpp(String workingDir, String configuration, String architecture, St
     commandLineArgs.add("--print-command-line")
     commandLineArgs.add("--generatedcppdir=" + workingDir + "/src/main/Il2CppOutputProject/Source/il2cppOutput")
     commandLineArgs.add("--cachedirectory=" + workingDir + "/build/il2cpp_"+ abi + "_" + configuration + "/il2cpp_cache")
-    commandLineArgs.add("--tool-chain-path=" + android.ndkDirectory)
+    commandLineArgs.add("--tool-chain-path=" + getNdkDir())
     staticLibraries.eachWithIndex {fileName, i->
         commandLineArgs.add("--additional-libraries=" + workingDir + "/src/main/jniStaticLibs/" + abi + "/" + fileName)
     }
@@ -84,7 +88,6 @@ def BuildIl2Cpp(String workingDir, String configuration, String architecture, St
 }
 
 android {
-    namespace 'com.sciencecraft.unity'
     task BuildIl2CppTask {
         doLast {
               BuildIl2Cpp(projectDir.toString().replaceAll('\\\\', '/'), 'Release', 'armv7', 'armeabi-v7a', [  ] as String[]);

@@ -5,13 +5,15 @@ import '../../materi/controllers/material_list_controller.dart'; // Import contr
 import '../../../routes/app_pages.dart'; 
 
 class LabView extends GetView<LabController> {
-  const LabView({super.key});
+  LabView({super.key});
+
+  final MaterialListController materiController =
+    Get.isRegistered<MaterialListController>()
+        ? Get.find<MaterialListController>()
+        : Get.put(MaterialListController());
 
   @override
   Widget build(BuildContext context) {
-    // Kita panggil MaterialListController buat ngambil datanya
-    final materiController = Get.put(MaterialListController()); 
-
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -27,10 +29,7 @@ class LabView extends GetView<LabController> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        // Kita saring, HANYA tampilkan materi yang punya unity_scene_id dari admin
-        final labMaterials = materiController.filteredMaterials
-            .where((m) => m.unitySceneId != null && m.unitySceneId!.isNotEmpty)
-            .toList();
+        final labMaterials = materiController.labMaterials;
 
         if (labMaterials.isEmpty) {
           return const Center(child: Text("Belum ada eksperimen yang tersedia."));
@@ -113,7 +112,7 @@ class LabView extends GetView<LabController> {
                                 Get.toNamed(
                                   Routes.SIMULATION,
                                   arguments: {
-                                    'sceneID': item.unitySceneId,
+                                    'sceneId': item.unitySceneId,
                                     'sceneName': item.title,
                                     'materialId': item.id,
                                   },

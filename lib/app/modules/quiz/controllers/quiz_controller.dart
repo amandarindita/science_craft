@@ -56,13 +56,18 @@ class QuizController extends GetxController {
       );
 
       if (response.statusCode == 200) {
-        List<dynamic> dbData = jsonDecode(response.body);
+      final decoded = jsonDecode(response.body) as List;
 
-        if (dbData.isEmpty) {
-          questions.clear(); 
-        } else {
-          // Mapping dari JSON Flask ke Model (QuizQuestion)
-          questions.assignAll(dbData.map((item) {
+      final dbData = decoded
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+
+      if (dbData.isEmpty) {
+        questions.clear();
+      } else {
+        final selectedData = _selectRandomQuestions(dbData);
+
+        questions.assignAll(selectedData.map((item) {
           return QuizQuestion(
             question: item['question_text']?.toString() ?? '',
             options: [
@@ -71,16 +76,20 @@ class QuizController extends GetxController {
               item['option_c']?.toString() ?? '',
               item['option_d']?.toString() ?? '',
             ],
-            correctAnswerIndex: _parseAnswer(item['correct_answer']?.toString() ?? 'A'),
+            correctAnswerIndex: _parseAnswer(
+              item['correct_answer']?.toString() ?? 'A',
+            ),
           );
         }).toList());
 
-          // Siapkan slot jawaban kosong
-          selectedAnswers.value = Map.fromIterables(
-            List.generate(questions.length, (i) => i),
-            List.generate(questions.length, (i) => null),
-          );
-        }
+        selectedAnswers.value = Map.fromIterables(
+          List.generate(questions.length, (i) => i),
+          List.generate(questions.length, (i) => null),
+        );
+
+        currentQuestionIndex.value = 0;
+        isQuizFinished.value = false;
+      }
       } else {
         print("Gagal mengambil soal kuis dari server.");
       }
@@ -100,6 +109,45 @@ class QuizController extends GetxController {
       case 'D': return 3;
       default: return 0;
     }
+  }
+  List<Map<String, dynamic>> _selectRandomQuestions(
+    List<Map<String, dynamic>> allQuestions,
+  ) {
+    final konsep = allQuestions
+        .where((q) => q['question_type']?.toString().toLowerCase().trim() == 'konsep')
+        .toList()
+      ..shuffle();
+
+    final pemahaman = allQuestions
+        .where((q) => q['question_type']?.toString().toLowerCase().trim() == 'pemahaman')
+        .toList()
+      ..shuffle();
+
+    final studiKasus = allQuestions
+        .where((q) => q['question_type']?.toString().toLowerCase().trim() == 'studi_kasus')
+        .toList()
+      ..shuffle();
+
+    final selected = <Map<String, dynamic>>[];
+
+    selected.addAll(konsep.take(7));
+    selected.addAll(pemahaman.take(10));
+    selected.addAll(studiKasus.take(3));
+
+    final selectedIds = selected.map((q) => q['id']?.toString()).toSet();
+
+    final remaining = allQuestions
+        .where((q) => !selectedIds.contains(q['id']?.toString()))
+        .toList()
+      ..shuffle();
+
+    if (selected.length < 20) {
+      selected.addAll(remaining.take(20 - selected.length));
+    }
+
+    selected.shuffle();
+
+    return selected.take(20).toList();
   }
 
   // --- LOGIKA GAMEPLAY (TIDAK ADA PERUBAHAN) ---
@@ -153,7 +201,6 @@ class QuizController extends GetxController {
       score.value = 0;
     }
 
-    // 🌟 1. TEMBAK DATA KE SERVER FLASK BUAT DAPET XP & BADGE 🌟
     try {
       final response = await http.post(
         Uri.parse('${ApiService.baseUrl}/quiz/submit'), // Sesuai rute API Flask lu

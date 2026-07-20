@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/login_controller.dart';
+import '../../../routes/app_pages.dart';
 
 class LoginView extends GetView<LoginController> {
   const LoginView({super.key});
@@ -147,7 +148,35 @@ class LoginView extends GetView<LoginController> {
                         controller.passwordController,
                         obscureText: true,
                       ),
-                      const SizedBox(height: 30),
+
+                      const SizedBox(height: 8),
+
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
+                            Get.toNamed(Routes.FORGOT_PASSWORD);
+                          },
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text(
+                            'Lupa Password?',
+                            style: TextStyle(
+                              color: Color(0xFF2196F3),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 22),
                       SizedBox(
                         width: double.infinity,
                         height: 48,

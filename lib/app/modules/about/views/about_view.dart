@@ -78,7 +78,7 @@ class AboutAppView extends GetView<AboutAppController> {
                       _buildSectionTitle('Dikembangkan Oleh'),
                       const SizedBox(height: 12),
                       const Text(
-                        'Aplikasi ini dibuat dengan penuh semangat oleh [Nama Anda / Nama Tim Anda].\n\nTerima kasih telah menggunakan Science Craft!',
+                        'Aplikasi ini dibuat dengan penuh semangat oleh Amanda Aulia Ayu Arindita Dari Program Studi D4 Teknik Informatika Universitas Harkat Negeri.\n\nTerima kasih telah menggunakan Science Craft!',
                         style: TextStyle(
                           fontSize: 15,
                           color: Colors.black54,

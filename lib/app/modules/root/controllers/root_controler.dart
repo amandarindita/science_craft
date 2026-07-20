@@ -22,7 +22,7 @@ class RootController extends GetxController {
     // --- GANTI BAGIAN INI ---
     // Dulu: Container(color: Colors.green...),
     // Sekarang:
-    const LabView(),            // Indeks 1: Lab (Menu List Eksperimen)
+    LabView(),            // Indeks 1: Lab (Menu List Eksperimen)
     
     const MaterialListView(),   // Indeks 2: Materi
     const ProfileView(),        // Indeks 3: Profil
