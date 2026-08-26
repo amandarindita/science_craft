@@ -50,6 +50,8 @@ dependencies:
   flutter_unity_widget: ^2022.2.0
   tuple: ^2.0.2
   file_picker: ^8.1.7
+  audioplayers: ^6.6.0
+  flutter_tts: ^4.2.5
 
 
 dev_dependencies:

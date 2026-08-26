@@ -3,8 +3,8 @@ import 'package:science_craft/app/modules/FAQ/bindings/faq_binding.dart';
 import 'package:science_craft/app/modules/FAQ/views/faq_view.dart';
 import 'package:science_craft/app/modules/notification/views/notification_view.dart';
 import 'package:science_craft/app/modules/on_boarding/views/on_boarding_view.dart';
-import 'package:science_craft/app/modules/quiz/bindings/quiz_binding.dart';
-import 'package:science_craft/app/modules/quiz/views/quiz_view.dart';
+import 'package:science_craft/app/modules/learning/bindings/learning_binding.dart';
+import 'package:science_craft/app/modules/learning/views/quiz_view.dart';
 import '../modules/login/bindings/login_binding.dart';
 import '../modules/login/views/login_view.dart';
 import '../modules/register/bindings/register_binding.dart';
@@ -37,7 +37,10 @@ import '../modules/admin/views/admin_view.dart  ';
 import '../modules/lab/bindings/lab_binding.dart';
 import '../modules/lab/views/lab_view.dart';
 import '../modules/lab/views/simulation_view.dart';
-
+import '../modules/learning/bindings/learning_binding.dart';
+import '../modules/learning/views/learning_view.dart';
+import '../modules/admin_learning/bindings/admin_learning_binding.dart';
+import '../modules/admin_learning/views/admin_learning_view.dart';
 
 part 'app_routes.dart';
 
@@ -88,12 +91,15 @@ class AppPages {
       page: () => const MaterialDetailView(),
       binding: MaterialDetailBinding(),
     ),
-    GetPage(
-      name: _Paths.QUIZ,
-      page: () => const QuizView(),
-      binding: QuizBinding(),
-    ),
 
+    // GetPage(
+    //   name: _Paths.QUIZ,
+    //   page: () => LearningQuizView(
+    //     materialId: Get.arguments['materialId'],
+    //     moduleTitle: Get.arguments['moduleTitle'],
+    //   ),
+    //   binding: LearningBinding(),
+    // ),
     // GetPage untuk halaman lain yang mungkin masih dibutuhkan
     GetPage(
       name: _Paths.DASHBOARD,
@@ -150,6 +156,12 @@ class AppPages {
       page: () => AdminView(),
       binding: AdminBinding(),
     ),
+
+    GetPage(
+      name: _Paths.ADMIN_LEARNING,
+      page: () => const AdminLearningView(),
+      binding: AdminLearningBinding(),
+    ),
     GetPage(
       name: _Paths.LAB, // atau rute Simulation kamu
       page: () => LabView(),
@@ -161,7 +173,11 @@ class AppPages {
       page: () => SimulationView(),
       binding: LabBinding(),
     ),
-
+    GetPage(
+      name: _Paths.LEARNING,
+      page: () => const LearningView(),
+      binding: LearningBinding(),
+    ),
   ];
 }
 

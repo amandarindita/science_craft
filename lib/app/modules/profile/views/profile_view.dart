@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/profile_controller.dart';
-import 'badge_view.dart'; 
+import 'badge_view.dart';
+import '../../profile_learning/views/profile_learning_view.dart'; 
 
 class ProfileView extends GetView<ProfileController> {
   const ProfileView({super.key});
@@ -14,6 +15,8 @@ class ProfileView extends GetView<ProfileController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildProfileHeader(),
+          const SizedBox(height: 20),
+          _buildLearningProfileEntry(),
           const SizedBox(height: 24),
           
           // --- STATS & STREAK BARU ---
@@ -129,47 +132,92 @@ class ProfileView extends GetView<ProfileController> {
   );
 }
 
-  // --- 2. BAGIAN STATS (Eksperimen + Streak ala Duolingo) ---
-  Widget _buildNewStatsSection() {
-    return Column(
-      children: [
-        // KOTAK EKSPERIMEN (Kuning)
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFD166), 
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Eksperimen Selesai',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                  Obx(() => Text(
-                        controller.experimentsCompleted.value.toString(),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 28),
-                      )),
-                ],
-              ),
-              const Text('🔬', style: TextStyle(fontSize: 40)),
+  Widget _buildLearningProfileEntry() {
+    return InkWell(
+      onTap: () => Get.to<void>(
+        () => const ProfileLearningView(),
+      ),
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(17),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: <Color>[
+              Color(0xFF2563EB),
+              Color(0xFF7C3AED),
             ],
           ),
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: const <BoxShadow>[
+            BoxShadow(
+              color: Color(0x242563EB),
+              blurRadius: 18,
+              offset: Offset(0, 9),
+            ),
+          ],
         ),
-        
-        const SizedBox(height: 16), 
-
-        // KOTAK STREAK (Putih ala Duolingo dengan Gambar Samping)
-        _buildDuolingoStreakCard(),
-      ],
+        child: const Row(
+          children: <Widget>[
+            SizedBox(
+              width: 48,
+              height: 48,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Color(0x33FFFFFF),
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(15),
+                  ),
+                ),
+                child: Icon(
+                  Icons.auto_graph_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+            ),
+            SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'Profil Pembelajaran Baru',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Lihat Level 1–3, progres modul, XP, streak, dan badge.',
+                    style: TextStyle(
+                      color: Color(0xFFE0E7FF),
+                      fontSize: 11,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 8),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  // --- 2. BAGIAN STATS ---
+  // Eksperimen Selesai dihapus karena tidak digunakan.
+  Widget _buildNewStatsSection() {
+    return _buildDuolingoStreakCard();
   }
 
   // --- WIDGET STREAK ALA DUOLINGO (MODIFIKASI ROW) ---

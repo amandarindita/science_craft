@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/dashboard_controller.dart';
 import '../../profile/controllers/profile_controller.dart';
 import '../../../widgets/shared_cards.dart';
+import 'dashboard_new_view.dart';
 
 
 class DashboardView extends GetView<DashboardController> {
@@ -64,30 +65,80 @@ class DashboardView extends GetView<DashboardController> {
           const SizedBox(width: 12),
 
           // Nama user
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Obx(
-                () => Text(
-                  'Hai ${profileController.userName.value}! 👋',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Obx(
+                  () => Text(
+                    'Hai ${profileController.userName.value}! 👋',
+                    maxLines: 1,
+                    overflow:
+                        TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight:
+                          FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
-              ),
-              const Text(
-                'Siap belajar sains hari ini?',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black54,
+                const Text(
+                  'Siap belajar sains hari ini?',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black54,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                InkWell(
+                  onTap: () async {
+                    await Get.to<void>(
+                      () =>
+                          const DashboardNewView(),
+                    );
+
+                    controller.onDashboardVisible();
+                  },
+                  borderRadius:
+                      BorderRadius.circular(16),
+                  child: const Padding(
+                    padding:
+                        EdgeInsets.symmetric(
+                      vertical: 3,
+                    ),
+                    child: Row(
+                      mainAxisSize:
+                          MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons
+                              .compare_arrows_rounded,
+                          size: 14,
+                          color:
+                              Color(0xFF2563EB),
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'Bandingkan tampilan baru',
+                          style: TextStyle(
+                            color:
+                                Color(0xFF2563EB),
+                            fontSize: 10,
+                            fontWeight:
+                                FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
 
-          const Spacer(),
+          const SizedBox(width: 10),
 
           // Streak Counter
           Row(

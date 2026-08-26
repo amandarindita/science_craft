@@ -9,13 +9,18 @@ import '../../../data/api_service.dart';
 import '../../../data/auth_service.dart';
 import '../../../models/material_model.dart';
 import '../../profile/controllers/profile_controller.dart';
+import '../../rewards/controllers/xp_reward_controller.dart';
 
 class DashboardController extends GetxController with WidgetsBindingObserver {
   // =====================================================
   // DATA USER & GAMIFICATION
   // =====================================================
   final userName = 'Sobat Sains'.obs;
+  final userEmail = ''.obs;
   final userStreak = 0.obs;
+
+  // Tetap disimpan untuk kompatibilitas Daily Quest lama.
+  // Dashboard baru tidak menampilkan Level dari XP.
   final userLevel = 1.obs;
   final userXp = 0.obs;
 
@@ -26,11 +31,24 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
   final isLoading = true.obs;
 
   // =====================================================
+  // RINGKASAN PEMBELAJARAN AKADEMIK LEVEL 1–3
+  // =====================================================
+  final isLearningSummaryLoading = true.obs;
+  final currentLearningLevel = 1.obs;
+  final learningCompletedModules = 0.obs;
+  final learningTotalModules = 0.obs;
+  final currentLevelCompletedModules = 0.obs;
+  final currentLevelTotalModules = 0.obs;
+  final currentLevelProgress = 0.0.obs;
+
+  // =====================================================
   // BAGIAN FAKTA SAINS
   // =====================================================
   var currentFact = <String, String>{}.obs;
   var allFactsFromDb = <Map<String, dynamic>>[].obs;
   int _lastFactIndex = -1;
+
+  DateTime? _lastDashboardVisibleAt;
 
   // =====================================================
   // BAGIAN DAILY QUEST - BACKEND VERSION
@@ -47,10 +65,11 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
 
     fetchUserProfile();
+    fetchLearningSummary();
     fetchInProgressMaterials();
     fetchFunFacts();
 
-    // Ambil daily quest dari backend
+    // Ambil Daily Quest dari backend.
     fetchDailyQuest();
   }
 
@@ -64,13 +83,45 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
   // APP LIFECYCLE
   // =====================================================
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      randomizeFact();
-      fetchUserProfile();
+  void didChangeAppLifecycleState(
+    AppLifecycleState state,
+  ) {
+    if (state ==
+        AppLifecycleState.resumed) {
+      onDashboardVisible();
+    }
+  }
 
-      // Kalau app dibuka lagi, ambil ulang Daily Quest dari backend
-      fetchDailyQuest();
+  // =====================================================
+  // DASHBOARD DIBUKA / KEMBALI TERLIHAT
+  // =====================================================
+  void onDashboardVisible() {
+    final DateTime now =
+        DateTime.now();
+
+    // Mencegah Fun Fact berganti dua kali karena rebuild cepat.
+    if (_lastDashboardVisibleAt !=
+            null &&
+        now
+                .difference(
+                  _lastDashboardVisibleAt!,
+                )
+                .inMilliseconds <
+            700) {
+      return;
+    }
+
+    _lastDashboardVisibleAt = now;
+
+    fetchUserProfile();
+    fetchLearningSummary();
+    fetchInProgressMaterials();
+    fetchDailyQuest();
+
+    // Tidak perlu tombol refresh.
+    // Fakta berganti otomatis ketika Dashboard dibuka kembali.
+    if (allFactsFromDb.isNotEmpty) {
+      randomizeFact();
     }
   }
 
@@ -87,8 +138,56 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
   bool _toBool(dynamic value) {
     if (value is bool) return value;
     if (value is int) return value == 1;
-    if (value is String) return value.toLowerCase() == 'true';
+    if (value is String) {
+      final normalized =
+          value.toLowerCase();
+
+      return normalized == 'true' ||
+          normalized == '1' ||
+          normalized == 'yes';
+    }
+
     return false;
+  }
+
+  double _normalizeProgress(
+    dynamic value,
+  ) {
+    double progress = 0.0;
+
+    if (value is num) {
+      progress = value.toDouble();
+    } else {
+      progress = double.tryParse(
+            value?.toString() ?? '',
+          ) ??
+          0.0;
+    }
+
+    // Mendukung respons 0–1 maupun 0–100.
+    if (progress > 1.0) {
+      progress = progress / 100;
+    }
+
+    return progress.clamp(0.0, 1.0);
+  }
+
+  List<Map<String, dynamic>> _mapList(
+    dynamic raw,
+  ) {
+    if (raw is! List) {
+      return <Map<String, dynamic>>[];
+    }
+
+    return raw
+        .whereType<Map>()
+        .map(
+          (Map<dynamic, dynamic> item) =>
+              Map<String, dynamic>.from(
+            item,
+          ),
+        )
+        .toList();
   }
 
   String _levelTitle(int level) {
@@ -113,9 +212,13 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
       final userData = await ApiService.getUserData();
 
       if (userData != null) {
-        userName.value = userData['username'] ?? 'Sobat Sains';
+        userName.value =
+            (userData['username'] ?? 'Sobat Sains')
+                .toString();
+        userEmail.value =
+            (userData['email'] ?? '').toString();
 
-        // Backend kamu pakai key: streak, total_xp, level
+        // Backend memakai key streak, total_xp, dan level.
         userStreak.value = _toInt(
           userData['streak'] ?? userData['streak_count'],
         );
@@ -132,6 +235,136 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
     } catch (e) {
       print("Error fetch profile: $e");
     }
+  }
+
+  // =====================================================
+  // RINGKASAN LEVEL PEMBELAJARAN AKADEMIK
+  // =====================================================
+  Future<void> fetchLearningSummary() async {
+    isLearningSummaryLoading.value = true;
+
+    try {
+      final Map<String, dynamic>? data =
+          await ApiService.getLearningProgress();
+
+      if (data == null ||
+          data['success'] == false) {
+        _resetLearningSummary();
+        return;
+      }
+
+      final List<Map<String, dynamic>>
+          modules = _mapList(
+        data['modules'],
+      ).where(
+        (Map<String, dynamic> item) =>
+            !_toBool(
+          item['legacy_mode'],
+        ),
+      ).toList();
+
+      learningTotalModules.value =
+          modules.length;
+      learningCompletedModules.value =
+          modules.where(
+        (Map<String, dynamic> item) =>
+            _toBool(
+          item['module_completed'],
+        ),
+      ).length;
+
+      int activeLevel = 1;
+
+      for (int level = 1;
+          level <= 3;
+          level++) {
+        final List<Map<String, dynamic>>
+            levelModules = modules.where(
+          (Map<String, dynamic> item) =>
+              _toInt(
+                item['level'],
+                fallback: 1,
+              ) ==
+              level,
+        ).toList();
+
+        final bool isUnlocked =
+            level == 1 ||
+            levelModules.any(
+              (Map<String, dynamic> item) =>
+                  _toBool(
+                item['is_unlocked'],
+              ),
+            );
+
+        if (isUnlocked) {
+          activeLevel = level;
+        }
+      }
+
+      currentLearningLevel.value =
+          activeLevel;
+
+      final List<Map<String, dynamic>>
+          currentModules = modules.where(
+        (Map<String, dynamic> item) =>
+            _toInt(
+              item['level'],
+              fallback: 1,
+            ) ==
+            activeLevel,
+      ).toList();
+
+      currentLevelTotalModules.value =
+          currentModules.length;
+      currentLevelCompletedModules.value =
+          currentModules.where(
+        (Map<String, dynamic> item) =>
+            _toBool(
+          item['module_completed'],
+        ),
+      ).length;
+
+      if (currentModules.isEmpty) {
+        currentLevelProgress.value = 0.0;
+      } else {
+        final double totalProgress =
+            currentModules.fold<double>(
+          0.0,
+          (
+            double sum,
+            Map<String, dynamic> item,
+          ) =>
+              sum +
+              _normalizeProgress(
+                item['progress'],
+              ),
+        );
+
+        currentLevelProgress.value =
+            (
+              totalProgress /
+              currentModules.length
+            ).clamp(0.0, 1.0);
+      }
+    } catch (e) {
+      print(
+        '[Dashboard] Error learning summary: $e',
+      );
+      _resetLearningSummary();
+    } finally {
+      isLearningSummaryLoading.value =
+          false;
+    }
+  }
+
+  void _resetLearningSummary() {
+    currentLearningLevel.value = 1;
+    learningCompletedModules.value = 0;
+    learningTotalModules.value = 0;
+    currentLevelCompletedModules.value = 0;
+    currentLevelTotalModules.value = 0;
+    currentLevelProgress.value = 0.0;
   }
 
   // =====================================================
@@ -187,19 +420,45 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
 
         List<MaterialItem> tempResult = [];
 
-        for (var m in data) {
-          double progress = 0.0;
+        for (final dynamic materialRaw
+            in data) {
+          final Map<String, dynamic> material =
+              Map<String, dynamic>.from(
+            materialRaw as Map,
+          );
 
-          if (serverProgressMap.containsKey(m['id'])) {
-            progress = serverProgressMap[m['id']]!;
-          } else if (serverProgressMap.containsKey(m['id'].toString())) {
-            progress = serverProgressMap[m['id'].toString()]!;
+          dynamic rawProgress = 0.0;
+
+          if (serverProgressMap.containsKey(
+            material['id'],
+          )) {
+            rawProgress =
+                serverProgressMap[
+                  material['id']
+                ];
+          } else if (
+              serverProgressMap.containsKey(
+                material['id'].toString(),
+              )) {
+            rawProgress =
+                serverProgressMap[
+                  material['id']
+                      .toString()
+                ];
           }
 
-          if (progress > 0.0 && progress < 1.0) {
+          final double progress =
+              _normalizeProgress(
+            rawProgress,
+          );
+
+          // Lanjutkan Belajar hanya memuat progres
+          // lebih dari 0% dan kurang dari 100%.
+          if (progress > 0.0 &&
+              progress < 1.0) {
             tempResult.add(
               MaterialItem.fromMap({
-                ...m,
+                ...material,
                 'progress': progress,
               }),
             );
@@ -291,13 +550,17 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
       (item) => item.id.toString() == id,
     );
 
-    if (progress < 0.99 && progress > 0.0) {
+    final double normalizedProgress =
+        _normalizeProgress(progress);
+
+    if (normalizedProgress > 0.0 &&
+        normalizedProgress < 1.0) {
       final newItem = MaterialItem(
         id: int.parse(id),
         title: title,
         category: 'Lanjutkan',
         iconPath: iconPath,
-        progress: progress,
+        progress: normalizedProgress,
       );
 
       inProgressMaterials.insert(0, newItem);
@@ -319,9 +582,7 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
       arguments: item.progress,
     );
 
-    fetchUserProfile();
-    fetchInProgressMaterials();
-    fetchDailyQuest();
+    onDashboardVisible();
   }
 
   void navigateToSubject(String subjectName) {
@@ -335,9 +596,13 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
 
   void refreshDashboardData() {
     fetchUserProfile();
+    fetchLearningSummary();
     fetchInProgressMaterials();
-    randomizeFact();
     fetchDailyQuest();
+
+    if (allFactsFromDb.isNotEmpty) {
+      randomizeFact();
+    }
   }
 
   // =====================================================
@@ -522,6 +787,17 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green,
         colorText: Colors.white,
+      );
+
+      await XpRewardController
+          .ensureRegistered()
+          .syncXp(
+        currentXp,
+        userKey:
+            userEmail.value.isNotEmpty
+                ? userEmail.value
+                : userName.value,
+        showUnlockDialog: true,
       );
 
       if (levelUp) {

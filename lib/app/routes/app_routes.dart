@@ -23,6 +23,8 @@ abstract class Routes {
   static const ADMIN = _Paths.ADMIN;
   static const LAB = _Paths.LAB;
   static const SIMULATION = _Paths.SIMULATION;
+  static const LEARNING = _Paths.LEARNING;
+  static const ADMIN_LEARNING =_Paths.ADMIN_LEARNING;
   
 }
 
@@ -49,5 +51,7 @@ abstract class _Paths {
   static const ADMIN = '/admin'; 
   static const LAB = '/lab';
   static const SIMULATION = '/simulation';
+  static const LEARNING = '/learning';
+  static const ADMIN_LEARNING ='/admin-learning';
   }
 // Tambahkan path untuk dashboard

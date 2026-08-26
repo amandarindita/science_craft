@@ -1,49 +1,73 @@
-import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
-// Import View
 import '../../dashboard/views/dashboard_view.dart';
-import '../../materi/views/material_list_view.dart';
 import '../../profile/views/profile_view.dart';
-import '../../../routes/app_pages.dart';
-
-// --- IMPORT VIEW LAB (YANG ISINYA MENU LIST) ---
-import '../../lab/views/lab_view.dart'; 
+import '../../lab/views/lab_view.dart';
+import '../../learning/views/learning_view.dart';
 
 import '../../dashboard/controllers/dashboard_controller.dart';
+import '../../learning/controllers/learning_controller.dart';
+
+import '../../../routes/app_pages.dart';
 
 class RootController extends GetxController {
   final selectedNavIndex = 0.obs;
   final previousNavIndex = 0.obs;
 
-  final List<Widget> pages = [
-    const DashboardView(),      // Indeks 0: Home
-    
-    // --- GANTI BAGIAN INI ---
-    // Dulu: Container(color: Colors.green...),
-    // Sekarang:
-    LabView(),            // Indeks 1: Lab (Menu List Eksperimen)
-    
-    const MaterialListView(),   // Indeks 2: Materi
-    const ProfileView(),        // Indeks 3: Profil
-  ];
+  late final List<Widget> pages;
 
-  Widget get currentPage => pages[selectedNavIndex.value];
+  @override
+  void onInit() {
+    super.onInit();
 
-void changeNavIndex(int index) {
-    if (index == selectedNavIndex.value) return;
+    // Karena LearningView dibuka langsung dari bottom navigation,
+    // LearningController harus didaftarkan di sini.
+    if (!Get.isRegistered<LearningController>()) {
+      Get.lazyPut<LearningController>(
+        LearningController.new,
+        fenix: true,
+      );
+    }
 
-    previousNavIndex.value = selectedNavIndex.value;
+    pages = <Widget>[
+      const DashboardView(), // Indeks 0: Home
+      LabView(),             // Indeks 1: Lab
+      const LearningView(),  // Indeks 2: Materi baru
+      const ProfileView(),   // Indeks 3: Profil
+    ];
+  }
+
+  Widget get currentPage =>
+      pages[selectedNavIndex.value];
+
+  void changeNavIndex(int index) {
+    if (index == selectedNavIndex.value) {
+      // Saat tab materi ditekan ulang, muat ulang kontennya.
+      if (index == 2 &&
+          Get.isRegistered<LearningController>()) {
+        Get.find<LearningController>().initialize();
+      }
+      return;
+    }
+
+    previousNavIndex.value =
+        selectedNavIndex.value;
     selectedNavIndex.value = index;
 
-    // Logika refresh data Dashboard
     if (index == 0) {
       if (Get.isRegistered<DashboardController>()) {
-        final dashController = Get.find<DashboardController>();
+        final DashboardController dashController =
+            Get.find<DashboardController>();
+
         dashController.fetchInProgressMaterials();
-        // dashController.checkLocalStreak(); <-- HAPUS ATAU COMMENT BARIS INI
-        dashController.fetchUserProfile(); // <-- Ganti jadi ini biar sinkron ke Flask
+        dashController.fetchUserProfile();
       }
+    }
+
+    if (index == 2 &&
+        Get.isRegistered<LearningController>()) {
+      Get.find<LearningController>().initialize();
     }
   }
 

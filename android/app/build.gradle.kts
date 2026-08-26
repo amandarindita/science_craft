@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "amanda.science_craft"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "21.3.6528147"
 
     compileOptions {
@@ -25,7 +25,7 @@ android {
         applicationId = "com.amanda.sciencecraft"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 22
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
