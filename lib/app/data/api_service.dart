@@ -1,69 +1,23 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'api_client.dart';
 
 class ApiService {
-  // Gunakan domain ini jika backend Step 5 sudah di-deploy.
-  // Android Emulator + Flask lokal: http://10.0.2.2:5000
-  // HP fisik + Flask lokal: http://IP_LAPTOP:5000https://sciencecraft-app.my.id
-  static const String baseUrl = 'https://ethical-ape-oddly.ngrok-free.app';
+  static String get baseUrl => ApiClient.baseUrl;
 
-  static const Duration _timeout = Duration(seconds: 25);
-  static final GetStorage _storage = GetStorage();
+  static bool get hasToken => ApiClient.hasToken;
 
-  static String? get _token => _storage.read<String>('authToken');
+  static String? get _token => ApiClient.token;
 
-  static bool get hasToken {
-    final token = _token;
-    return token != null && token.trim().isNotEmpty;
-  }
+  static Map<String, String> get _headers => ApiClient.defaultHeaders();
 
-  static Map<String, String> get _headers {
-    final token = _token;
+  static Map<String, dynamic> _decodeMap(String body) =>
+      ApiClient.decodeMap(body);
 
-    return <String, String>{
-      'Content-Type': 'application/json',
-      if (token != null && token.trim().isNotEmpty)
-        'Authorization': 'Bearer $token',
-    };
-  }
-
-  static Map<String, dynamic> _decodeMap(String body) {
-    if (body.trim().isEmpty) {
-      return <String, dynamic>{};
-    }
-
-    final dynamic decoded = jsonDecode(body);
-
-    if (decoded is Map<String, dynamic>) {
-      return decoded;
-    }
-
-    if (decoded is Map) {
-      return Map<String, dynamic>.from(decoded);
-    }
-
-    return <String, dynamic>{'data': decoded};
-  }
-
-  static List<Map<String, dynamic>> _decodeMapList(String body) {
-    if (body.trim().isEmpty) {
-      return <Map<String, dynamic>>[];
-    }
-
-    final dynamic decoded = jsonDecode(body);
-
-    if (decoded is! List) {
-      return <Map<String, dynamic>>[];
-    }
-
-    return decoded
-        .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item))
-        .toList();
-  }
+  static List<Map<String, dynamic>> _decodeMapList(String body) =>
+      ApiClient.decodeMapList(body);
 
   static Map<String, dynamic> _failureData(http.Response response) {
     Map<String, dynamic> data;
@@ -115,12 +69,9 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/learning/levels'),
-            headers: _headers,
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.get(
+        Uri.parse('$baseUrl/learning/levels'),
+      );
 
       if (response.statusCode == 200) {
         return _decodeMapList(response.body);
@@ -160,9 +111,7 @@ class ApiService {
         queryParameters: query.isEmpty ? null : query,
       );
 
-      final response = await http
-          .get(uri, headers: _headers)
-          .timeout(_timeout);
+      final response = await ApiClient.get(uri);
 
       if (response.statusCode == 200) {
         return _decodeMapList(response.body);
@@ -187,12 +136,9 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/learning/module/$materialId'),
-            headers: _headers,
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.get(
+        Uri.parse('$baseUrl/learning/module/$materialId'),
+      );
 
       if (response.statusCode == 200) {
         return _decodeMap(response.body);
@@ -216,12 +162,9 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/learning/module/$materialId/status'),
-            headers: _headers,
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.get(
+        Uri.parse('$baseUrl/learning/module/$materialId/status'),
+      );
 
       if (response.statusCode == 200) {
         return _decodeMap(response.body);
@@ -246,17 +189,14 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .post(
-            Uri.parse(
-              '$baseUrl/learning/submaterial/$submaterialId/open',
-            ),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              'mode': mode,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.post(
+        Uri.parse(
+          '$baseUrl/learning/submaterial/$submaterialId/open',
+        ),
+        body: jsonEncode(<String, dynamic>{
+          'mode': mode,
+        }),
+      );
 
       if (response.statusCode == 200) {
         return _decodeMap(response.body);
@@ -281,17 +221,14 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .post(
-            Uri.parse(
-              '$baseUrl/learning/submaterial/$submaterialId/complete-mode',
-            ),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              'mode': mode,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.post(
+        Uri.parse(
+          '$baseUrl/learning/submaterial/$submaterialId/complete-mode',
+        ),
+        body: jsonEncode(<String, dynamic>{
+          'mode': mode,
+        }),
+      );
 
       if (response.statusCode == 200) {
         return _decodeMap(response.body);
@@ -316,17 +253,14 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .post(
-            Uri.parse(
-              '$baseUrl/learning/checkpoint/$checkpointId/submit',
-            ),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              'answer': answer,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.post(
+        Uri.parse(
+          '$baseUrl/learning/checkpoint/$checkpointId/submit',
+        ),
+        body: jsonEncode(<String, dynamic>{
+          'answer': answer,
+        }),
+      );
 
       if (response.statusCode == 200) {
         return _decodeMap(response.body);
@@ -350,12 +284,9 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/learning/module/$materialId/quiz'),
-            headers: _headers,
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.get(
+        Uri.parse('$baseUrl/learning/module/$materialId/quiz'),
+      );
 
       if (response.statusCode == 200) {
         return _decodeMap(response.body);
@@ -385,17 +316,14 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .post(
-            Uri.parse(
-              '$baseUrl/learning/module/$materialId/quiz/submit',
-            ),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              'answers': answers,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.post(
+        Uri.parse(
+          '$baseUrl/learning/module/$materialId/quiz/submit',
+        ),
+        body: jsonEncode(<String, dynamic>{
+          'answers': answers,
+        }),
+      );
 
       if (response.statusCode == 200) {
         return _decodeMap(response.body);
@@ -420,15 +348,12 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .post(
-            Uri.parse(
-              '$baseUrl/learning/module/$materialId/lab/result',
-            ),
-            headers: _headers,
-            body: jsonEncode(payload),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.post(
+        Uri.parse(
+          '$baseUrl/learning/module/$materialId/lab/result',
+        ),
+        body: jsonEncode(payload),
+      );
 
       if (response.statusCode == 201) {
         return _decodeMap(response.body);
@@ -453,17 +378,14 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .post(
-            Uri.parse(
-              '$baseUrl/learning/module/$materialId/lab/complete',
-            ),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              if (resultId != null) 'result_id': resultId,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.post(
+        Uri.parse(
+          '$baseUrl/learning/module/$materialId/lab/complete',
+        ),
+        body: jsonEncode(<String, dynamic>{
+          if (resultId != null) 'result_id': resultId,
+        }),
+      );
 
       if (response.statusCode == 200) {
         return _decodeMap(response.body);
@@ -485,12 +407,9 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/learning/progress'),
-            headers: _headers,
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.get(
+        Uri.parse('$baseUrl/learning/progress'),
+      );
 
       if (response.statusCode == 200) {
         return _decodeMap(response.body);
@@ -522,16 +441,13 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/sync/progress'),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              'material_id': materialId,
-              'progress': progress,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.post(
+        Uri.parse('$baseUrl/sync/progress'),
+        body: jsonEncode(<String, dynamic>{
+          'material_id': materialId,
+          'progress': progress,
+        }),
+      );
 
       if (response.statusCode == 200) {
         final data = _decodeMap(response.body);
@@ -553,12 +469,9 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/sync/all-progress'),
-            headers: _headers,
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.get(
+        Uri.parse('$baseUrl/sync/all-progress'),
+      );
 
       if (response.statusCode == 200) {
         final dynamic decoded = jsonDecode(response.body);
@@ -602,15 +515,12 @@ class ApiService {
     }
 
     try {
-      await http
-          .post(
-            Uri.parse('$baseUrl/gamification/xp'),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              'amount': amount,
-            }),
-          )
-          .timeout(_timeout);
+      await ApiClient.post(
+        Uri.parse('$baseUrl/gamification/xp'),
+        body: jsonEncode(<String, dynamic>{
+          'amount': amount,
+        }),
+      );
 
       debugPrint('[API] +$amount XP berhasil dikirim ke server');
     } catch (e) {
@@ -624,12 +534,9 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/gamification/user-data'),
-            headers: _headers,
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.get(
+        Uri.parse('$baseUrl/gamification/user-data'),
+      );
 
       if (response.statusCode == 200) {
         return _decodeMap(response.body);
@@ -651,12 +558,9 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/daily-quests/today'),
-            headers: _headers,
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.get(
+        Uri.parse('$baseUrl/daily-quests/today'),
+      );
 
       debugPrint(
         '[API] getTodayDailyQuest status: ${response.statusCode}',
@@ -689,16 +593,13 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/daily-quests/progress'),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              'quest_key': questKey,
-              'amount': amount,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.post(
+        Uri.parse('$baseUrl/daily-quests/progress'),
+        body: jsonEncode(<String, dynamic>{
+          'quest_key': questKey,
+          'amount': amount,
+        }),
+      );
 
       debugPrint(
         '[API] updateDailyQuestProgress status: ${response.statusCode}',
@@ -728,12 +629,9 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/daily-quests/claim'),
-            headers: _headers,
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.post(
+        Uri.parse('$baseUrl/daily-quests/claim'),
+      );
 
       final data = _decodeMap(response.body);
 
@@ -754,12 +652,9 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .get(
-            Uri.parse('$baseUrl/notifications'),
-            headers: _headers,
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.get(
+        Uri.parse('$baseUrl/notifications'),
+      );
 
       if (response.statusCode == 200) {
         final dynamic decoded = jsonDecode(response.body);
@@ -781,15 +676,12 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/gamification/badge'),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              'badge_name': badgeName,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.post(
+        Uri.parse('$baseUrl/gamification/badge'),
+        body: jsonEncode(<String, dynamic>{
+          'badge_name': badgeName,
+        }),
+      );
 
       if (response.statusCode == 200) {
         final data = _decodeMap(response.body);
@@ -814,16 +706,13 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/sync/progress'),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              'material_id': materialId,
-              'progress': progress,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.post(
+        Uri.parse('$baseUrl/sync/progress'),
+        body: jsonEncode(<String, dynamic>{
+          'material_id': materialId,
+          'progress': progress,
+        }),
+      );
 
       final data = _decodeMap(response.body);
 
@@ -850,15 +739,12 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/funfacts/read'),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              'funfact_id': funfactId,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.post(
+        Uri.parse('$baseUrl/funfacts/read'),
+        body: jsonEncode(<String, dynamic>{
+          'funfact_id': funfactId,
+        }),
+      );
 
       final data = _decodeMap(response.body);
 
@@ -883,15 +769,12 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/lab/complete'),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              'material_id': materialId,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.post(
+        Uri.parse('$baseUrl/lab/complete'),
+        body: jsonEncode(<String, dynamic>{
+          'material_id': materialId,
+        }),
+      );
 
       final data = _decodeMap(response.body);
 
@@ -916,16 +799,13 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .put(
-            Uri.parse('$baseUrl/auth/update-profile'),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              'username': newName,
-              'avatar': avatarPath,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.put(
+        Uri.parse('$baseUrl/auth/update-profile'),
+        body: jsonEncode(<String, dynamic>{
+          'username': newName,
+          'avatar': avatarPath,
+        }),
+      );
 
       if (response.statusCode == 200) {
         debugPrint(
@@ -958,17 +838,14 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .put(
-            Uri.parse('$baseUrl/auth/change-password'),
-            headers: _headers,
-            body: jsonEncode(<String, dynamic>{
-              'old_password': oldPassword,
-              'new_password': newPassword,
-              'confirm_password': confirmPassword,
-            }),
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.put(
+        Uri.parse('$baseUrl/auth/change-password'),
+        body: jsonEncode(<String, dynamic>{
+          'old_password': oldPassword,
+          'new_password': newPassword,
+          'confirm_password': confirmPassword,
+        }),
+      );
 
       final data = _decodeMap(response.body);
 
@@ -999,12 +876,9 @@ class ApiService {
     }
 
     try {
-      final response = await http
-          .delete(
-            Uri.parse('$baseUrl/auth/delete'),
-            headers: _headers,
-          )
-          .timeout(_timeout);
+      final response = await ApiClient.delete(
+        Uri.parse('$baseUrl/auth/delete'),
+      );
 
       return response.statusCode == 200;
     } catch (e) {

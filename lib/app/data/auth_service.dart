@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'api_client.dart';
 import 'api_service.dart';
 import '../routes/app_pages.dart';
 import '../widgets/app_snackbar.dart';
@@ -16,14 +17,20 @@ class AuthService extends GetxService {
   );
 
   String get token => _storage.read('authToken') ?? '';
+  String get refreshToken => _storage.read('refreshToken') ?? '';
 
   bool isLoggedIn() {
-    return _storage.hasData('authToken');
+    return _storage.hasData('authToken') || _storage.hasData('refreshToken');
   }
 
   // --- LOGIKA TERPUSAT (Anti-Gagal) ---
   void _handleLoginResult(Map<String, dynamic> data) async {
-    await _storage.write('authToken', data['access_token']);
+    if (data['access_token'] != null) {
+      await _storage.write('authToken', data['access_token']);
+    }
+    if (data['refresh_token'] != null) {
+      await _storage.write('refreshToken', data['refresh_token']);
+    }
     
     // Nangkep role dari manapun asalnya
     String userRole = 'user';
@@ -67,10 +74,10 @@ class AuthService extends GetxService {
       Get.back(); 
 
       if (response.statusCode == 200) {
-        _handleLoginResult(jsonDecode(response.body));
+        _handleLoginResult(ApiClient.decodeMap(response.body));
       } else {
-        final resData = jsonDecode(response.body);
-        final String message = resData['message'] ?? 'Email atau kata sandi tidak sesuai.';
+        final resData = ApiClient.decodeMap(response.body);
+        final String message = resData['message'] ?? resData['error'] ?? 'Email atau kata sandi tidak sesuai.';
         AppSnackbar.error('Login Gagal', message);
       }
     } catch (e) {
@@ -108,7 +115,7 @@ class AuthService extends GetxService {
       Get.back(); 
 
       if (response.statusCode == 200) {
-        _handleLoginResult(jsonDecode(response.body));
+        _handleLoginResult(ApiClient.decodeMap(response.body));
       } else {
         AppSnackbar.error(
           'Autentikasi Gagal',
@@ -146,10 +153,10 @@ class AuthService extends GetxService {
           'Registrasi Berhasil 🎉',
           'Akun kamu berhasil dibuat. Selamat datang di Science Craft!',
         );
-        _handleLoginResult(jsonDecode(response.body));
+        _handleLoginResult(ApiClient.decodeMap(response.body));
       } else {
-        final resData = jsonDecode(response.body);
-        final String message = resData['message'] ?? 'Gagal mendaftarkan akun. Email/Username mungkin sudah terdaftar.';
+        final resData = ApiClient.decodeMap(response.body);
+        final String message = resData['message'] ?? resData['error'] ?? 'Gagal mendaftarkan akun. Email/Username mungkin sudah terdaftar.';
         AppSnackbar.error('Registrasi Gagal', message);
       }
     } catch (e) {
@@ -163,6 +170,7 @@ class AuthService extends GetxService {
 
   void logout() async {
     await _storage.remove('authToken');
+    await _storage.remove('refreshToken');
     await _storage.remove('userRole');
     await DatabaseHelper.instance.clearUserData();
     Get.offAllNamed(Routes.LOGIN);

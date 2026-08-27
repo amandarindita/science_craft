@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import '../../../routes/app_pages.dart';
+import '../../../data/api_client.dart';
 import '../../../data/api_service.dart';
 import '../../../data/auth_service.dart';
 import '../../../models/material_model.dart';
@@ -402,11 +403,8 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
     isLoading.value = true;
 
     try {
-      final response = await http.get(
+      final response = await ApiClient.get(
         Uri.parse('${ApiService.baseUrl}/admin/materials'),
-        headers: {
-          'Authorization': 'Bearer ${Get.find<AuthService>().token}',
-        },
       );
 
       if (response.statusCode == 200) {
@@ -483,11 +481,8 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
   // =====================================================
   void fetchFunFacts() async {
     try {
-      final response = await http.get(
+      final response = await ApiClient.get(
         Uri.parse('${ApiService.baseUrl}/admin/funfacts'),
-        headers: {
-          'Authorization': 'Bearer ${Get.find<AuthService>().token}',
-        },
       );
 
       if (response.statusCode == 200) {

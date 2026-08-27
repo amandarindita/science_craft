@@ -4,6 +4,7 @@ import 'package:science_craft/app/modules/notification/notification_helper.dart'
 import '../../../data/db/database_helper.dart';
 import '../../../models/material_model.dart'; 
 import '../../../routes/app_pages.dart';
+import '../../../data/api_client.dart';
 import '../../../data/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -90,9 +91,8 @@ class MaterialDetailController extends GetxController {
 
  Future<void> fetchMaterialContent(String id) async {
     try {
-      final response = await http.get(
+      final response = await ApiClient.get(
         Uri.parse('${ApiService.baseUrl}/admin/material/$id'),
-        headers: {'Authorization': 'Bearer ${profileController.authService.token}'},
       );
 
       if (response.statusCode == 200) {
