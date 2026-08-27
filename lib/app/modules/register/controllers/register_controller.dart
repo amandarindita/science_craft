@@ -1,36 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-// 1. Import AuthService
 import '../../../data/auth_service.dart';
+import '../../../widgets/app_snackbar.dart';
 
 class RegisterController extends GetxController {
-  // 2. Panggil instance AuthService
   final AuthService authService = Get.find<AuthService>();
 
-  final usernameController = TextEditingController();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
-  // 3. Buat fungsi untuk tombol register
+  final RxBool isPasswordHidden = true.obs;
+
+  void togglePasswordVisibility() {
+    isPasswordHidden.value = !isPasswordHidden.value;
+  }
+
   void register() {
-    // (Opsional) Tambahkan validasi di sini
-    if (usernameController.text.isEmpty ||
-        emailController.text.isEmpty ||
-        passwordController.text.isEmpty) {
-      Get.snackbar('Error', 'Semua field harus diisi');
+    final String username = usernameController.text.trim();
+    final String email = emailController.text.trim();
+    final String password = passwordController.text.trim();
+
+    if (username.isEmpty || email.isEmpty || password.isEmpty) {
+      AppSnackbar.warning(
+        'Perhatian',
+        'Semua kolom pendaftaran wajib diisi lengkap!',
+      );
       return;
     }
 
-    authService.register(
-      usernameController.text,
-      emailController.text,
-      passwordController.text,
-    );
+    if (username.length < 3) {
+      AppSnackbar.warning(
+        'Username Kurang Panjang',
+        'Nama pengguna minimal terdiri dari 3 karakter!',
+      );
+      return;
+    }
+
+    if (!GetUtils.isEmail(email)) {
+      AppSnackbar.error(
+        'Format Email Tidak Valid',
+        'Silakan masukkan format alamat email yang benar!',
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      AppSnackbar.warning(
+        'Kata Sandi Kurang Kuat',
+        'Kata sandi minimal terdiri dari 6 karakter!',
+      );
+      return;
+    }
+
+    debugPrint('Mencoba Mendaftarkan Akun Baru: $username ($email)');
+    authService.register(username, email, password);
   }
 
-  // 4. Buat fungsi untuk register via Google
   void registerWithGoogle() {
-    // Register dan Login Google alurnya sama
     authService.loginWithGoogle();
   }
 

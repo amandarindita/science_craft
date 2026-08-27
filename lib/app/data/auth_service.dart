@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'api_service.dart';
 import '../routes/app_pages.dart';
+import '../widgets/app_snackbar.dart';
 import 'db/database_helper.dart'; 
 
 class AuthService extends GetxService {
@@ -33,7 +34,12 @@ class AuthService extends GetxService {
     }
     
     await _storage.write('userRole', userRole);
-    print("DEBUG: User Role = $userRole");
+    debugPrint("DEBUG: User Role = $userRole");
+
+    AppSnackbar.success(
+      'Login Berhasil 🎉',
+      'Selamat datang kembali di Science Craft!',
+    );
 
     // Navigasi
     if (userRole.toLowerCase() == 'admin') {
@@ -45,7 +51,14 @@ class AuthService extends GetxService {
 
   Future<void> login(String email, String password) async {
     try {
-      Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
+      Get.dialog(
+        const Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF2563EB),
+          ),
+        ),
+        barrierDismissible: false,
+      );
       final response = await http.post(
         Uri.parse('${ApiService.baseUrl}/auth/login'),
         headers: {'Content-Type': 'application/json'},
@@ -56,20 +69,35 @@ class AuthService extends GetxService {
       if (response.statusCode == 200) {
         _handleLoginResult(jsonDecode(response.body));
       } else {
-        Get.snackbar('Login Gagal', 'Email atau password salah.');
+        final resData = jsonDecode(response.body);
+        final String message = resData['message'] ?? 'Email atau kata sandi tidak sesuai.';
+        AppSnackbar.error('Login Gagal', message);
       }
     } catch (e) {
       Get.back();
-      Get.snackbar('Error', 'Gagal konek ke server.');
+      AppSnackbar.error(
+        'Gangguan Koneksi',
+        'Tidak dapat terhubung ke server. Pastikan koneksi internet stabil.',
+      );
     }
   }
 
   Future<void> loginWithGoogle() async {
     try {
-      Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
+      Get.dialog(
+        const Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF2563EB),
+          ),
+        ),
+        barrierDismissible: false,
+      );
       await _googleSignIn.signOut();
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) { Get.back(); return; }
+      if (googleUser == null) {
+        Get.back();
+        return;
+      }
       
       final String? idToken = (await googleUser.authentication).idToken;
       final response = await http.post(
@@ -82,17 +110,30 @@ class AuthService extends GetxService {
       if (response.statusCode == 200) {
         _handleLoginResult(jsonDecode(response.body));
       } else {
-        Get.snackbar('Login Gagal', 'Google Auth gagal.');
+        AppSnackbar.error(
+          'Autentikasi Gagal',
+          'Gagal masuk menggunakan akun Google.',
+        );
       }
     } catch (e) {
       Get.back();
-      Get.snackbar('Error', 'Kesalahan koneksi.');
+      AppSnackbar.error(
+        'Gangguan Koneksi',
+        'Terjadi kesalahan saat menghubungkan akun Google.',
+      );
     }
   }
 
   Future<void> register(String username, String email, String password) async {
     try {
-      Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
+      Get.dialog(
+        const Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF2563EB),
+          ),
+        ),
+        barrierDismissible: false,
+      );
       final response = await http.post(
         Uri.parse('${ApiService.baseUrl}/auth/register'),
         headers: {'Content-Type': 'application/json'},
@@ -101,13 +142,22 @@ class AuthService extends GetxService {
       Get.back(); 
 
       if (response.statusCode == 201) {
+        AppSnackbar.success(
+          'Registrasi Berhasil 🎉',
+          'Akun kamu berhasil dibuat. Selamat datang di Science Craft!',
+        );
         _handleLoginResult(jsonDecode(response.body));
       } else {
-        Get.snackbar('Register Gagal', 'Cek email lu lagi.');
+        final resData = jsonDecode(response.body);
+        final String message = resData['message'] ?? 'Gagal mendaftarkan akun. Email/Username mungkin sudah terdaftar.';
+        AppSnackbar.error('Registrasi Gagal', message);
       }
     } catch (e) {
       Get.back();
-      Get.snackbar('Error', 'Gagal konek.');
+      AppSnackbar.error(
+        'Gangguan Koneksi',
+        'Tidak dapat terhubung ke server pendaftaran.',
+      );
     }
   }
 
