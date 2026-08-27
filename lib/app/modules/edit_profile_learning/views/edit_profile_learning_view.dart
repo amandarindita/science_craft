@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../controllers/edit_profile_learning_controller.dart';
 
@@ -17,17 +18,25 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
-        title: const Text('Edit Profil Pembelajaran'),
+        title: Text(
+          'Edit Profil Pembelajaran',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: _text,
-        elevation: 0,
+        elevation: 0.5,
+        shadowColor: Colors.black12,
         surfaceTintColor: Colors.white,
       ),
       body: Obx(
         () => controller.isLoading.value
             ? const Center(child: CircularProgressIndicator())
             : ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 36),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                 children: <Widget>[
                   _AvatarHero(controller: controller),
                   const SizedBox(height: 16),
@@ -89,20 +98,20 @@ class _AvatarHero extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Profilmu, versi pembelajaran',
-            style: TextStyle(
+            style: GoogleFonts.poppins(
               color: Colors.white,
               fontSize: 18,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 5),
-          const Text(
+          Text(
             'Perubahan nama dan avatar akan langsung tampil di Profil Pembelajaran.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Color(0xFFDCE9FF),
+            style: GoogleFonts.inter(
+              color: const Color(0xFFDCE9FF),
               fontSize: 11,
               height: 1.45,
             ),
@@ -399,7 +408,7 @@ class _SaveButton extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            textStyle: const TextStyle(fontWeight: FontWeight.w900),
+            textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700),
           ),
         ),
       ),
@@ -500,18 +509,18 @@ class _CardTitle extends StatelessWidget {
             children: <Widget>[
               Text(
                 title,
-                style: const TextStyle(
+                style: GoogleFonts.poppins(
                   color: _text,
                   fontSize: 16,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: GoogleFonts.inter(
                   color: _muted,
-                  fontSize: 10,
+                  fontSize: 11,
                   height: 1.35,
                 ),
               ),

@@ -1,540 +1,1421 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../../widgets/logout_confirmation_dialog.dart';
+import '../../../widgets/science_shimmer.dart';
+
 import '../controllers/profile_controller.dart';
 import 'badge_view.dart';
-import '../../profile_learning/views/profile_learning_view.dart'; 
+import '../../profile_learning/controllers/profile_learning_controller.dart';
+import '../../edit_profile_learning/bindings/edit_profile_learning_binding.dart';
+import '../../edit_profile_learning/views/edit_profile_learning_view.dart';
+import '../../milestone/controllers/milestone_controller.dart';
+import '../../milestone/views/milestone_collection_view.dart';
+import '../../milestone/widgets/milestone_avatar_frame.dart';
 
-class ProfileView extends GetView<ProfileController> {
-  const ProfileView({super.key});
+const Color _background = Color(0xFFF4F8FF);
+const Color _primary = Color(0xFF2563EB);
+const Color _purple = Color(0xFF7C3AED);
+const Color _text = Color(0xFF172033);
+const Color _muted = Color(0xFF64748B);
+const Color _success = Color(0xFF16A34A);
+const Color _warning = Color(0xFFF59E0B);
+
+class ProfileView
+    extends StatefulWidget {
+  const ProfileView({
+    super.key,
+  });
+
+  @override
+  State<ProfileView> createState() =>
+      _ProfileViewState();
+}
+
+class _ProfileViewState
+    extends State<ProfileView> {
+  late final ProfileLearningController
+      controller;
+  late final MilestoneController milestoneController;
+
+  ProfileController? get profileController =>
+      Get.isRegistered<ProfileController>()
+          ? Get.find<ProfileController>()
+          : null;
+
+  @override
+  void initState() {
+    super.initState();
+
+    milestoneController =
+        MilestoneController.ensureRegistered();
+
+    if (Get.isRegistered<
+        ProfileLearningController>()) {
+      controller =
+          Get.find<ProfileLearningController>();
+    } else {
+      controller =
+          Get.put<ProfileLearningController>(
+        ProfileLearningController(),
+      );
+    }
+
+    // Profile tetap memuat data akademik seperti sebelumnya.
+    // Milestone kemudian diambil dari Flask, bukan dihitung dari GetStorage.
+    Future<void>.microtask(_refreshProfileAndMilestone);
+  }
+
+  Future<void> _refreshProfileAndMilestone() async {
+    await controller.loadProfile();
+    await milestoneController.loadMilestones();
+  }
+
+  Future<void> _openEditProfileLearning() async {
+    final bool? updated = await Get.to<bool>(
+      () => const EditProfileLearningView(),
+      binding: EditProfileLearningBinding(),
+    );
+
+    if (updated == true) {
+      await _refreshProfileAndMilestone();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildProfileHeader(),
-          const SizedBox(height: 20),
-          _buildLearningProfileEntry(),
-          const SizedBox(height: 24),
-          
-          // --- STATS & STREAK BARU ---
-          _buildNewStatsSection(), 
-          // ---------------------------
-
-          const SizedBox(height: 30),
-          _buildBadgesSection(),
-          const SizedBox(height: 30),
-          _buildSettingsSection(),
-          const SizedBox(height: 40),
+    return Scaffold(
+      backgroundColor: _background,
+      appBar: AppBar(
+        title: Text(
+          'Profil Pembelajaran',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w700,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        foregroundColor: _text,
+        elevation: 0.5,
+        shadowColor: Colors.black12,
+        actions: <Widget>[
+          IconButton(
+            tooltip: 'Muat ulang',
+            onPressed: _refreshProfileAndMilestone,
+            icon: const Icon(
+              Icons.refresh_rounded,
+            ),
+          ),
         ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refreshProfileAndMilestone,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+          children: <Widget>[
+            Obx(
+              () => _HeroCard(
+                name: controller.userName.value,
+                email: controller.userEmail.value,
+                avatar: controller.avatarPath.value,
+                frameId: milestoneController.equippedFrame.value?.id,
+                level: controller.currentLearningLevel.value,
+                onEdit: _openEditProfileLearning,
+              ),
+            ),
+            Obx(
+              () => controller.errorMessage.value.isNotEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: _ErrorCard(
+                        message: controller.errorMessage.value,
+                        onRetry: _refreshProfileAndMilestone,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 14),
+            Obx(
+              () => _ProgressCard(
+                level: controller.currentLearningLevel.value,
+                progress: controller.currentLevelProgress.value,
+                message: controller.nextLearningMessage,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Obx(
+              () => _StatsGrid(
+                completed: controller.completedModules.value,
+                total: controller.totalModules.value,
+                xp: controller.totalXp.value,
+                badges: controller.ownedBadgeCount.value,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Obx(
+              () => _WeeklyStreakCard(
+                streak: controller.dailyStreak.value,
+                todayStatus: controller.todayActivityStatus.value,
+                days: controller.weeklyActivity,
+              ),
+            ),
+            const SizedBox(height: 14),
+            _MilestonePreviewCard(
+              controller: milestoneController,
+              onTap: () async {
+                await Get.to<void>(
+                  () => const MilestoneCollectionView(),
+                );
+                await milestoneController.loadMilestones();
+              },
+            ),
+            const SizedBox(height: 18),
+            const _SectionTitle(
+              title: 'Perjalanan Level',
+              subtitle:
+                  'Level dibuka dari penyelesaian modul, bukan dari jumlah XP.',
+            ),
+            const SizedBox(height: 11),
+            Obx(
+              () => controller.isLoading.value
+                  ? const _LoadingCard()
+                  : Column(
+                      children: controller.levelSummaries
+                          .map(
+                            (LearningLevelSummary item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _LevelCard(
+                                summary: item,
+                                current: item.level ==
+                                    controller.currentLearningLevel.value,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+            ),
+            const SizedBox(height: 8),
+            Obx(
+              () => _BadgeCard(
+                owned: controller.ownedBadgeCount.value,
+                total: controller.totalBadgeCount.value,
+                onTap: profileController == null
+                    ? null
+                    : () => Get.to<void>(
+                          () => const BadgeView(),
+                        ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            const _SectionTitle(
+              title: 'Akun & Bantuan',
+              subtitle: 'Kelola profil, keamanan akun, dan bantuan aplikasi.',
+            ),
+            const SizedBox(height: 11),
+            _AccountCard(
+              controller: profileController,
+              onEditProfile: _openEditProfileLearning,
+            ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  // --- 1. HEADER (TETAP SAMA) ---
- Widget _buildProfileHeader() {
-  return Center(
-    child: Column(
-      children: [
-        // --- BAGIAN AVATAR YANG DIPERBAIKI ---
-        Obx(() {
-          // Radius 50 berarti diameter (lebar & tinggi) adalah 100
-          const double size = 100.0;
-          
-          return Container(
-            width: size,
-            height: size,
+
+class _MilestonePreviewCard extends StatelessWidget {
+  const _MilestonePreviewCard({
+    required this.controller,
+    required this.onTap,
+  });
+
+  final MilestoneController controller;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () {
+        final next = controller.nextReward.value;
+        final bool hasData = controller.totalCount.value > 0;
+
+        return InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.grey.shade200, // Warna dasar jika gambar loading
-              border: Border.all(color: Colors.white, width: 2), // Opsional: border putih biar rapi
-            ),
-            child: ClipOval(
-              child: Image.asset(
-                controller.avatarPath.value,
-                width: size,
-                height: size,
-                // BoxFit.cover = Gambar di-zoom biar penuh lingkaran (tidak gepeng)
-                fit: BoxFit.cover, 
-                // Error handling kalau gambar tidak ditemukan
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(Icons.person, size: 50, color: Colors.grey),
-                  );
-                },
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFFDCE7FA),
               ),
-            ),
-          );
-        }),
-        // -------------------------------------
-
-        const SizedBox(height: 12),
-        
-        // Nama User
-        Obx(() => Text(
-              controller.userName.value,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            )),
-            
-        const SizedBox(height: 4),
-        
-        // Level dan Tombol Edit
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Obx(() => Text(
-                  controller.userLevel.value,
-                  style: const TextStyle(fontSize: 16, color: Colors.black54),
-                )),
-            IconButton(
-              icon: const Icon(Icons.edit, size: 20, color: Colors.black54),
-              onPressed: () => controller.gotoEditProfile(),
-            )
-          ],
-        ),
-        
-        const SizedBox(height: 12),
-        
-        // XP Bar (Progress Bar)
-        GestureDetector(
-          onTap: () => controller.goToLevelBenefits(),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Column(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Obx(() => LinearProgressIndicator(
-                        value: (controller.nextLevelXp.value == 0)
-                            ? 0.0
-                            : controller.currentXp.value / controller.nextLevelXp.value,
-                        minHeight: 12,
-                        backgroundColor: Colors.grey.shade200,
-                        color: Colors.blueAccent,
-                      )),
+              boxShadow: const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x0D0F172A),
+                  blurRadius: 12,
+                  offset: Offset(0, 5),
                 ),
-                const SizedBox(height: 6),
-                Obx(() => Text(
-                      '${controller.currentXp.value} / ${controller.nextLevelXp.value} XP',
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w600),
-                    )),
+              ],
+            ),
+            child: Column(
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: <Color>[
+                            Color(0xFF2563EB),
+                            Color(0xFF7C3AED),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.auto_awesome_rounded,
+                        color: Colors.white,
+                        size: 25,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'Milestone & Koleksi',
+                            style: GoogleFonts.poppins(
+                              color: _text,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            hasData
+                                ? '${controller.unlockedCount.value} / ${controller.totalCount.value} item terbuka'
+                                : 'Lihat koleksimu di sini',
+                            style: GoogleFonts.inter(
+                              color: _muted,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: _muted,
+                    ),
+                  ],
+                ),
+                if (hasData) ...<Widget>[
+                  const SizedBox(height: 14),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      value: next == null
+                          ? 1
+                          : controller.progressToNext.value,
+                      minHeight: 8,
+                      color: _primary,
+                      backgroundColor: const Color(0xFFE8EEF7),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          next == null
+                              ? 'Semua milestone terbuka'
+                              : 'Berikutnya: ${next.title}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: _text,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${controller.currentXp.value} XP',
+                        style: const TextStyle(
+                          color: _primary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
-  Widget _buildLearningProfileEntry() {
-    return InkWell(
-      onTap: () => Get.to<void>(
-        () => const ProfileLearningView(),
-      ),
-      borderRadius: BorderRadius.circular(22),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(17),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: <Color>[
-              Color(0xFF2563EB),
-              Color(0xFF7C3AED),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: const <BoxShadow>[
-            BoxShadow(
-              color: Color(0x242563EB),
-              blurRadius: 18,
-              offset: Offset(0, 9),
-            ),
-          ],
-        ),
-        child: const Row(
-          children: <Widget>[
-            SizedBox(
-              width: 48,
-              height: 48,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: Color(0x33FFFFFF),
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(15),
-                  ),
-                ),
-                child: Icon(
-                  Icons.auto_graph_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-            ),
-            SizedBox(width: 13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'Profil Pembelajaran Baru',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Lihat Level 1–3, progres modul, XP, streak, dan badge.',
-                    style: TextStyle(
-                      color: Color(0xFFE0E7FF),
-                      fontSize: 11,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: 8),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: Colors.white,
-              size: 18,
-            ),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
+}
 
-  // --- 2. BAGIAN STATS ---
-  // Eksperimen Selesai dihapus karena tidak digunakan.
-  Widget _buildNewStatsSection() {
-    return _buildDuolingoStreakCard();
-  }
+class _HeroCard extends StatelessWidget {
+  const _HeroCard({
+    required this.name,
+    required this.email,
+    required this.avatar,
+    required this.frameId,
+    required this.level,
+    required this.onEdit,
+  });
 
-  // --- WIDGET STREAK ALA DUOLINGO (MODIFIKASI ROW) ---
-  Widget _buildDuolingoStreakCard() {
+  final String name;
+  final String email;
+  final String avatar;
+  final String? frameId;
+  final int level;
+  final VoidCallback? onEdit;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16), // Padding agak dikecilin biar muat gambar
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200, width: 2),
-        boxShadow: [
+        gradient: const LinearGradient(
+          colors: <Color>[
+            Color(0xFF1D4ED8),
+            Color(0xFF7C3AED),
+          ],
+        ),
+        borderRadius:
+            BorderRadius.circular(24),
+        boxShadow: const <BoxShadow>[
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
+            color: Color(0x262563EB),
+            blurRadius: 20,
+            offset: Offset(0, 10),
+          ),
         ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center, // Rata tengah vertikal
-        children: [
-          // --- BAGIAN KIRI (TEKS & BUBBLES) ---
+        children: <Widget>[
+          MilestoneAvatarFrame(
+            frameId: frameId,
+            size: 92,
+            child: _Avatar(path: avatar),
+          ),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Header Streak
-                Row(
-                  children: [
-                    // 🌟 INI DIA SULAPNYA: API HIJAU VS KUNING 🌟
-                    Obx(() => Icon(
-                          Icons.local_fire_department,
-                          // Kalau 'active' hijau, kalau baru 'login' amber/kuning
-                          color: controller.dailyStatus.value == 'active'
-                              ? Colors.green
-                              : Colors.amber,
-                          size: 24,
-                        )),
-                    const SizedBox(width: 6),
-                    Obx(() => Text(
-                          "${controller.dailyStreak.value} Day Streak",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        )),
-                  ],
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow:
+                      TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 21,
+                    fontWeight:
+                        FontWeight.w900,
+                  ),
                 ),
-                const SizedBox(height: 4),
-                
-                // 2. Subtitle Motivasi (Sekalian dibikin dinamis cok!)
-                Obx(() => Text(
-                      controller.dailyStatus.value == 'active'
-                          ? "Mantap! Kamu on fire hari ini 🔥"
-                          : "Kamu sudah absen. Yuk mulai belajar! 📚",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade500,
-                      ),
-                    )),
-                // 3. Row Bubble Hari
-                Obx(() {
-                  if (controller.weeklyStreak.isEmpty) {
-                    return const LinearProgressIndicator(); // Loading tipis
-                  }
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: controller.weeklyStreak.map((day) {
-                      return _buildDayBubble(
-                        day.label,
-                        day.isCompleted,
-                        isToday: day.isToday,
-                        isActiveToday: controller.dailyStatus.value == 'active',
-                      );
-                    }).toList(),
-                  );
-                }),
+                if (email.trim().isNotEmpty) ...<
+                    Widget>[
+                  const SizedBox(height: 3),
+                  Text(
+                    email,
+                    maxLines: 1,
+                    overflow:
+                        TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFFDCE9FF),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 10),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        const Color(0x33FFFFFF),
+                    borderRadius:
+                        BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Level Pembelajaran $level',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight:
+                          FontWeight.w900,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-
-          // --- SPASI ANTARA KIRI & KANAN ---
-          const SizedBox(width: 12),
-
-          // --- BAGIAN KANAN (GAMBAR MASKOT) ---
-          // Logika gambar berubah tergantung streak
-          Obx(() {
-            return _buildMascotImage(controller.dailyStreak.value);
-          }),
+          if (onEdit != null)
+            IconButton(
+              tooltip: 'Edit profil',
+              onPressed: onEdit,
+              style: IconButton.styleFrom(
+                foregroundColor:
+                    Colors.white,
+                backgroundColor:
+                    const Color(0x26FFFFFF),
+              ),
+              icon: const Icon(
+                Icons.edit_rounded,
+              ),
+            ),
         ],
       ),
     );
   }
-
-  // Helper untuk memilih gambar maskot
-  Widget _buildMascotImage(int streak) {
-  String imageAsset;
-
-  if (streak == 0) {
-    imageAsset = 'assets/chara_login.png';
-  } else if (streak >= 7) {
-    imageAsset = 'assets/fire.png';
-  } else {
-    imageAsset = 'assets/ice.png';
-  }
-
-  return Image.asset(
-    imageAsset,
-    height: 70,
-    fit: BoxFit.contain,
-    errorBuilder: (context, error, stackTrace) {
-      if (streak == 0) {
-        return const Icon(
-          Icons.sentiment_dissatisfied,
-          size: 60,
-          color: Colors.grey,
-        );
-      } else if (streak >= 7) {
-        return const Icon(
-          Icons.whatshot,
-          size: 60,
-          color: Colors.orange,
-        );
-      } else {
-        return const Icon(
-          Icons.sentiment_very_satisfied,
-          size: 60,
-          color: Colors.green,
-        );
-      }
-    },
-  );
 }
 
-  // Widget Helper Bubble Hari (Diperkecil sedikit agar muat)
-Widget _buildDayBubble(
-  String day,
-  bool isCompleted, {
-  bool isToday = false,
-  bool isActiveToday = false,
-}) {
-  final activeColor = isActiveToday ? Colors.green : Colors.amber;
+class _ProgressCard extends StatelessWidget {
+  const _ProgressCard({
+    required this.level,
+    required this.progress,
+    required this.message,
+  });
 
-  Color bgColor = Colors.transparent;
-  Color borderColor = Colors.grey.shade300;
-  Color textColor = Colors.grey.shade400;
+  final int level;
+  final double progress;
+  final String message;
 
-  Widget content = Text(
-    day,
-    style: TextStyle(
-      color: textColor,
-      fontWeight: FontWeight.bold,
-      fontSize: 10,
-    ),
-  );
+  @override
+  Widget build(BuildContext context) {
+    final int percent =
+        (progress * 100).round();
 
-  if (isCompleted) {
-    bgColor = activeColor;
-    borderColor = activeColor;
-    content = const Icon(Icons.check, color: Colors.white, size: 14);
-  } else if (isToday) {
-    borderColor = activeColor;
-    textColor = activeColor;
-    content = Text(
-      day,
-      style: TextStyle(
-        color: textColor,
-        fontWeight: FontWeight.bold,
-        fontSize: 10,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius:
+            BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const Icon(
+                Icons.auto_graph_rounded,
+                color: _primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Progres Level $level',
+                  style: const TextStyle(
+                    color: _text,
+                    fontSize: 16,
+                    fontWeight:
+                        FontWeight.w900,
+                  ),
+                ),
+              ),
+              Text(
+                '$percent%',
+                style: const TextStyle(
+                  color: _primary,
+                  fontSize: 18,
+                  fontWeight:
+                      FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius:
+                BorderRadius.circular(20),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 11,
+              color: _primary,
+              backgroundColor:
+                  const Color(0xFFE2E8F0),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: const TextStyle(
+              color: _muted,
+              fontSize: 11,
+              height: 1.4,
+            ),
+          ),
+        ],
       ),
     );
   }
-
-  return Column(
-    children: [
-      Container(
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          color: bgColor,
-          shape: BoxShape.circle,
-          border: Border.all(color: borderColor, width: 2),
-        ),
-        child: Center(child: content),
-      ),
-      const SizedBox(height: 4),
-      Text(
-        day,
-        style: TextStyle(fontSize: 8, color: Colors.grey.shade400),
-      ),
-    ],
-  );
 }
-  // --- 3, 4, 5 (BAGIAN LAIN TETAP SAMA) ---
-  Widget _buildBadgesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text('Badge', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-          ],
+
+class _StatsGrid extends StatelessWidget {
+  const _StatsGrid({
+    required this.completed,
+    required this.total,
+    required this.xp,
+    required this.badges,
+  });
+
+  final int completed;
+  final int total;
+  final int xp;
+  final int badges;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: _Stat(
+            icon: Icons.menu_book_rounded,
+            color: _primary,
+            value: '$completed/$total',
+            label: 'Modul',
+          ),
         ),
-        const SizedBox(height: 16),
-        GestureDetector(
-          onTap: () => Get.to(() => const BadgeView()),
-          child: Container(
-            height: 80,
-            color: Colors.transparent,
-            child: Obx(
-              () => ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: controller.badges.length > 5 ? 5 : controller.badges.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 16),
-                itemBuilder: (context, index) {
-                  final badge = controller.badges[index];
-                  return SizedBox(
-                    width: 70,
-                    height: 70,
-                    child: badge.isOwned
-                        ? Image.asset(badge.imagePath)
-                        : ColorFiltered(
-                            colorFilter: const ColorFilter.matrix(<double>[
-                              0.2126, 0.7152, 0.0722, 0, 0,
-                              0.2126, 0.7152, 0.0722, 0, 0,
-                              0.2126, 0.7152, 0.0722, 0, 0,
-                              0,      0,      0,      1, 0,
-                            ]),
-                            child: Opacity(
-                              opacity: 0.5,
-                              child: Image.asset(badge.imagePath),
-                            ),
-                          ),
-                  );
-                },
-              ),
-            ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: _Stat(
+            icon: Icons.bolt_rounded,
+            color: _warning,
+            value: '$xp',
+            label: 'Total XP',
+          ),
+        ),
+        const SizedBox(width: 9),
+        Expanded(
+          child: _Stat(
+            icon:
+                Icons.workspace_premium_rounded,
+            color: _purple,
+            value: '$badges',
+            label: 'Badge',
           ),
         ),
       ],
     );
   }
-  Widget _buildSettingsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        _SettingsItem(
-            icon: Icons.notifications_outlined,
-            label: 'Notifikasi',
-            onTap: () => controller.goToNotifications()),
-        const SizedBox(height: 12),
-        _SettingsItem(
-            icon: Icons.info_outline,
-            label: 'Tentang Science Craft',
-            onTap: () => controller.goToAboutApp()),
-        const SizedBox(height: 12),
-        _SettingsItem(
-            icon: Icons.quiz_outlined,
-            label: 'FAQ',
-            onTap: () => controller.goToFaq()),
-        const SizedBox(height: 12),
-        _SettingsItem(
-            icon: Icons.logout,
-            label: 'Logout',
-            onTap: () => controller.logout(),
-            isLogout: true),
+}
+
+class _WeeklyStreakCard
+    extends StatelessWidget {
+  const _WeeklyStreakCard({
+    required this.streak,
+    required this.todayStatus,
+    required this.days,
+  });
+
+  final int streak;
+  final String todayStatus;
+  final List<LearningStreakDay> days;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool active =
+        todayStatus == 'active';
+    final bool loginOnly =
+        todayStatus == 'login';
+
+    final Color statusColor = active
+        ? _success
+        : loginOnly
+            ? _warning
+            : _muted;
+
+    final String subtitle = active
+        ? 'Mantap! Kamu sudah aktif belajar hari ini.'
+        : loginOnly
+            ? 'Login sudah tercatat. Mulai satu aktivitas agar hari ini menjadi hijau.'
+            : 'Login untuk mempertahankan streak belajarmu.';
+
+    final String mascotAsset = active
+        ? 'assets/fire.png'
+        : loginOnly
+            ? 'assets/ice.png'
+            : 'assets/chara_login.png';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius:
+            BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
+        boxShadow: const <BoxShadow>[
+          BoxShadow(
+            color: Color(0x0D0F172A),
+            blurRadius: 12,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment:
+            CrossAxisAlignment.center,
+        children: <Widget>[
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Icon(
+                      Icons
+                          .local_fire_department_rounded,
+                      color: statusColor,
+                      size: 25,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$streak Day Streak',
+                      style: const TextStyle(
+                        color: _text,
+                        fontSize: 17,
+                        fontWeight:
+                            FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: _muted,
+                    fontSize: 10,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 13),
+                Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment
+                          .spaceBetween,
+                  children: List<Widget>.generate(
+                    7,
+                    (int index) {
+                      final LearningStreakDay day =
+                          index < days.length
+                              ? days[index]
+                              : LearningStreakDay(
+                                  label: const <
+                                      String>[
+                                    'S',
+                                    'S',
+                                    'R',
+                                    'K',
+                                    'J',
+                                    'S',
+                                    'M',
+                                  ][index],
+                                  dayName: '',
+                                  date: '',
+                                  status: 'none',
+                                  isToday: false,
+                                  isFuture: false,
+                                );
+
+                      return _StreakDayBubble(
+                        day: day,
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 11),
+                const Wrap(
+                  spacing: 11,
+                  runSpacing: 5,
+                  children: <Widget>[
+                    _StreakLegend(
+                      color: _warning,
+                      label: 'Login',
+                    ),
+                    _StreakLegend(
+                      color: _success,
+                      label: 'Aktif belajar',
+                    ),
+                    _StreakLegend(
+                      color: Color(
+                        0xFFCBD5E1,
+                      ),
+                      label: 'Belum login',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Image.asset(
+            mascotAsset,
+            width: 68,
+            height: 82,
+            fit: BoxFit.contain,
+            errorBuilder: (
+              BuildContext context,
+              Object error,
+              StackTrace? stackTrace,
+            ) {
+              return Icon(
+                active
+                    ? Icons.whatshot_rounded
+                    : loginOnly
+                        ? Icons
+                            .sentiment_satisfied_alt_rounded
+                        : Icons
+                            .sentiment_neutral_rounded,
+                size: 54,
+                color: statusColor,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StreakDayBubble
+    extends StatelessWidget {
+  const _StreakDayBubble({
+    required this.day,
+  });
+
+  final LearningStreakDay day;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color fillColor =
+        day.isActive
+            ? _success
+            : day.isLoginOnly
+                ? _warning
+                : Colors.transparent;
+
+    final Color borderColor =
+        day.isActive
+            ? _success
+            : day.isLoginOnly
+                ? _warning
+                : day.isToday
+                    ? _primary
+                    : const Color(
+                        0xFFCBD5E1,
+                      );
+
+    final Color textColor =
+        day.hasActivity
+            ? Colors.white
+            : day.isToday
+                ? _primary
+                : _muted;
+
+    return Tooltip(
+      message: day.isActive
+          ? '${day.dayName}: aktif belajar'
+          : day.isLoginOnly
+              ? '${day.dayName}: login saja'
+              : '${day.dayName}: belum login',
+      child: Column(
+        children: <Widget>[
+          Container(
+            width: 29,
+            height: 29,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: fillColor,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: borderColor,
+                width: day.isToday ? 2.5 : 2,
+              ),
+            ),
+            child: day.isActive
+                ? const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 16,
+                  )
+                : Text(
+                    day.label,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 10,
+                      fontWeight:
+                          FontWeight.w900,
+                    ),
+                  ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            day.label,
+            style: TextStyle(
+              color: day.isToday
+                  ? _primary
+                  : _muted,
+              fontSize: 8,
+              fontWeight: day.isToday
+                  ? FontWeight.w900
+                  : FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StreakLegend
+    extends StatelessWidget {
+  const _StreakLegend({
+    required this.color,
+    required this.label,
+  });
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            color: _muted,
+            fontSize: 9,
+          ),
+        ),
       ],
     );
   }
 }
 
-class _SettingsItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool isLogout;
-
-  const _SettingsItem({
-    Key? key,
+class _Stat extends StatelessWidget {
+  const _Stat({
     required this.icon,
+    required this.color,
+    required this.value,
     required this.label,
-    required this.onTap,
-    this.isLogout = false,
-  }) : super(key: key);
+  });
+
+  final IconData icon;
+  final Color color;
+  final String value;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    final color = isLogout ? Colors.red : Colors.black87;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 5,
-                spreadRadius: 1)
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color),
-            const SizedBox(width: 16),
-            Text(label,
-                style: TextStyle(fontWeight: FontWeight.w600, color: color)),
-          ],
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius:
+            BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
         ),
       ),
+      child: Row(
+        children: <Widget>[
+          Icon(icon, color: color, size: 29),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              mainAxisAlignment:
+                  MainAxisAlignment.center,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow:
+                      TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _text,
+                    fontSize: 17,
+                    fontWeight:
+                        FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow:
+                      TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _muted,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
+  }
+}
+
+class _LevelCard extends StatelessWidget {
+  const _LevelCard({
+    required this.summary,
+    required this.current,
+  });
+
+  final LearningLevelSummary summary;
+  final bool current;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color =
+        summary.isCompleted
+            ? _success
+            : summary.isUnlocked
+                ? _primary
+                : _muted;
+
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius:
+            BorderRadius.circular(18),
+        border: Border.all(
+          color: current
+              ? _primary
+              : const Color(0xFFE2E8F0),
+          width: current ? 1.5 : 1,
+        ),
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: color.withValues(
+                alpha: 0.11,
+              ),
+              borderRadius:
+                  BorderRadius.circular(14),
+            ),
+            child: Icon(
+              summary.isCompleted
+                  ? Icons
+                      .check_circle_rounded
+                  : summary.isUnlocked
+                      ? Icons
+                          .science_rounded
+                      : Icons.lock_rounded,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        summary.title,
+                        style:
+                            const TextStyle(
+                          color: _text,
+                          fontWeight:
+                              FontWeight
+                                  .w900,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      summary.status,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 10,
+                        fontWeight:
+                            FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  summary.totalModules == 0
+                      ? 'Belum ada modul'
+                      : '${summary.completedModules}/${summary.totalModules} modul selesai',
+                  style: const TextStyle(
+                    color: _muted,
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                LinearProgressIndicator(
+                  value: summary.progress,
+                  minHeight: 7,
+                  color: color,
+                  backgroundColor:
+                      const Color(
+                    0xFFE2E8F0,
+                  ),
+                  borderRadius:
+                      BorderRadius.circular(20),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BadgeCard extends StatelessWidget {
+  const _BadgeCard({
+    required this.owned,
+    required this.total,
+    required this.onTap,
+  });
+
+  final int owned;
+  final int total;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius:
+            BorderRadius.circular(19),
+        border: Border.all(
+          color: const Color(0xFFFDE68A),
+        ),
+      ),
+      child: Row(
+        children: <Widget>[
+          const Icon(
+            Icons.workspace_premium_rounded,
+            color: _warning,
+            size: 38,
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Text(
+              total > 0
+                  ? '$owned dari $total badge sudah dimiliki.'
+                  : '$owned badge sudah dimiliki.',
+              style: const TextStyle(
+                color: _text,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          if (onTap != null)
+            FilledButton(
+              onPressed: onTap,
+              style: FilledButton.styleFrom(
+                backgroundColor: _warning,
+                foregroundColor:
+                    Colors.white,
+              ),
+              child: const Text('Lihat'),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+
+class _AccountCard extends StatelessWidget {
+  const _AccountCard({
+    required this.controller,
+    required this.onEditProfile,
+  });
+
+  final ProfileController? controller;
+  final VoidCallback onEditProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    if (controller == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius:
+            BorderRadius.circular(19),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: Column(
+        children: <Widget>[
+          _AccountItem(
+            icon: Icons.edit_rounded,
+            label: 'Edit Profil Pembelajaran',
+            onTap: onEditProfile,
+          ),
+          const Divider(height: 1),
+          _AccountItem(
+            icon:
+                Icons.notifications_outlined,
+            label: 'Notifikasi',
+            onTap:
+                controller!.goToNotifications,
+          ),
+          const Divider(height: 1),
+          _AccountItem(
+            icon: Icons.quiz_outlined,
+            label: 'FAQ',
+            onTap: controller!.goToFaq,
+          ),
+          const Divider(height: 1),
+          _AccountItem(
+            icon: Icons.info_outline_rounded,
+            label: 'Tentang ScienceCraft',
+            onTap:
+                controller!.goToAboutApp,
+          ),
+          const Divider(height: 1),
+          _AccountItem(
+            icon: Icons.logout_rounded,
+            label: 'Logout',
+            onTap: () =>
+                showLogoutConfirmation(
+              onConfirm: controller!.logout,
+            ),
+            danger: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountItem extends StatelessWidget {
+  const _AccountItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color =
+        danger
+            ? const Color(0xFFDC2626)
+            : _text;
+
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: color),
+      title: Text(
+        label,
+        style: GoogleFonts.poppins(
+          color: color,
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+      ),
+      trailing: const Icon(
+        Icons.arrow_forward_ios_rounded,
+        size: 15,
+        color: _muted,
+      ),
+    );
+  }
+}
+
+class _Avatar extends StatelessWidget {
+  const _Avatar({
+    required this.path,
+  });
+
+  final String path;
+
+  @override
+  Widget build(BuildContext context) {
+    if (path.startsWith('http://') ||
+        path.startsWith('https://')) {
+      return Image.network(
+        path,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            const _AvatarFallback(),
+      );
+    }
+
+    return Image.asset(
+      path,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) =>
+          const _AvatarFallback(),
+    );
+  }
+}
+
+class _AvatarFallback extends StatelessWidget {
+  const _AvatarFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFE2E8F0),
+      child: const Icon(
+        Icons.person_rounded,
+        color: _muted,
+        size: 46,
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            color: _text,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          subtitle,
+          style: GoogleFonts.poppins(
+            color: _muted,
+            fontSize: 12,
+            height: 1.4,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ErrorCard extends StatelessWidget {
+  const _ErrorCard({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF1F2),
+        borderRadius:
+            BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFFECACA),
+        ),
+      ),
+      child: Row(
+        children: <Widget>[
+          const Icon(
+            Icons.error_outline_rounded,
+            color: Color(0xFFDC2626),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: _text,
+                fontSize: 11,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            child: const Text('Coba Lagi'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoadingCard extends StatelessWidget {
+  const _LoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ProfileLevelShimmer();
   }
 }

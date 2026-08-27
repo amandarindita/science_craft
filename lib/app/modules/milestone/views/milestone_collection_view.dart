@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../controllers/milestone_controller.dart';
 import '../models/milestone_reward.dart';
@@ -39,10 +40,18 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
       child: Scaffold(
         backgroundColor: _background,
         appBar: AppBar(
-          title: const Text('Milestone & Koleksi'),
+          title: Text(
+            'Milestone & Koleksi',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
+          ),
+          centerTitle: true,
           backgroundColor: Colors.white,
           foregroundColor: _text,
-          elevation: 0,
+          elevation: 0.5,
+          shadowColor: Colors.black12,
         ),
         body: Column(
           children: <Widget>[
@@ -73,8 +82,8 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
                   ),
                   labelColor: _primary,
                   unselectedLabelColor: _muted,
-                  labelStyle: const TextStyle(
-                    fontWeight: FontWeight.w800,
+                  labelStyle: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w700,
                     fontSize: 13,
                   ),
                   tabs: const <Widget>[
@@ -125,7 +134,7 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
       onRefresh: controller.loadMilestones,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 120),
         children: <Widget>[
           const _SectionHeading(
             title: 'Perjalanan Milestone',
@@ -196,7 +205,7 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
           else
             _buildDiscoveryGrid(),
           const SliverToBoxAdapter(
-            child: SizedBox(height: 32),
+            child: SizedBox(height: 120),
           ),
         ],
       ),
@@ -1717,18 +1726,18 @@ class _SectionHeading extends StatelessWidget {
       children: <Widget>[
         Text(
           title,
-          style: const TextStyle(
+          style: GoogleFonts.poppins(
             color: _text,
             fontSize: 18,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           subtitle,
-          style: const TextStyle(
+          style: GoogleFonts.inter(
             color: _muted,
-            fontSize: 11,
+            fontSize: 12,
             height: 1.45,
           ),
         ),
