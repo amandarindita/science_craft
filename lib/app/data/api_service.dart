@@ -670,6 +670,62 @@ class ApiService {
     return null;
   }
 
+  static Future<bool> markNotificationAsRead(int notifId) async {
+    if (!hasToken) return false;
+
+    try {
+      final response = await ApiClient.put(
+        Uri.parse('$baseUrl/notifications/$notifId/read'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('[API] Error markNotificationAsRead: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> markAllNotificationsAsRead() async {
+    if (!hasToken) return false;
+
+    try {
+      final response = await ApiClient.put(
+        Uri.parse('$baseUrl/notifications/read-all'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('[API] Error markAllNotificationsAsRead: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> deleteNotification(int notifId) async {
+    if (!hasToken) return false;
+
+    try {
+      final response = await ApiClient.delete(
+        Uri.parse('$baseUrl/notifications/$notifId'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('[API] Error deleteNotification: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> clearAllNotifications() async {
+    if (!hasToken) return false;
+
+    try {
+      final response = await ApiClient.delete(
+        Uri.parse('$baseUrl/notifications'),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('[API] Error clearAllNotifications: $e');
+      return false;
+    }
+  }
+
   static Future<bool> unlockBadge(String badgeName) async {
     if (!hasToken) {
       return false;
