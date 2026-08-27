@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 
 import '../controllers/dashboard_controller.dart';
@@ -67,41 +68,12 @@ class _DashboardViewState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _background,
-      appBar: AppBar(
-        title: const Text(
-          'Dashboard',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        backgroundColor: _background,
-        foregroundColor: _text,
-        surfaceTintColor: _background,
-        elevation: 0,
-      ),
-      floatingActionButton:
-          FloatingActionButton.extended(
-        onPressed: () =>
-            Get.toNamed(
-          Routes.CHATBOT,
-        ),
-        backgroundColor: _blue,
-        foregroundColor: Colors.white,
-        elevation: 7,
-        icon: const Icon(
-          Icons.smart_toy_rounded,
-        ),
-        label: const Text(
-          'Tanya Aira',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ),
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.endFloat,
-      body: RefreshIndicator(
-        onRefresh: () async {
+
+
+      body: SafeArea(
+        bottom: false,
+        child: RefreshIndicator(
+          onRefresh: () async {
           controller.refreshDashboardData();
           await milestoneController.loadMilestones();
 
@@ -119,6 +91,7 @@ class _DashboardViewState
             _buildHeader(),
             _buildBody(),
           ],
+        ),
         ),
       ),
     );
@@ -177,7 +150,7 @@ class _DashboardViewState
                     maxLines: 1,
                     overflow:
                         TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: GoogleFonts.inter(
                       color: _text,
                       fontSize: 20,
                       fontWeight:
@@ -186,9 +159,9 @@ class _DashboardViewState
                   ),
                 ),
                 const SizedBox(height: 2),
-                const Text(
+                Text(
                   'Siap belajar sains hari ini?',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: _muted,
                     fontSize: 13,
                   ),
@@ -232,7 +205,7 @@ class _DashboardViewState
                   Text(
                     '${controller.userStreak.value}',
                     style:
-                        const TextStyle(
+                        GoogleFonts.inter(
                       color: _orange,
                       fontSize: 19,
                       fontWeight:
@@ -240,9 +213,9 @@ class _DashboardViewState
                     ),
                   ),
                   const SizedBox(width: 4),
-                  const Text(
+                  Text(
                     '🔥',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 22,
                     ),
                   ),
@@ -412,9 +385,9 @@ class _DashboardViewState
                     mainAxisSize:
                         MainAxisSize.min,
                     children: <Widget>[
-                      const Text(
+                      Text(
                         'Tahukah Kamu?',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight:
                               FontWeight.bold,
@@ -428,7 +401,7 @@ class _DashboardViewState
                                 'desc'] ??
                             '',
                         style:
-                            const TextStyle(
+                            GoogleFonts.inter(
                           fontSize: 14,
                           color:
                               Color(0xFF555555),
@@ -558,7 +531,7 @@ class _DashboardViewState
                             Text(
                               'Level Pembelajaran ${controller.currentLearningLevel.value}',
                               style:
-                                  const TextStyle(
+                                  GoogleFonts.inter(
                                 color: _text,
                                 fontSize: 17,
                                 fontWeight:
@@ -572,7 +545,7 @@ class _DashboardViewState
                             Text(
                               '${controller.currentLevelCompletedModules.value} dari ${controller.currentLevelTotalModules.value} modul level ini selesai',
                               style:
-                                  const TextStyle(
+                                  GoogleFonts.inter(
                                 color:
                                     _muted,
                                 fontSize:
@@ -619,7 +592,7 @@ class _DashboardViewState
                       Text(
                         '${(progress * 100).round()}%',
                         style:
-                            const TextStyle(
+                            GoogleFonts.inter(
                           color:
                               _blueDark,
                           fontSize: 12,
@@ -636,7 +609,7 @@ class _DashboardViewState
                   Text(
                     '${controller.learningCompletedModules.value}/${controller.learningTotalModules.value} modul keseluruhan selesai',
                     style:
-                        const TextStyle(
+                        GoogleFonts.inter(
                       color: _blueDark,
                       fontSize: 10,
                       fontWeight:
@@ -861,7 +834,7 @@ class _DashboardViewState
                             const SizedBox(
                               width: 11,
                             ),
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment:
                                     CrossAxisAlignment
@@ -871,7 +844,7 @@ class _DashboardViewState
                                   Text(
                                     'Papan Misi Hari Ini',
                                     style:
-                                        TextStyle(
+                                        GoogleFonts.inter(
                                       color:
                                           Colors
                                               .white,
@@ -888,7 +861,7 @@ class _DashboardViewState
                                   Text(
                                     'Sedikit progres setiap hari membuat belajar lebih konsisten.',
                                     style:
-                                        TextStyle(
+                                        GoogleFonts.inter(
                                       color:
                                           Color(
                                         0xFFDCE9FF,
@@ -924,7 +897,7 @@ class _DashboardViewState
                               child: Text(
                                 '+${controller.dailyRewardXp.value} XP',
                                 style:
-                                    const TextStyle(
+                                    GoogleFonts.inter(
                                   color:
                                       _blueDark,
                                   fontSize:
@@ -972,7 +945,7 @@ class _DashboardViewState
                             Text(
                               '$completedCount/$total',
                               style:
-                                  const TextStyle(
+                                  GoogleFonts.inter(
                                 color:
                                     Colors.white,
                                 fontSize:
@@ -1091,7 +1064,7 @@ class _DashboardViewState
                                   ? 'Ambil Reward +${controller.dailyRewardXp.value} XP'
                                   : 'Selesaikan Semua Misi',
                           style:
-                              const TextStyle(
+                              GoogleFonts.inter(
                             fontWeight:
                                 FontWeight
                                     .w900,
@@ -1127,7 +1100,7 @@ class _SectionTitle extends StatelessWidget {
       children: <Widget>[
         Text(
           title,
-          style: const TextStyle(
+          style: GoogleFonts.inter(
             color: _text,
             fontSize: 18,
             fontWeight: FontWeight.w900,
@@ -1136,7 +1109,7 @@ class _SectionTitle extends StatelessWidget {
         const SizedBox(height: 3),
         Text(
           subtitle,
-          style: const TextStyle(
+          style: GoogleFonts.inter(
             color: _muted,
             fontSize: 10,
           ),
@@ -1245,7 +1218,7 @@ class _ContinueLearningCard
                           TextOverflow
                               .ellipsis,
                       style:
-                          const TextStyle(
+                          GoogleFonts.inter(
                         color: _text,
                         fontSize: 15,
                         fontWeight:
@@ -1255,10 +1228,10 @@ class _ContinueLearningCard
                     const SizedBox(
                       height: 5,
                     ),
-                    const Text(
+                    Text(
                       'Lanjutkan dari progres terakhir',
                       style:
-                          TextStyle(
+                          GoogleFonts.inter(
                         color: _muted,
                         fontSize: 10,
                       ),
@@ -1294,7 +1267,7 @@ class _ContinueLearningCard
                         Text(
                           '$percentage%',
                           style:
-                              const TextStyle(
+                              GoogleFonts.inter(
                             color: _blue,
                             fontSize: 11,
                             fontWeight:
@@ -1424,7 +1397,7 @@ class _QuestTile extends StatelessWidget {
                   maxLines: 1,
                   overflow:
                       TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: isDone
                         ? const Color(
                             0xFF15803D,
@@ -1451,7 +1424,7 @@ class _QuestTile extends StatelessWidget {
                     overflow:
                         TextOverflow.ellipsis,
                     style:
-                        const TextStyle(
+                        GoogleFonts.inter(
                       color: _muted,
                       fontSize: 9,
                     ),
@@ -1502,7 +1475,7 @@ class _QuestTile extends StatelessWidget {
             ),
             child: Text(
               progressText,
-              style: TextStyle(
+              style: GoogleFonts.inter(
                 color: isDone
                     ? _green
                     : _muted,
@@ -1557,7 +1530,7 @@ class _EmptyCard extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: GoogleFonts.inter(
               color: _text,
               fontSize: 15,
               fontWeight:
@@ -1568,7 +1541,7 @@ class _EmptyCard extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: GoogleFonts.inter(
               color: _muted,
               fontSize: 11,
               height: 1.4,
