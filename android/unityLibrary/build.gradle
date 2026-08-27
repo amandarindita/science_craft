@@ -50,8 +50,26 @@ def getSdkDir() {
 }
 def getNdkDir() {
     Properties local = new Properties()
-    local.load(new FileInputStream("${rootDir}/local.properties"))
-    return local.getProperty('ndk.dir').replace("\\", "/")
+    File localProps = new File("${rootDir}/local.properties")
+    if (localProps.exists()) {
+        local.load(new FileInputStream(localProps))
+    }
+    String ndkDir = local.getProperty('ndk.dir')
+    if (ndkDir != null && !ndkDir.isEmpty()) {
+        return ndkDir.replace("\\", "/")
+    }
+    String sdkDir = local.getProperty('sdk.dir')
+    if (sdkDir != null && !sdkDir.isEmpty()) {
+        def ndk21 = new File(sdkDir, "ndk/21.3.6528147")
+        if (ndk21.exists()) {
+            return ndk21.absolutePath.replace("\\", "/")
+        }
+        def ndkRoot = new File(sdkDir, "ndk")
+        if (ndkRoot.exists() && ndkRoot.listFiles() != null && ndkRoot.listFiles().length > 0) {
+            return ndkRoot.listFiles()[0].absolutePath.replace("\\", "/")
+        }
+    }
+    return ""
 }
 def BuildIl2Cpp(String workingDir, String configuration, String architecture, String abi, String[] staticLibraries) {
     def commandLineArgs = []

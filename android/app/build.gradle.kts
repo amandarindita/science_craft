@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "amanda.science_craft"
     compileSdk = 36
-    ndkVersion = "21.3.6528147"
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
