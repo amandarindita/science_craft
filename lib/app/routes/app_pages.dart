@@ -25,8 +25,8 @@ import '../modules/materi/views/material_list_view.dart';
 import '../modules/notification/bindings/notification_binding.dart';
 import '../modules/about/bindings/about_binding.dart';
 import '../modules/about/views/about_view.dart';
-import '../modules/edit_profile/bindings/edit_profile_binding.dart';
-import '../modules/edit_profile/views/edit_profile_view.dart';
+import '../modules/edit_profile_learning/bindings/edit_profile_learning_binding.dart';
+import '../modules/edit_profile_learning/views/edit_profile_learning_view.dart';
 import '../modules/chatbot/views/chatbot_view.dart';
 import '../modules/chatbot/bindings/chatbot_binding.dart';
 import '../modules/roadmap/bindings/roadmap_binding.dart';
@@ -131,8 +131,8 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.EDITPROFILE,
-      page: () => const EditProfileView(),
-      binding: EditProfileBinding(),
+      page: () => const EditProfileLearningView(),
+      binding: EditProfileLearningBinding(),
     ),
     GetPage(
       name: _Paths.ROADMAP,
