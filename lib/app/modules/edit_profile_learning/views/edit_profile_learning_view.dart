@@ -7,7 +7,7 @@ import '../controllers/edit_profile_learning_controller.dart';
 const Color _bg = Color(0xFFF8FAFC);
 const Color _primaryBlue = Color(0xFF2563EB);
 const Color _darkNavy = Color(0xFF1E3A8A);
-const Color _textDark = Color(0xFF1E293B);
+const Color _textDark = Color(0xFF0F172A);
 const Color _textMuted = Color(0xFF64748B);
 
 class EditProfileLearningView extends GetView<EditProfileLearningController> {
@@ -38,8 +38,6 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                     _buildAccountInfoCard(),
                     const SizedBox(height: 16),
                     _buildSecurityCard(),
-                    const SizedBox(height: 16),
-                    _buildScienceTipCard(),
                   ],
                 ),
               ),
@@ -57,7 +55,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
   }
 
   // ===========================================================================
-  // 1. HERO HEADER WITH INTERACTIVE AVATAR STAGE
+  // 1. HERO HEADER (CLEAN & MODERN SCIENCE ID)
   // ===========================================================================
   Widget _buildHeroHeader(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -72,29 +70,29 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
           colors: [_darkNavy, _primaryBlue],
         ),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x331E3A8A),
-            blurRadius: 18,
-            offset: Offset(0, 8),
+            color: Color(0x291E3A8A),
+            blurRadius: 16,
+            offset: Offset(0, 6),
           ),
         ],
       ),
       child: Column(
         children: [
-          // Top Nav Row
+          // Top Navigation Bar
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Back Button
               Material(
                 color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   onTap: () => Get.back(),
                   child: const Padding(
                     padding: EdgeInsets.all(10),
@@ -107,19 +105,19 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                 ),
               ),
 
-              // Title
+              // Title Header
               Column(
                 children: [
                   Text(
-                    'Edit Profil Pelajar',
+                    'Pengaturan Profil',
                     style: GoogleFonts.poppins(
-                      fontSize: 17.5,
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
                   ),
                   Text(
-                    'SMA Science Explorer 🎓',
+                    'Identitas Akun & Riset Sains',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w500,
@@ -129,12 +127,12 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                 ],
               ),
 
-              // Info / Reset Button
+              // Info Dialog Trigger
               Material(
                 color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                   onTap: () {
                     Get.dialog(_buildInfoDialog(), barrierDismissible: true);
                   },
@@ -152,7 +150,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
           ),
           const SizedBox(height: 18),
 
-          // Interactive Avatar Stage
+          // Avatar Stage
           Obx(() {
             final activeChar = controller.currentSelectedCharacter;
             return Column(
@@ -163,32 +161,30 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                     // Dynamic Theme Glow Ring
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
-                      width: 106,
-                      height: 106,
+                      width: 104,
+                      height: 104,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: activeChar.themeColor.withValues(
-                              alpha: 0.55,
-                            ),
-                            blurRadius: 24,
-                            spreadRadius: 3,
+                            color: activeChar.themeColor.withValues(alpha: 0.45),
+                            blurRadius: 20,
+                            spreadRadius: 2,
                           ),
                         ],
                       ),
                     ),
                     // White Frame
                     Container(
-                      width: 100,
-                      height: 100,
-                      padding: const EdgeInsets.all(4),
+                      width: 98,
+                      height: 98,
+                      padding: const EdgeInsets.all(3.5),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: activeChar.themeColor.withValues(alpha: 0.8),
-                          width: 2.5,
+                          color: activeChar.themeColor.withValues(alpha: 0.7),
+                          width: 2,
                         ),
                       ),
                       child: ClipOval(
@@ -207,17 +203,11 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                           color: activeChar.themeColor,
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 4,
-                            ),
-                          ],
                         ),
                         child: const Icon(
-                          Icons.auto_awesome_rounded,
+                          Icons.edit_rounded,
                           color: Colors.white,
-                          size: 14,
+                          size: 13,
                         ),
                       ),
                     ),
@@ -231,7 +221,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                   spacing: 8,
                   runSpacing: 6,
                   children: [
-                    // Character & Element Chip
+                    // Character & Element Pill
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -241,18 +231,21 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                         color: Colors.white.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.28),
+                          color: Colors.white.withValues(alpha: 0.25),
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            Icons.stars_rounded,
-                            color: Color(0xFFFDE047),
-                            size: 15,
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              color: activeChar.themeColor,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                          const SizedBox(width: 5),
+                          const SizedBox(width: 6),
                           Text(
                             '${activeChar.name} • ${activeChar.element}',
                             style: GoogleFonts.poppins(
@@ -265,17 +258,17 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                       ),
                     ),
 
-                    // Trait Badge Chip
+                    // Trait Badge
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF38BDF8).withValues(alpha: 0.25),
+                        color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: const Color(0xFF38BDF8).withValues(alpha: 0.5),
+                          color: const Color(0xFF38BDF8).withValues(alpha: 0.4),
                         ),
                       ),
                       child: Text(
@@ -298,7 +291,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
   }
 
   // ===========================================================================
-  // 2. AVATAR CHARACTER PICKER CARD
+  // 2. AVATAR CHARACTER PICKER CARD (MODERN LAB PERSONA)
   // ===========================================================================
   Widget _buildAvatarPickerCard() {
     return _ModernCard(
@@ -306,13 +299,13 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _CardHeader(
-            icon: Icons.face_retouching_natural_rounded,
-            iconColor: Color(0xFF8B5CF6),
-            title: 'Karakter Avatar Pelajar',
+            icon: Icons.face_rounded,
+            iconColor: Color(0xFF6366F1),
+            title: 'Avatar Persona',
             subtitle:
-                'Pilih persona elemen sains yang mewakili jiwa eksplorasimu!',
+                'Pilih karakter elemen yang merepresentasikan fokus belajarmu.',
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           // Category Filter Tabs
           Obx(() {
@@ -330,19 +323,19 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                   ),
                   const SizedBox(width: 8),
                   _FilterTab(
-                    label: '🌿 Alam',
+                    label: 'Bio & Alam',
                     isSelected: currentCategory == 'nature',
                     onTap: () => controller.setAvatarCategory('nature'),
                   ),
                   const SizedBox(width: 8),
                   _FilterTab(
-                    label: '⚡ Energi',
+                    label: 'Fisika & Energi',
                     isSelected: currentCategory == 'energy',
                     onTap: () => controller.setAvatarCategory('energy'),
                   ),
                   const SizedBox(width: 8),
                   _FilterTab(
-                    label: '✨ Kosmik',
+                    label: 'Kuantum & Kosmik',
                     isSelected: currentCategory == 'cosmic',
                     onTap: () => controller.setAvatarCategory('cosmic'),
                   ),
@@ -363,7 +356,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                 crossAxisCount: 4,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
-                childAspectRatio: 0.74,
+                childAspectRatio: 0.76,
               ),
               itemCount: list.length,
               itemBuilder: (context, index) {
@@ -374,9 +367,9 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () => controller.selectAvatar(char.path),
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(16),
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
+                      duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 4,
                         vertical: 8,
@@ -386,21 +379,21 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                             isSelected
                                 ? const Color(0xFFEFF6FF)
                                 : const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color:
                               isSelected
                                   ? _primaryBlue
                                   : const Color(0xFFE2E8F0),
-                          width: isSelected ? 2 : 1.2,
+                          width: isSelected ? 1.8 : 1,
                         ),
                         boxShadow:
                             isSelected
                                 ? [
                                   BoxShadow(
-                                    color: _primaryBlue.withValues(alpha: 0.22),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
+                                    color: _primaryBlue.withValues(alpha: 0.18),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
                                   ),
                                 ]
                                 : null,
@@ -408,13 +401,13 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Avatar Circle with Stack Indicator
+                          // Avatar Circle
                           Stack(
                             alignment: Alignment.topRight,
                             children: [
                               Container(
-                                width: 48,
-                                height: 48,
+                                width: 46,
+                                height: 46,
                                 padding: const EdgeInsets.all(2),
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
@@ -424,7 +417,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                                         isSelected
                                             ? char.themeColor
                                             : const Color(0xFFE2E8F0),
-                                    width: isSelected ? 2 : 1.5,
+                                    width: isSelected ? 1.8 : 1.2,
                                   ),
                                 ),
                                 child: ClipOval(
@@ -482,27 +475,18 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
               },
             );
           }),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          // Selected Character Lore & Trait Card
+          // Selected Persona Detail Box
           Obx(() {
             final activeChar = controller.currentSelectedCharacter;
             return Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    activeChar.themeColor.withValues(alpha: 0.08),
-                    const Color(0xFFF8FAFC),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: activeChar.themeColor.withValues(alpha: 0.25),
-                ),
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -510,13 +494,13 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: activeChar.themeColor.withValues(alpha: 0.15),
+                      color: activeChar.themeColor.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      Icons.tips_and_updates_rounded,
+                      Icons.science_outlined,
                       color: activeChar.themeColor,
-                      size: 18,
+                      size: 17,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -525,10 +509,10 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Persona: ${activeChar.name} (${activeChar.element})',
+                          '${activeChar.name} — ${activeChar.element}',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                             color: _textDark,
                           ),
                         ),
@@ -564,11 +548,11 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
           const _CardHeader(
             icon: Icons.badge_outlined,
             iconColor: Color(0xFF0284C7),
-            title: 'Informasi Pelajar',
+            title: 'Informasi Pribadi',
             subtitle:
-                'Identitas nama yang tampil di Leaderboard, Lab, dan Quiz.',
+                'Identitas nama pada leaderboard, sertifikat, dan modul pembelajaran.',
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
 
           // Name Input
           Text(
@@ -589,23 +573,18 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
               color: _textDark,
             ),
             decoration: _inputDecoration(
-              hint: 'Masukkan nama panggilan atau aslimu',
-              prefixIcon: Icons.person_rounded,
+              hint: 'Masukkan nama tampilan',
+              prefixIcon: Icons.person_outline_rounded,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            '💡 Nama ini akan dicantumkan pada sertifikat dan pencapaian milestone.',
-            style: GoogleFonts.plusJakartaSans(fontSize: 11, color: _textMuted),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Email Input (Read-only)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Alamat Email Pelajar',
+                'Alamat Email',
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -616,15 +595,19 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.lock_rounded, size: 11, color: _textMuted),
+                    const Icon(
+                      Icons.lock_outline_rounded,
+                      size: 11,
+                      color: _textMuted,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      'Terkunci 🔒',
+                      'Terkunci',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -647,11 +630,6 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
               isReadOnly: true,
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Email terhubung langsung dengan akun autentikasi data belajar kamu.',
-            style: GoogleFonts.plusJakartaSans(fontSize: 11, color: _textMuted),
-          ),
         ],
       ),
     );
@@ -670,17 +648,16 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
               const _CardHeader(
                 icon: Icons.security_rounded,
                 iconColor: Color(0xFF10B981),
-                title: 'Keamanan Akun Pelajar',
-                subtitle:
-                    'Pengaturan keamanan akun terkelola lewat akun pihak ketiga.',
+                title: 'Keamanan Akun',
+                subtitle: 'Autentikasi terhubung melalui penyedia pihak ketiga.',
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -706,13 +683,13 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                             'Akun Google Terhubung',
                             style: GoogleFonts.poppins(
                               fontSize: 13.5,
-                              fontWeight: FontWeight.w700,
-                              color: _darkNavy,
+                              fontWeight: FontWeight.w600,
+                              color: _textDark,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 3),
                           Text(
-                            'Akun ini masuk menggunakan Google Sign-In. Password dan keamanan dikelola langsung melalui akun Google kamu.',
+                            'Akun ini masuk menggunakan Google Sign-In. Pengaturan kata sandi dan keamanan dikelola langsung melalui akun Google Anda.',
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 12,
                               color: _textMuted,
@@ -736,10 +713,9 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
               icon: Icons.lock_outline_rounded,
               iconColor: Color(0xFF10B981),
               title: 'Ubah Kata Sandi',
-              subtitle:
-                  'Opsional. Isi formulir jika ingin mengganti password login.',
+              subtitle: 'Opsional. Isi formulir jika ingin mengganti password.',
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
             // Current Password
             _buildPasswordField(
@@ -748,7 +724,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
               obscure: controller.isCurrentPasswordObscure.value,
               onToggle: controller.toggleCurrentPasswordVisibility,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
 
             // New Password
             _buildPasswordField(
@@ -757,7 +733,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
               obscure: controller.isNewPasswordObscure.value,
               onToggle: controller.toggleNewPasswordVisibility,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
 
             // Confirm Password
             _buildPasswordField(
@@ -766,7 +742,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
               obscure: controller.isConfirmPasswordObscure.value,
               onToggle: controller.toggleConfirmPasswordVisibility,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
             // Change Password Button
             SizedBox(
@@ -789,7 +765,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                         : const Icon(Icons.lock_reset_rounded, size: 18),
                 label: Text(
                   controller.isChangingPassword.value
-                      ? 'Menyimpan Password...'
+                      ? 'Menyimpan...'
                       : 'Perbarui Kata Sandi',
                   style: GoogleFonts.poppins(
                     fontSize: 13.5,
@@ -798,10 +774,10 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                 ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _primaryBlue,
-                  side: const BorderSide(color: Color(0xFFBFDBFE), width: 1.5),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: const BorderSide(color: Color(0xFFBFDBFE), width: 1.2),
+                  padding: const EdgeInsets.symmetric(vertical: 13),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
               ),
@@ -813,67 +789,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
   }
 
   // ===========================================================================
-  // 5. HIGH SCHOOL SCIENCE TIP BANNER
-  // ===========================================================================
-  Widget _buildScienceTipCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFEFF6FF), Color(0xFFF8FAFC)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFDBEAFE)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: _primaryBlue.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.science_rounded,
-              color: _primaryBlue,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '💡 Tips Eksplorasi Sains SMA',
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: _darkNavy,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Selesaikan eksperimen virtual di Lab Sains dan kuis harian untuk membuka bingkai avatar eksklusif di menu Koleksi Milestone!',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 12,
-                    color: _textMuted,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ===========================================================================
-  // 6. STICKY BOTTOM SAVE BUTTON
+  // 5. STICKY BOTTOM SAVE BUTTON
   // ===========================================================================
   Widget _buildStickyBottomBar() {
     return Container(
@@ -883,7 +799,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
         border: const Border(top: BorderSide(color: Color(0xFFE2E8F0))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
@@ -892,37 +808,37 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
       child: SafeArea(
         child: SizedBox(
           width: double.infinity,
-          height: 52,
+          height: 50,
           child: ElevatedButton.icon(
             onPressed:
                 controller.isSaving.value ? null : controller.saveProfile,
             icon:
                 controller.isSaving.value
                     ? const SizedBox(
-                      width: 20,
-                      height: 20,
+                      width: 18,
+                      height: 18,
                       child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
+                        strokeWidth: 2,
                         color: Colors.white,
                       ),
                     )
-                    : const Icon(Icons.rocket_launch_rounded, size: 20),
+                    : const Icon(Icons.check_rounded, size: 19),
             label: Text(
               controller.isSaving.value
-                  ? 'Menyimpan Perubahan...'
-                  : 'Simpan Perubahan Profil',
+                  ? 'Menyimpan...'
+                  : 'Simpan Perubahan',
               style: GoogleFonts.poppins(
                 fontSize: 14.5,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w600,
               ),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: _primaryBlue,
               foregroundColor: Colors.white,
-              elevation: 3,
-              shadowColor: _primaryBlue.withValues(alpha: 0.45),
+              elevation: 2,
+              shadowColor: _primaryBlue.withValues(alpha: 0.35),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
               ),
             ),
           ),
@@ -932,7 +848,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
   }
 
   // ===========================================================================
-  // 7. HELPER COMPONENTS & DIALOG
+  // 6. HELPER COMPONENTS & DIALOG
   // ===========================================================================
   Widget _buildPasswordField({
     required TextEditingController controller,
@@ -972,7 +888,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
           CircularProgressIndicator(color: _primaryBlue),
           SizedBox(height: 16),
           Text(
-            'Memuat data profil pelajar...',
+            'Memuat data profil...',
             style: TextStyle(color: _textMuted, fontWeight: FontWeight.w500),
           ),
         ],
@@ -982,10 +898,10 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
 
   Widget _buildInfoDialog() {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(22),
+        padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -996,35 +912,35 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: _primaryBlue.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
-                    Icons.school_rounded,
+                    Icons.account_circle_outlined,
                     color: _primaryBlue,
-                    size: 22,
+                    size: 20,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Text(
-                  'Profil Pelajar SMA',
+                  'Profil Persona Sains',
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w600,
                     color: _textDark,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Text(
-              'Avatar dan nama yang kamu atur di sini akan menjadi identitas sainsmu di seluruh aplikasi Science Craft, termasuk pada peringkat leaderboard, catatan lab virtual, dan kuis sains.',
+              'Avatar dan nama tampilan ini akan digunakan pada seluruh platform Science Craft, termasuk papan peringkat leaderboard, sertifikat modul, dan rekap eksperimen lab.',
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 13,
                 color: _textMuted,
                 height: 1.45,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -1033,10 +949,10 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
                   backgroundColor: _primaryBlue,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Mengerti 👍'),
+                child: const Text('Mengerti'),
               ),
             ),
           ],
@@ -1047,7 +963,7 @@ class EditProfileLearningView extends GetView<EditProfileLearningController> {
 }
 
 // =============================================================================
-// FILTER PILL TAB WIDGET (MATCHING NOTIFICATION STYLE)
+// FILTER PILL TAB WIDGET (CLEAN & MODERN)
 // =============================================================================
 class _FilterTab extends StatelessWidget {
   final String label;
@@ -1068,10 +984,10 @@ class _FilterTab extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6.5),
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
           decoration: BoxDecoration(
             gradient:
                 isSelected
@@ -1082,27 +998,21 @@ class _FilterTab extends StatelessWidget {
                     )
                     : null,
             color: isSelected ? null : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected ? _primaryBlue : const Color(0xFFE2E8F0),
-              width: 1.2,
+              width: 1,
             ),
             boxShadow:
                 isSelected
                     ? [
                       BoxShadow(
-                        color: _primaryBlue.withValues(alpha: 0.28),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ]
-                    : [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 4,
+                        color: _primaryBlue.withValues(alpha: 0.25),
+                        blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
-                    ],
+                    ]
+                    : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -1110,7 +1020,7 @@ class _FilterTab extends StatelessWidget {
               Text(
                 label,
                 style: GoogleFonts.poppins(
-                  fontSize: 12.5,
+                  fontSize: 12,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected ? Colors.white : _textDark,
                 ),
@@ -1119,20 +1029,20 @@ class _FilterTab extends StatelessWidget {
                 const SizedBox(width: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 2,
+                    horizontal: 6,
+                    vertical: 1.5,
                   ),
                   decoration: BoxDecoration(
                     color:
                         isSelected
                             ? Colors.white.withValues(alpha: 0.25)
                             : const Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     badge!,
                     style: GoogleFonts.poppins(
-                      fontSize: 10.5,
+                      fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color:
                           isSelected ? Colors.white : const Color(0xFF475569),
@@ -1159,16 +1069,16 @@ class _ModernCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1196,13 +1106,13 @@ class _CardHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 42,
-          height: 42,
+          width: 38,
+          height: 38,
           decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(13),
+            color: iconColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(11),
           ),
-          child: Icon(icon, color: iconColor, size: 22),
+          child: Icon(icon, color: iconColor, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -1212,8 +1122,8 @@ class _CardHeader extends StatelessWidget {
               Text(
                 title,
                 style: GoogleFonts.poppins(
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w600,
                   color: _textDark,
                 ),
               ),
@@ -1221,7 +1131,7 @@ class _CardHeader extends StatelessWidget {
               Text(
                 subtitle,
                 style: GoogleFonts.plusJakartaSans(
-                  fontSize: 12,
+                  fontSize: 11.5,
                   color: _textMuted,
                   height: 1.35,
                 ),
@@ -1265,7 +1175,7 @@ class _AvatarFallback extends StatelessWidget {
     return Container(
       color: const Color(0xFFE2E8F0),
       alignment: Alignment.center,
-      child: const Icon(Icons.person_rounded, color: _textMuted, size: 36),
+      child: const Icon(Icons.person_rounded, color: _textMuted, size: 32),
     );
   }
 }
@@ -1284,22 +1194,22 @@ InputDecoration _inputDecoration({
     prefixIcon: Icon(
       prefixIcon,
       color: isReadOnly ? _textMuted : _primaryBlue,
-      size: 20,
+      size: 19,
     ),
     filled: true,
     fillColor: isReadOnly ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: _primaryBlue, width: 1.8),
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: _primaryBlue, width: 1.5),
     ),
   );
 }

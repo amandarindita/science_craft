@@ -21,8 +21,8 @@ class AvatarCharacter {
     required this.element,
     required this.themeColor,
     this.category = 'nature',
-    this.lore = 'Peneliti sains penuh rasa ingin tahu dan semangat eksplorasi.',
-    this.traitBadge = 'Explorer',
+    this.lore = 'Fokus pada eksplorasi dan metodologi sains modern.',
+    this.traitBadge = 'General Science',
   });
 }
 
@@ -46,79 +46,79 @@ class EditProfileLearningController extends GetxController {
   final RxBool isNewPasswordObscure = true.obs;
   final RxBool isConfirmPasswordObscure = true.obs;
 
-  /// Daftar lengkap avatar karakter Science Craft dengan tema persona sains SMA
+  /// Daftar lengkap avatar karakter Science Craft dengan tema persona sains modern
   final RxList<AvatarCharacter> avatarList = <AvatarCharacter>[
     const AvatarCharacter(
       path: 'assets/aira.png',
       name: 'Aira',
-      element: 'Udara 💨',
+      element: 'Aerodinamika',
       themeColor: Color(0xFF0284C7),
       category: 'nature',
-      lore: 'Lincah, adaptif, dan berpikir cepat dalam memecahkan soal fisika udara!',
-      traitBadge: 'Speedster 💨',
+      lore: 'Eksplorasi fluida udara, tekanan atmosfer, dan kinetika gerak.',
+      traitBadge: 'Aerodynamics',
     ),
     const AvatarCharacter(
       path: 'assets/aqua.png',
       name: 'Aqua',
-      element: 'Air 💧',
+      element: 'Hidrodinamika',
       themeColor: Color(0xFF0EA5E9),
       category: 'nature',
-      lore: 'Tenang namun mendalam, ahli analisis larutan kimia dan reaksi fluida.',
-      traitBadge: 'Alchemist 🧪',
+      lore: 'Analisis larutan kimia, termodinamika zat cair, dan struktur molekul.',
+      traitBadge: 'Hydrokinetics',
     ),
     const AvatarCharacter(
       path: 'assets/terra.png',
       name: 'Terra',
-      element: 'Bumi 🌿',
+      element: 'Geosains & Bio',
       themeColor: Color(0xFF10B981),
       category: 'nature',
-      lore: 'Pecinta biologi & ekosistem bumi dengan fondasi teori sains yang kokoh.',
-      traitBadge: 'Botanist 🌿',
+      lore: 'Penelitian ekosistem biologi, struktur geologi, dan keberlanjutan bumi.',
+      traitBadge: 'Geoscience',
     ),
     const AvatarCharacter(
       path: 'assets/volt.png',
       name: 'Volt',
-      element: 'Listrik ⚡',
+      element: 'Elektromagnetik',
       themeColor: Color(0xFFD97706),
       category: 'energy',
-      lore: 'Penuh energi listrik! Reaksi super cepat dalam eksperimen kinetik & arus.',
-      traitBadge: 'Energizer ⚡',
+      lore: 'Fisika arus listrik, medan magnet, dan konversi energi terbarukan.',
+      traitBadge: 'Electromagnetics',
     ),
     const AvatarCharacter(
       path: 'assets/nova.png',
       name: 'Nova',
-      element: 'Cahaya 🌟',
+      element: 'Optika & Foton',
       themeColor: Color(0xFFF59E0B),
       category: 'energy',
-      lore: 'Terang dan berwawasan luas, menerangi konsep termodinamika & gelombang optik.',
-      traitBadge: 'Illuminator 🌟',
+      lore: 'Spektrum gelombang elektromagnetik, radiasi foton, dan teknologi laser.',
+      traitBadge: 'Photonics',
     ),
     const AvatarCharacter(
       path: 'assets/ferro.png',
       name: 'Ferro',
-      element: 'Logam ⚙️',
+      element: 'Material Sains',
       themeColor: Color(0xFF64748B),
       category: 'energy',
-      lore: 'Presisi tinggi mekanik, struktur material, dan perhitungan matematis presisi.',
-      traitBadge: 'Technologist ⚙️',
+      lore: 'Rekayasa material logam, kekuatan mekanik, dan struktur nanoteknologi.',
+      traitBadge: 'Materials Science',
     ),
     const AvatarCharacter(
       path: 'assets/lyra.png',
       name: 'Lyra',
-      element: 'Kosmik ✨',
+      element: 'Fisika Kuantum',
       themeColor: Color(0xFF8B5CF6),
       category: 'cosmic',
-      lore: 'Intuisi sains tinggi dalam meneliti astronomi dan partikel kuantum luar angkasa.',
-      traitBadge: 'Visionary ✨',
+      lore: 'Mekanika kuantum partikel subatomik dan komputasi sains tingkat lanjut.',
+      traitBadge: 'Quantum Physics',
     ),
     const AvatarCharacter(
       path: 'assets/orion.png',
       name: 'Orion',
-      element: 'Galaksi 🌌',
+      element: 'Astrofisika',
       themeColor: Color(0xFF6366F1),
       category: 'cosmic',
-      lore: 'Petualang bintang sejati yang tak pernah lelah menjelajah batas pengetahuan.',
-      traitBadge: 'Stargazer 🌌',
+      lore: 'Observasi astronomi, relativitas kosmologi, dan dinamika ruang angkasa.',
+      traitBadge: 'Astrophysics',
     ),
   ].obs;
 
@@ -137,11 +137,11 @@ class EditProfileLearningController extends GetxController {
     }
     return AvatarCharacter(
       path: current,
-      name: 'Kustom',
-      element: 'Peneliti 🧪',
+      name: 'Custom',
+      element: 'Peneliti Sains',
       themeColor: const Color(0xFF2563EB),
-      lore: 'Peneliti muda sains yang sedang mengeksplorasi potensi terbaiknya!',
-      traitBadge: 'Scientist 🧪',
+      lore: 'Persona kustom untuk eksplorasi modul pembelajaran sains.',
+      traitBadge: 'Researcher',
     );
   }
 
@@ -216,11 +216,11 @@ class EditProfileLearningController extends GetxController {
         AvatarCharacter(
           path: avatar,
           name: 'Aktif',
-          element: 'Peneliti 🧪',
+          element: 'Peneliti Sains',
           themeColor: const Color(0xFF2563EB),
           category: 'nature',
-          lore: 'Avatar kustom pilihanmu untuk eksplorasi materi sains.',
-          traitBadge: 'Active 🔬',
+          lore: 'Avatar aktif yang sedang digunakan.',
+          traitBadge: 'Active Profile',
         ),
       );
     }
@@ -255,7 +255,7 @@ class EditProfileLearningController extends GetxController {
     if (newName.isEmpty) {
       AppSnackbar.warning(
         'Nama Belum Diisi',
-        'Silakan masukkan nama lengkap atau nama panggilanmu.',
+        'Silakan masukkan nama lengkap atau nama tampilan.',
       );
       return;
     }
@@ -263,7 +263,7 @@ class EditProfileLearningController extends GetxController {
     if (avatar.isEmpty) {
       AppSnackbar.warning(
         'Avatar Belum Dipilih',
-        'Pilih salah satu karakter avatar sains di atas.',
+        'Pilih salah satu karakter persona sains di atas.',
       );
       return;
     }
@@ -276,7 +276,7 @@ class EditProfileLearningController extends GetxController {
       if (!success) {
         AppSnackbar.error(
           'Gagal Menyimpan',
-          'Perubahan profil belum tersimpan di server. Coba lagi.',
+          'Perubahan profil belum tersimpan di server. Silakan coba lagi.',
         );
         return;
       }
@@ -296,8 +296,8 @@ class EditProfileLearningController extends GetxController {
 
       Get.back<bool>(result: true);
       AppSnackbar.success(
-        'Profil Diperbarui 🎉',
-        'Nama dan persona sains barumu berhasil disimpan!',
+        'Profil Diperbarui',
+        'Data nama dan avatar persona berhasil disimpan.',
       );
     } catch (_) {
       AppSnackbar.error(
@@ -327,7 +327,7 @@ class EditProfileLearningController extends GetxController {
     if (newPassword.length < 6) {
       AppSnackbar.warning(
         'Password Terlalu Pendek',
-        'Password baru minimal harus 6 karakter.',
+        'Password baru minimal terdiri dari 6 karakter.',
       );
       return;
     }
@@ -335,7 +335,7 @@ class EditProfileLearningController extends GetxController {
     if (newPassword != confirmPassword) {
       AppSnackbar.warning(
         'Konfirmasi Tidak Cocok',
-        'Password baru dan konfirmasi password harus persis sama.',
+        'Password baru dan konfirmasi password harus sesuai.',
       );
       return;
     }
@@ -360,7 +360,7 @@ class EditProfileLearningController extends GetxController {
         currentPasswordController.clear();
         newPasswordController.clear();
         confirmPasswordController.clear();
-        AppSnackbar.success('Password Diperbarui 🔒', message);
+        AppSnackbar.success('Password Diperbarui', message);
       } else {
         AppSnackbar.error('Gagal Mengubah Password', message);
       }
