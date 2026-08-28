@@ -58,54 +58,55 @@ class RootView extends GetView<RootController> {
   }
 
   Widget _buildFloatingChatButton() {
-    return Obx(() => AnimatedOpacity(
-          opacity: controller.selectedNavIndex.value == 0 ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 200),
-          child: IgnorePointer(
-            ignoring: controller.selectedNavIndex.value != 0,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 90.0, right: 20.0),
-              child: Align(
-                alignment: Alignment.bottomRight,
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        _primaryBlue,
-                        _brightBlue,
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _primaryBlue.withValues(alpha: 0.45),
-                        blurRadius: 14,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
+    return Obx(
+      () => AnimatedOpacity(
+        opacity: controller.selectedNavIndex.value == 0 ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 200),
+        child: IgnorePointer(
+          ignoring: controller.selectedNavIndex.value != 0,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 90.0, right: 20.0),
+            child: Align(
+              alignment: Alignment.bottomRight,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [_primaryBlue, _brightBlue],
                   ),
-                  child: FloatingActionButton(
-                    onPressed: () => controller.goToChatbot(),
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    child: const Icon(
-                      Icons.smart_toy_rounded,
-                      color: Colors.white,
-                      size: 26,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _primaryBlue.withValues(alpha: 0.45),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
                     ),
+                  ],
+                ),
+                child: FloatingActionButton(
+                  onPressed: () => controller.goToChatbot(),
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  child: const Icon(
+                    Icons.smart_toy_rounded,
+                    color: Colors.white,
+                    size: 26,
                   ),
                 ),
               ),
             ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 
   // --- WIDGET CUSTOM NAVIGATION BAR (TERANG & MODERN) ---
   Widget _buildCustomBottomNavBar(
-      BuildContext context, List<Map<String, dynamic>> navItems) {
+    BuildContext context,
+    List<Map<String, dynamic>> navItems,
+  ) {
     const double navBarHeight = 65.0;
     const double circleDiameter = 58.0;
     const double holeRadius = 34.0;
@@ -145,17 +146,14 @@ class RootView extends GetView<RootController> {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            _primaryBlue,
-                            _brightBlue,
-                          ],
+                          colors: [_primaryBlue, _brightBlue],
                         ),
                         boxShadow: [
                           BoxShadow(
                             color: Color(0x3D2563EB),
                             blurRadius: 18,
                             offset: Offset(0, -4),
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -196,21 +194,15 @@ class RootView extends GetView<RootController> {
                       gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          _deepBlue,
-                          _primaryBlue,
-                        ],
+                        colors: [_deepBlue, _primaryBlue],
                       ),
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 2.8,
-                      ),
+                      border: Border.all(color: Colors.white, width: 2.8),
                       boxShadow: [
                         BoxShadow(
                           color: _primaryBlue.withValues(alpha: 0.5),
                           blurRadius: 14,
                           offset: const Offset(0, 4),
-                        )
+                        ),
                       ],
                     ),
                     child: Icon(
@@ -228,14 +220,16 @@ class RootView extends GetView<RootController> {
     });
   }
 
-  Widget _buildNavItem(
-      {required IconData icon,
-      required String label,
-      required int index,
-      required bool isSelected}) {
+  Widget _buildNavItem({
+    required IconData icon,
+    required String label,
+    required int index,
+    required bool isSelected,
+  }) {
     final screenWidth = Get.width;
     final double itemWidth = screenWidth / 4;
-    final color = isSelected ? Colors.transparent : Colors.white.withValues(alpha: 0.88);
+    final color =
+        isSelected ? Colors.transparent : Colors.white.withValues(alpha: 0.88);
 
     return GestureDetector(
       onTap: () => controller.changeNavIndex(index),
@@ -279,14 +273,22 @@ class NavBarClipper extends CustomClipper<Path> {
     path.quadraticBezierTo(0, 0, rounding, 0);
     path.lineTo(position - holeRadius - rounding, 0);
     path.quadraticBezierTo(
-        position - holeRadius, 0, position - holeRadius, rounding);
+      position - holeRadius,
+      0,
+      position - holeRadius,
+      rounding,
+    );
     path.arcToPoint(
       Offset(position + holeRadius, rounding),
       radius: Radius.circular(holeRadius),
       clockwise: false,
     );
     path.quadraticBezierTo(
-        position + holeRadius, 0, position + holeRadius + rounding, 0);
+      position + holeRadius,
+      0,
+      position + holeRadius + rounding,
+      0,
+    );
     path.lineTo(size.width - rounding, 0);
     path.quadraticBezierTo(size.width, 0, size.width, rounding);
     path.lineTo(size.width, size.height);
