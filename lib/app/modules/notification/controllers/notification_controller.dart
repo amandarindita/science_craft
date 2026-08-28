@@ -100,7 +100,6 @@ class NotificationController extends GetxController {
                 item.categoryName == 'Info')
             .toList();
       case NotificationCategory.all:
-      default:
         return notifications;
     }
   }
@@ -267,9 +266,9 @@ class NotificationController extends GetxController {
   // ========================================================================
 
   void triggerTestNotification() {
-    const String title = "Materi Baru Tersedia: Reaksi Kimia! 🧪";
+    const String title = "Materi Baru: Reaksi Kimia";
     const String body =
-        "Modul eksperimen baru dan quest harian sudah siap untuk kamu jelajahi!";
+        "Modul eksperimen baru dan quest harian sudah siap untuk kamu jelajahi.";
 
     _notifHelper.showInstantNotification(
       id: 99,
@@ -285,15 +284,15 @@ class NotificationController extends GetxController {
     );
 
     AppSnackbar.success(
-      'Notifikasi Dikirim 🔔',
-      'Notifikasi uji coba info materi berhasil dimunculkan!',
+      'Notifikasi Terkirim',
+      'Notifikasi uji coba info materi berhasil ditampilkan.',
     );
   }
 
   void checkXPMilestone(int currentXP) {
     if (currentXP > 0 && currentXP % 500 == 0) {
-      String title = "Level Up! XP Tembus $currentXP! 🚀";
-      String body = "Kamu makin jago! Pertahankan semangat belajarmu.";
+      String title = "Level Up: XP Mencapai $currentXP";
+      String body = "Pencapaian luar biasa. Pertahankan konsistensi belajarmu.";
 
       _notifHelper.showInstantNotification(id: 400, title: title, body: body);
       _addToHistory(
@@ -307,8 +306,8 @@ class NotificationController extends GetxController {
   }
 
   void unlockBadge(String badgeName) {
-    String title = "Lencana Baru: $badgeName! 🏅";
-    String body = "Cek koleksi lencana barumu di profil.";
+    String title = "Lencana Baru: $badgeName";
+    String body = "Cek koleksi lencana barumu di halaman profil.";
 
     _notifHelper.showInstantNotification(id: 500, title: title, body: body);
     _addToHistory(
@@ -321,8 +320,8 @@ class NotificationController extends GetxController {
   }
 
   void unlockNewChapter(String chapterName) {
-    String title = "Bab Terbuka: $chapterName 🔓";
-    String body = "Siap melanjutkan petualangan sains? Yuk mulai!";
+    String title = "Bab Terbuka: $chapterName";
+    String body = "Silakan lanjutkan ke modul pembelajaran berikutnya.";
 
     _notifHelper.showInstantNotification(id: 600, title: title, body: body);
     _addToHistory(
@@ -341,15 +340,15 @@ class NotificationController extends GetxController {
   void setDailyReminder(int hour, int minute) {
     _notifHelper.scheduleDailyNotification(
       id: 100,
-      title: "Waktunya Belajar! ⏰",
-      body: "Luangkan 15 menit hari ini biar makin pintar.",
+      title: "Waktunya Belajar",
+      body: "Luangkan 15 menit hari ini untuk mempelajari materi sains.",
       hour: hour,
       minute: minute,
     );
     box.write('reminder_hour', hour);
     box.write('reminder_minute', minute);
     AppSnackbar.success(
-      "Pengingat Aktif ⏰",
+      "Pengingat Aktif",
       "Pengingat belajar dijadwalkan setiap jam ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}",
     );
   }
@@ -357,8 +356,8 @@ class NotificationController extends GetxController {
   void scheduleReviewReminder(String topicName) {
     _notifHelper.scheduleFutureNotification(
       id: topicName.hashCode,
-      title: "Ingat materi $topicName? 🧠",
-      body: "Sudah 24 jam nih. Coba tes ingatanmu yuk!",
+      title: "Review Materi: $topicName",
+      body: "Sudah 24 jam sejak sesi terakhir. Uji pemahaman konsepmu sekarang.",
       delay: const Duration(hours: 24),
     );
   }
@@ -367,8 +366,8 @@ class NotificationController extends GetxController {
     if (score < 60) {
       _notifHelper.scheduleFutureNotification(
         id: 700,
-        title: "Jangan Menyerah di $subject! 💪",
-        body: "Yuk review materi sebentar dan coba lagi nanti.",
+        title: "Evaluasi Materi: $subject",
+        body: "Pelajari kembali rangkuman materi dan coba kuis latihan lagi.",
         delay: const Duration(hours: 2),
       );
     }
@@ -380,8 +379,8 @@ class NotificationController extends GetxController {
 
     _notifHelper.scheduleDailyNotification(
       id: 888,
-      title: "Streak-mu dalam bahaya! 🔥",
-      body: "Login sekarang untuk menyelamatkan api semangatmu!",
+      title: "Pengingat Streak Harian",
+      body: "Buka aplikasi sekarang untuk mempertahankan streak belajarmu.",
       hour: 20,
       minute: 0,
     );
@@ -392,8 +391,8 @@ class NotificationController extends GetxController {
     if (weekday == 6 || weekday == 7) {
       _notifHelper.scheduleDailyNotification(
         id: 900,
-        title: "Weekend Mode 🍃",
-        body: "Santai dulu sejenak sambil baca fakta unik sains.",
+        title: "Eksplorasi Akhir Pekan",
+        body: "Manfaatkan waktu luang untuk membaca fakta sains menarik.",
         hour: 10,
         minute: 0,
       );
@@ -443,7 +442,7 @@ class NotificationController extends GetxController {
       ApiService.markAllNotificationsAsRead();
 
       AppSnackbar.success(
-        'Selesai 🎉',
+        'Selesai',
         'Semua notifikasi telah ditandai sudah dibaca.',
       );
     }

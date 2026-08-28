@@ -322,7 +322,7 @@ class NotificationView extends GetView<NotificationController> {
             ),
             const SizedBox(width: 8),
             _FilterTab(
-              label: '🏆 Prestasi',
+              label: 'Prestasi',
               badge: controller.achievementCount > 0
                   ? '${controller.achievementCount}'
                   : null,
@@ -332,7 +332,7 @@ class NotificationView extends GetView<NotificationController> {
             ),
             const SizedBox(width: 8),
             _FilterTab(
-              label: '⏰ Pengingat',
+              label: 'Pengingat',
               badge: controller.reminderCount > 0
                   ? '${controller.reminderCount}'
                   : null,
@@ -386,7 +386,7 @@ class NotificationView extends GetView<NotificationController> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Semua Notifikasi Bersih! ✨',
+              'Semua Notifikasi Terbaca',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 18,
