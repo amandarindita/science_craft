@@ -8,7 +8,7 @@ import '../routes/app_pages.dart';
 import '../widgets/app_snackbar.dart';
 
 class ApiClient {
-  static const String baseUrl = 'https://ethical-ape-oddly.ngrok-free.app';
+  static const String baseUrl = 'https://dangling-unpainted-manhole.ngrok-free.dev';
   static const Duration defaultTimeout = Duration(seconds: 25);
   static final GetStorage _storage = GetStorage();
 

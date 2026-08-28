@@ -70,7 +70,7 @@ Future<void> showLogoutConfirmation({
 
                 // Description
                 Text(
-                  'Apakah kamu yakin ingin keluar dari akun Science Craft? Sesi dan progres belajarmu tetap tersimpan aman di cloud.',
+                  'Apakah kamu yakin ingin keluar dari akun Science Craft?',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 12.5,

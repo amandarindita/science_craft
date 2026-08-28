@@ -5,18 +5,22 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../data/api_service.dart';
 import '../controllers/admin_learning_controller.dart';
 import 'admin_visual_builder.dart';
 
-const Color _primary = Color(0xFF2563EB);
-const Color _text = Color(0xFF172033);
-const Color _muted = Color(0xFF64748B);
-const Color _background = Color(0xFFF5F8FF);
+const Color _bg = Color(0xFFF8FAFC);
+const Color _primaryBlue = Color(0xFF2563EB);
+const Color _darkNavy = Color(0xFF1E3A8A);
+const Color _textDark = Color(0xFF1E293B);
+const Color _textMuted = Color(0xFF64748B);
+const Color _border = Color(0xFFE2E8F0);
+const Color _success = Color(0xFF10B981);
+const Color _danger = Color(0xFFEF4444);
 
-class AdminSubmaterialFormView
-    extends StatefulWidget {
+class AdminSubmaterialFormView extends StatefulWidget {
   const AdminSubmaterialFormView({
     super.key,
     required this.materialId,
@@ -26,43 +30,23 @@ class AdminSubmaterialFormView
   final int materialId;
   final Map<String, dynamic>? submaterial;
 
-  bool get isEditing =>
-      submaterial != null;
+  bool get isEditing => submaterial != null;
 
   @override
-  State<AdminSubmaterialFormView>
-      createState() =>
-          _AdminSubmaterialFormViewState();
+  State<AdminSubmaterialFormView> createState() =>
+      _AdminSubmaterialFormViewState();
 }
 
-class _AdminSubmaterialFormViewState
-    extends State<AdminSubmaterialFormView> {
-  final GlobalKey<FormState> _formKey =
-      GlobalKey<FormState>();
+class _AdminSubmaterialFormViewState extends State<AdminSubmaterialFormView> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  final TextEditingController
-      _titleController =
-      TextEditingController();
-
-  final TextEditingController
-      _orderController =
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _orderController =
       TextEditingController(text: '1');
-
-  final TextEditingController
-      _summaryController =
-      TextEditingController();
-
-  final TextEditingController
-      _readController =
-      TextEditingController();
-
-  final TextEditingController
-      _ttsController =
-      TextEditingController();
-
-  final TextEditingController
-      _visualJsonController =
-      TextEditingController();
+  final TextEditingController _summaryController = TextEditingController();
+  final TextEditingController _readController = TextEditingController();
+  final TextEditingController _ttsController = TextEditingController();
+  final TextEditingController _visualJsonController = TextEditingController();
 
   String _visualType = 'infographic';
   bool _isRequired = true;
@@ -77,8 +61,6 @@ class _AdminSubmaterialFormViewState
   bool _removeExistingAudio = false;
   bool _removeExistingImage = false;
 
-  String? _visualJsonError;
-
   late final AdminVisualBuilderController _visualBuilder;
 
   AdminLearningController get controller =>
@@ -88,90 +70,52 @@ class _AdminSubmaterialFormViewState
   void initState() {
     super.initState();
 
-    final Map<String, dynamic>? data =
-        widget.submaterial;
+    final Map<String, dynamic>? data = widget.submaterial;
 
-    Map<String, dynamic> initialVisualData =
-        <String, dynamic>{};
+    Map<String, dynamic> initialVisualData = <String, dynamic>{};
 
     if (data != null) {
-      _titleController.text =
-          data['title']?.toString() ?? '';
-
-      _orderController.text =
-          AdminLearningController.intValue(
+      _titleController.text = data['title']?.toString() ?? '';
+      _orderController.text = AdminLearningController.intValue(
         data['order_index'],
         fallback: 1,
       ).toString();
-
-      _summaryController.text =
-          data['summary']?.toString() ?? '';
-
-      _readController.text =
-          data['read_content']
-                  ?.toString() ??
-              '';
-
-      _ttsController.text =
-          data['tts_text']?.toString() ??
-              '';
-
-      _existingAudioUrl =
-          data['audio_url']
-                  ?.toString()
-                  .trim() ??
-              '';
-
-      _existingImageUrl =
-          data['image_url']
-                  ?.toString()
-                  .trim() ??
-              '';
+      _summaryController.text = data['summary']?.toString() ?? '';
+      _readController.text = data['read_content']?.toString() ?? '';
+      _ttsController.text = data['tts_text']?.toString() ?? '';
+      _existingAudioUrl = data['audio_url']?.toString().trim() ?? '';
+      _existingImageUrl = data['image_url']?.toString().trim() ?? '';
 
       final String visualType =
-          data['visual_type']
-                  ?.toString()
-                  .trim() ??
-              '';
-
+          data['visual_type']?.toString().trim() ?? '';
       if (visualType.isNotEmpty) {
         _visualType = visualType;
       }
 
       initialVisualData =
-          AdminLearningController.mapValue(
-        data['visual_data'],
-      );
+          AdminLearningController.mapValue(data['visual_data']);
 
-      _visualJsonController.text =
-          initialVisualData.isEmpty
-              ? _templateFor(_visualType)
-              : const JsonEncoder.withIndent('  ')
-                  .convert(initialVisualData);
+      _visualJsonController.text = initialVisualData.isEmpty
+          ? _templateFor(_visualType)
+          : const JsonEncoder.withIndent('  ').convert(initialVisualData);
 
-      _isRequired =
-          AdminLearningController.boolValue(
+      _isRequired = AdminLearningController.boolValue(
         data['is_required'],
         fallback: true,
       );
 
-      _isPublished =
-          AdminLearningController.boolValue(
+      _isPublished = AdminLearningController.boolValue(
         data['is_published'],
         fallback: true,
       );
     } else {
-      _visualJsonController.text =
-          _templateFor(_visualType);
-      initialVisualData =
-          Map<String, dynamic>.from(
-        jsonDecode(_visualJsonController.text)
-            as Map,
+      _visualJsonController.text = _templateFor(_visualType);
+      initialVisualData = Map<String, dynamic>.from(
+        jsonDecode(_visualJsonController.text) as Map,
       );
     }
 
-    _visualBuilder =
-        AdminVisualBuilderController(
+    _visualBuilder = AdminVisualBuilderController(
       initialType: _visualType,
       initialData: initialVisualData,
     );
@@ -186,222 +130,258 @@ class _AdminSubmaterialFormViewState
     _ttsController.dispose();
     _visualJsonController.dispose();
     _visualBuilder.dispose();
-
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool hasRead =
-        _readController.text.trim().isNotEmpty;
-
-    final bool hasListen =
-        _ttsController.text.trim().isNotEmpty ||
-            _audioPath != null ||
-            (_existingAudioUrl.isNotEmpty &&
-                !_removeExistingAudio);
-
-    final bool hasVisual =
-        _imagePath != null ||
-            (_existingImageUrl.isNotEmpty &&
-                !_removeExistingImage) ||
-            _visualBuilder.hasContent;
+    final bool hasRead = _readController.text.trim().isNotEmpty;
+    final bool hasListen = _ttsController.text.trim().isNotEmpty ||
+        _audioPath != null ||
+        (_existingAudioUrl.isNotEmpty && !_removeExistingAudio);
+    final bool hasVisual = _imagePath != null ||
+        (_existingImageUrl.isNotEmpty && !_removeExistingImage) ||
+        _visualBuilder.hasContent;
 
     return Scaffold(
-      backgroundColor: _background,
+      backgroundColor: _bg,
       appBar: AppBar(
         title: Text(
-          widget.isEditing
-              ? 'Edit Submateri'
-              : 'Tambah Submateri',
+          widget.isEditing ? 'Edit Submateri' : 'Tambah Submateri Baru',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w700,
+            fontSize: 17,
+            color: _textDark,
+          ),
         ),
+        centerTitle: true,
         backgroundColor: Colors.white,
-        foregroundColor: _text,
-        elevation: 0,
+        foregroundColor: _textDark,
+        elevation: 0.5,
+        shadowColor: Colors.black.withValues(alpha: 0.05),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding:
-              const EdgeInsets.fromLTRB(
-            16,
-            17,
-            16,
-            110,
-          ),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 120),
           children: <Widget>[
+            // 1. Informasi Dasar Submateri
             _SectionCard(
-              title: 'Informasi dasar',
-              subtitle:
-                  'Identitas dan urutan submateri.',
+              title: 'Identitas & Urutan Submateri',
+              subtitle: 'Atur judul bab dan nomor urutan materi.',
+              icon: Icons.bookmark_border_rounded,
               children: <Widget>[
+                Text(
+                  'Judul Submateri',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: _textDark,
+                  ),
+                ),
+                const SizedBox(height: 6),
                 TextFormField(
-                  controller:
-                      _titleController,
-                  textCapitalization:
-                      TextCapitalization
-                          .sentences,
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Judul submateri',
-                    hintText:
-                        'Contoh: Pengertian Asam dan Basa',
-                    prefixIcon: Icon(
-                      Icons.title_rounded,
-                    ),
+                  controller: _titleController,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w500,
+                    color: _textDark,
+                  ),
+                  decoration: _buildInputDecoration(
+                    hintText: 'Contoh: Teori Arrhenius & Bronsted-Lowry',
+                    prefixIcon: Icons.title_rounded,
                   ),
                   validator: (value) {
-                    if (value == null ||
-                        value.trim().isEmpty) {
-                      return 'Judul wajib diisi.';
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Judul submateri wajib diisi.';
                     }
-
                     return null;
                   },
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
+                Text(
+                  'Nomor Urut Submateri',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: _textDark,
+                  ),
+                ),
+                const SizedBox(height: 6),
                 TextFormField(
-                  controller:
-                      _orderController,
-                  keyboardType:
-                      TextInputType.number,
-                  inputFormatters: <
-                      TextInputFormatter>[
-                    FilteringTextInputFormatter
-                        .digitsOnly,
+                  controller: _orderController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: <TextInputFormatter>[
+                    FilteringTextInputFormatter.digitsOnly,
                   ],
-                  decoration:
-                      const InputDecoration(
-                    labelText: 'Urutan',
-                    prefixIcon: Icon(
-                      Icons.format_list_numbered,
-                    ),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: _textDark,
+                  ),
+                  decoration: _buildInputDecoration(
+                    hintText: '1',
+                    prefixIcon: Icons.format_list_numbered_rounded,
                   ),
                   validator: (value) {
-                    final int? number =
-                        int.tryParse(
-                      value?.trim() ?? '',
-                    );
-
-                    if (number == null ||
-                        number < 1) {
+                    final int? number = int.tryParse(value?.trim() ?? '');
+                    if (number == null || number < 1) {
                       return 'Urutan minimal 1.';
                     }
-
                     return null;
                   },
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
+                Text(
+                  'Ringkasan Singkat (Opsional)',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: _textDark,
+                  ),
+                ),
+                const SizedBox(height: 6),
                 TextFormField(
-                  controller:
-                      _summaryController,
-                  maxLines: 3,
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Ringkasan singkat',
-                    hintText:
-                        'Gambaran isi submateri',
-                    alignLabelWithHint: true,
+                  controller: _summaryController,
+                  maxLines: 2,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: _textDark,
+                  ),
+                  decoration: _buildInputDecoration(
+                    hintText: 'Gambaran umum ringkas isi submateri ini...',
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+
+            const SizedBox(height: 16),
+
+            // Mode Completion Status Indicators
             _ModeStatusCard(
               hasRead: hasRead,
               hasListen: hasListen,
               hasVisual: hasVisual,
             ),
-            const SizedBox(height: 14),
 
-            // MODE BACA
+            const SizedBox(height: 16),
+
+            // 2. MODE BACA
             _SectionCard(
-              title: 'Mode Baca',
-              subtitle:
-                  'Isi utama yang dibaca siswa.',
+              title: 'Mode Baca (Teks Materi)',
+              subtitle: 'Materi teks lengkap yang dibaca siswa saat belajar.',
               icon: Icons.menu_book_rounded,
               children: <Widget>[
+                Text(
+                  'Isi Teks Pembelajaran',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: _textDark,
+                  ),
+                ),
+                const SizedBox(height: 6),
                 TextFormField(
-                  controller:
-                      _readController,
-                  minLines: 8,
-                  maxLines: 18,
-                  onChanged: (_) =>
-                      setState(() {}),
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Isi materi baca',
+                  controller: _readController,
+                  minLines: 6,
+                  maxLines: 15,
+                  onChanged: (_) => setState(() {}),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13.5,
+                    color: _textDark,
+                    height: 1.45,
+                  ),
+                  decoration: _buildInputDecoration(
                     hintText:
-                        'Tulis materi dengan paragraf singkat dan bahasa yang mudah dipahami.',
-                    alignLabelWithHint: true,
+                        'Tulis materi secara terstruktur dengan bahasa yang jelas dan mudah dipahami siswa...',
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
 
-            // MODE DENGARKAN
+            const SizedBox(height: 16),
+
+            // 3. MODE DENGARKAN
             _SectionCard(
-              title: 'Mode Dengarkan',
+              title: 'Mode Dengarkan (Audio / TTS)',
               subtitle:
-                  'Prioritas audio file. Jika kosong, aplikasi memakai teks TTS.',
+                  'Gunakan rekaman suara audio atau naskah suara robot Text-to-Speech.',
               icon: Icons.headphones_rounded,
               children: <Widget>[
-                TextFormField(
-                  controller:
-                      _ttsController,
-                  minLines: 5,
-                  maxLines: 12,
-                  onChanged: (_) =>
-                      setState(() {}),
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Naskah Text-to-Speech',
-                    hintText:
-                        'Tulis narasi yang nyaman didengarkan.',
-                    alignLabelWithHint: true,
+                Text(
+                  'Naskah Text-to-Speech (TTS)',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: _textDark,
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 6),
+                TextFormField(
+                  controller: _ttsController,
+                  minLines: 4,
+                  maxLines: 10,
+                  onChanged: (_) => setState(() {}),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: _textDark,
+                    height: 1.4,
+                  ),
+                  decoration: _buildInputDecoration(
+                    hintText:
+                        'Tulis naskah narasi suara yang nyaman untuk didengarkan...',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Atau Unggah File Audio Rekaman',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: _textDark,
+                  ),
+                ),
+                const SizedBox(height: 6),
                 _FilePickerCard(
                   icon: Icons.audio_file_rounded,
-                  title: 'File audio',
-                  subtitle:
-                      'MP3, WAV, M4A, AAC, atau OGG',
+                  title: 'File Audio',
+                  subtitle: 'Format: MP3, WAV, M4A, AAC, atau OGG',
                   selectedPath: _audioPath,
                   existingUrl:
-                      _removeExistingAudio
-                          ? ''
-                          : _existingAudioUrl,
+                      _removeExistingAudio ? '' : _existingAudioUrl,
                   onPick: _pickAudio,
                   onRemove: _removeAudio,
                 ),
               ],
             ),
-            const SizedBox(height: 14),
 
-            // MODE VISUAL
+            const SizedBox(height: 16),
+
+            // 4. MODE VISUAL & VISUAL BUILDER
             _SectionCard(
-              title: 'Mode Visual',
-              subtitle:
-                  'Gambar utama dan data visual interaktif.',
-              icon:
-                  Icons.auto_awesome_rounded,
+              title: 'Mode Visual Interaktif',
+              subtitle: 'Gambar pendukung dan visual builder interaktif.',
+              icon: Icons.auto_awesome_rounded,
               children: <Widget>[
+                Text(
+                  'Gambar Utama Submateri',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: _textDark,
+                  ),
+                ),
+                const SizedBox(height: 6),
                 _ImagePickerCard(
                   selectedPath: _imagePath,
                   existingUrl:
-                      _removeExistingImage
-                          ? ''
-                          : _existingImageUrl,
+                      _removeExistingImage ? '' : _existingImageUrl,
                   onPick: _pickImage,
                   onRemove: _removeImage,
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
                 Obx(() {
                   final List<Map<String, dynamic>> types =
                       controller.visualTypes;
@@ -444,9 +424,8 @@ class _AdminSubmaterialFormViewState
                     controller: _visualBuilder,
                     visualTypes: effectiveTypes,
                     imagePath: _imagePath,
-                    existingImageUrl: _removeExistingImage
-                        ? ''
-                        : _existingImageUrl,
+                    existingImageUrl:
+                        _removeExistingImage ? '' : _existingImageUrl,
                     onPickImage: _pickImage,
                     onRemoveImage: _removeImage,
                     onChanged: () {
@@ -457,113 +436,135 @@ class _AdminSubmaterialFormViewState
                 }),
               ],
             ),
-            const SizedBox(height: 14),
 
+            const SizedBox(height: 16),
+
+            // 5. STATUS SUBMATERI
             _SectionCard(
-              title: 'Status',
-              subtitle:
-                  'Atur kewajiban dan publikasi.',
+              title: 'Status & Visibilitas',
+              subtitle: 'Atur kewajiban submateri dan status publikasi.',
+              icon: Icons.tune_rounded,
               children: <Widget>[
-                SwitchListTile.adaptive(
-                  contentPadding:
-                      EdgeInsets.zero,
-                  title: const Text(
-                    'Submateri wajib',
-                    style: TextStyle(
-                      fontWeight:
-                          FontWeight.w800,
-                    ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: _border),
                   ),
-                  subtitle: const Text(
-                    'Diperhitungkan dalam penyelesaian modul.',
+                  child: Column(
+                    children: [
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        activeTrackColor: _primaryBlue,
+                        title: Text(
+                          'Submateri Wajib',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: _textDark,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Diperhitungkan dalam syarat kelulusan modul pembelajaran.',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: _textMuted,
+                            fontSize: 11,
+                            height: 1.35,
+                          ),
+                        ),
+                        value: _isRequired,
+                        onChanged: (value) {
+                          setState(() {
+                            _isRequired = value;
+                          });
+                        },
+                      ),
+                      const Divider(height: 1, color: _border),
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        activeTrackColor: _success,
+                        title: Text(
+                          'Dipublikasikan',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: _textDark,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Siswa dapat melihat dan mengakses submateri ini.',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: _textMuted,
+                            fontSize: 11,
+                            height: 1.35,
+                          ),
+                        ),
+                        value: _isPublished,
+                        onChanged: (value) {
+                          setState(() {
+                            _isPublished = value;
+                          });
+                        },
+                      ),
+                    ],
                   ),
-                  value: _isRequired,
-                  onChanged: (value) {
-                    setState(() {
-                      _isRequired = value;
-                    });
-                  },
-                ),
-                const Divider(),
-                SwitchListTile.adaptive(
-                  contentPadding:
-                      EdgeInsets.zero,
-                  title: const Text(
-                    'Dipublikasikan',
-                    style: TextStyle(
-                      fontWeight:
-                          FontWeight.w800,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Siswa dapat melihat submateri ini.',
-                  ),
-                  value: _isPublished,
-                  onChanged: (value) {
-                    setState(() {
-                      _isPublished = value;
-                    });
-                  },
                 ),
               ],
             ),
           ],
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Container(
-          padding:
-              const EdgeInsets.fromLTRB(
-            16,
-            12,
-            16,
-            12,
-          ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            border: Border(
-              top: BorderSide(
-                color: Color(0xFFE2E8F0),
-              ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: const Border(top: BorderSide(color: _border)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, -3),
             ),
-          ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
           child: Obx(
-            () => FilledButton.icon(
-              onPressed: controller
-                      .isSavingSubmaterial
-                      .value
-                  ? null
-                  : _save,
-              icon: controller
-                      .isSavingSubmaterial
-                      .value
-                  ? const SizedBox(
-                      width: 19,
-                      height: 19,
-                      child:
-                          CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(
-                      Icons.save_rounded,
-                    ),
-              label: Text(
-                widget.isEditing
-                    ? 'Simpan Perubahan'
-                    : 'Buat Submateri',
-                style: const TextStyle(
-                  fontWeight:
-                      FontWeight.w900,
+            () => SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: controller.isSavingSubmaterial.value ? null : _save,
+                icon: controller.isSavingSubmaterial.value
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.check_circle_rounded, size: 20),
+                label: Text(
+                  controller.isSavingSubmaterial.value
+                      ? 'Menyimpan Submateri...'
+                      : (widget.isEditing
+                          ? 'Simpan Perubahan Submateri'
+                          : 'Buat Submateri'),
+                  style: GoogleFonts.poppins(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: _primary,
-                padding:
-                    const EdgeInsets.symmetric(
-                  vertical: 15,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _primaryBlue,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
             ),
@@ -573,9 +574,39 @@ class _AdminSubmaterialFormViewState
     );
   }
 
+  InputDecoration _buildInputDecoration({
+    String? hintText,
+    IconData? prefixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: GoogleFonts.plusJakartaSans(
+        fontSize: 12.5,
+        color: _textMuted.withValues(alpha: 0.7),
+      ),
+      prefixIcon: prefixIcon != null
+          ? Icon(prefixIcon, color: _primaryBlue, size: 20)
+          : null,
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _primaryBlue, width: 1.5),
+      ),
+    );
+  }
+
   Future<void> _pickAudio() async {
-    final FilePickerResult? result =
-        await FilePicker.platform.pickFiles(
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: const <String>[
         'mp3',
@@ -587,12 +618,8 @@ class _AdminSubmaterialFormViewState
       allowMultiple: false,
     );
 
-    final String? path =
-        result?.files.single.path;
-
-    if (path == null) {
-      return;
-    }
+    final String? path = result?.files.single.path;
+    if (path == null) return;
 
     setState(() {
       _audioPath = path;
@@ -601,23 +628,17 @@ class _AdminSubmaterialFormViewState
   }
 
   Future<void> _pickImage() async {
-    final FilePickerResult? result =
-        await FilePicker.platform.pickFiles(
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.image,
       allowMultiple: false,
     );
 
-    final String? path =
-        result?.files.single.path;
-
-    if (path == null) {
-      return;
-    }
+    final String? path = result?.files.single.path;
+    if (path == null) return;
 
     setState(() {
       _imagePath = path;
       _removeExistingImage = false;
-
       if (_visualBuilder.visualType == 'hotspot') {
         _visualBuilder.clearHotspots();
       }
@@ -641,128 +662,45 @@ class _AdminSubmaterialFormViewState
 
   void _syncVisualData() {
     _visualType = _visualBuilder.visualType;
-    _visualJsonController.text =
-        const JsonEncoder.withIndent('  ').convert(
+    _visualJsonController.text = const JsonEncoder.withIndent('  ').convert(
       _visualBuilder.buildData(),
     );
-    _visualJsonError = null;
   }
 
   bool _visualJsonHasContent() {
-    final String text =
-        _visualJsonController.text.trim();
-
-    return text.isNotEmpty &&
-        text != '{}' &&
-        text != '{\n}';
+    final String text = _visualJsonController.text.trim();
+    return text.isNotEmpty && text != '{}' && text != '{\n}';
   }
 
-  bool _validateVisualJson({
-    bool showSuccess = true,
-  }) {
-    final String text =
-        _visualJsonController.text.trim();
-
+  bool _validateVisualJson({bool showSuccess = true}) {
+    final String text = _visualJsonController.text.trim();
     if (text.isEmpty) {
-      setState(() {
-        _visualJsonError = null;
-      });
-
       return true;
     }
 
     try {
-      final dynamic decoded =
-          jsonDecode(text);
-
+      final dynamic decoded = jsonDecode(text);
       if (decoded is! Map) {
-        setState(() {
-          _visualJsonError =
-              'Data visual harus berupa objek JSON.';
-        });
-
+        controller.showError('Data visual harus berupa objek JSON.');
         return false;
-      }
-
-      setState(() {
-        _visualJsonError = null;
-      });
-
-      if (showSuccess) {
-        Get.snackbar(
-          'JSON valid',
-          'Format data visual dapat disimpan.',
-          snackPosition:
-              SnackPosition.BOTTOM,
-          backgroundColor:
-              const Color(0xFFE7F8EE),
-          colorText:
-              const Color(0xFF166534),
-        );
       }
 
       return true;
     } catch (e) {
-      setState(() {
-        _visualJsonError =
-            'JSON tidak valid: $e';
-      });
-
+      controller.showError('JSON tidak valid: $e');
       return false;
     }
   }
 
-  void _applyTemplate() {
-    final bool hasCustom =
-        _visualJsonHasContent();
-
-    if (hasCustom) {
-      Get.defaultDialog(
-        title: 'Ganti data visual?',
-        middleText:
-            'Isi JSON sekarang akan diganti dengan template ${_visualTypeLabel(_visualType)}.',
-        textCancel: 'Batal',
-        textConfirm: 'Ganti',
-        confirmTextColor: Colors.white,
-        onConfirm: () {
-          Get.back<void>();
-
-          setState(() {
-            _visualJsonController.text =
-                _templateFor(
-              _visualType,
-            );
-            _visualJsonError = null;
-          });
-        },
-      );
-
-      return;
-    }
-
-    setState(() {
-      _visualJsonController.text =
-          _templateFor(
-        _visualType,
-      );
-      _visualJsonError = null;
-    });
-  }
-
   Future<void> _save() async {
-    if (!(_formKey.currentState
-            ?.validate() ??
-        false)) {
+    if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
-    final bool hasVisualImage =
-        _imagePath != null ||
-        (_existingImageUrl.isNotEmpty &&
-            !_removeExistingImage);
+    final bool hasVisualImage = _imagePath != null ||
+        (_existingImageUrl.isNotEmpty && !_removeExistingImage);
 
-    final String? visualError =
-        _visualBuilder.validate(
+    final String? visualError = _visualBuilder.validate(
       hasImage: hasVisualImage,
     );
 
@@ -773,26 +711,17 @@ class _AdminSubmaterialFormViewState
 
     _syncVisualData();
 
-    if (!_validateVisualJson(
-      showSuccess: false,
-    )) {
+    if (!_validateVisualJson(showSuccess: false)) {
       return;
     }
 
-    final bool hasAnyMode =
-        _readController.text
-                .trim()
-                .isNotEmpty ||
-            _ttsController.text
-                .trim()
-                .isNotEmpty ||
-            _audioPath != null ||
-            (_existingAudioUrl.isNotEmpty &&
-                !_removeExistingAudio) ||
-            _imagePath != null ||
-            (_existingImageUrl.isNotEmpty &&
-                !_removeExistingImage) ||
-            _visualJsonHasContent();
+    final bool hasAnyMode = _readController.text.trim().isNotEmpty ||
+        _ttsController.text.trim().isNotEmpty ||
+        _audioPath != null ||
+        (_existingAudioUrl.isNotEmpty && !_removeExistingAudio) ||
+        _imagePath != null ||
+        (_existingImageUrl.isNotEmpty && !_removeExistingImage) ||
+        _visualJsonHasContent();
 
     if (!hasAnyMode) {
       controller.showError(
@@ -801,52 +730,29 @@ class _AdminSubmaterialFormViewState
       return;
     }
 
-    final String jsonText =
-        _visualJsonController.text.trim();
+    final String jsonText = _visualJsonController.text.trim();
+    final Map<String, dynamic> visualData = jsonText.isEmpty
+        ? <String, dynamic>{}
+        : Map<String, dynamic>.from(jsonDecode(jsonText) as Map);
 
-    final Map<String, dynamic>
-        visualData =
-        jsonText.isEmpty
-            ? <String, dynamic>{}
-            : Map<String, dynamic>.from(
-                jsonDecode(jsonText)
-                    as Map,
-              );
-
-    final Map<String, dynamic> data =
-        <String, dynamic>{
-      'title':
-          _titleController.text.trim(),
-      'order_index': int.parse(
-        _orderController.text.trim(),
-      ),
-      'summary':
-          _summaryController.text.trim(),
-      'read_content':
-          _readController.text.trim(),
-      'tts_text':
-          _ttsController.text.trim(),
+    final Map<String, dynamic> data = <String, dynamic>{
+      'title': _titleController.text.trim(),
+      'order_index': int.parse(_orderController.text.trim()),
+      'summary': _summaryController.text.trim(),
+      'read_content': _readController.text.trim(),
+      'tts_text': _ttsController.text.trim(),
       'visual_type': _visualType,
       'visual_data': visualData,
       'is_required': _isRequired,
       'is_published': _isPublished,
-      if (_removeExistingAudio &&
-          _audioPath == null)
-        'audio_url': '',
-      if (_removeExistingImage &&
-          _imagePath == null)
-        'image_url': '',
+      if (_removeExistingAudio && _audioPath == null) 'audio_url': '',
+      if (_removeExistingImage && _imagePath == null) 'image_url': '',
     };
 
-    final bool success =
-        await controller.saveSubmaterial(
-      submaterialId:
-          widget.submaterial == null
-              ? null
-              : AdminLearningController
-                  .intValue(
-                  widget.submaterial!['id'],
-                ),
+    final bool success = await controller.saveSubmaterial(
+      submaterialId: widget.submaterial == null
+          ? null
+          : AdminLearningController.intValue(widget.submaterial!['id']),
       materialId: widget.materialId,
       data: data,
       audioPath: _audioPath,
@@ -859,6 +765,9 @@ class _AdminSubmaterialFormViewState
   }
 }
 
+// =============================================================================
+// SECTION CARD WRAPPER
+// =============================================================================
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
     required this.title,
@@ -875,63 +784,53 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
             children: <Widget>[
-              if (icon != null) ...<Widget>[
+              if (icon != null) ...[
                 Container(
-                  width: 38,
-                  height: 38,
+                  padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: const Color(
-                      0xFFEAF1FF,
-                    ),
-                    borderRadius:
-                        BorderRadius.circular(
-                      12,
-                    ),
+                    color: _primaryBlue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(
-                    icon,
-                    color: _primary,
-                    size: 21,
-                  ),
+                  child: Icon(icon, color: _primaryBlue, size: 18),
                 ),
                 const SizedBox(width: 10),
               ],
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: _text,
-                        fontSize: 17,
-                        fontWeight:
-                            FontWeight.w900,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: _textDark,
                       ),
                     ),
-                    const SizedBox(height: 3),
                     Text(
                       subtitle,
-                      style: const TextStyle(
-                        color: _muted,
-                        fontSize: 12,
-                        height: 1.4,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11,
+                        color: _textMuted,
+                        height: 1.35,
                       ),
                     ),
                   ],
@@ -940,6 +839,8 @@ class _SectionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const SizedBox(height: 16),
           ...children,
         ],
       ),
@@ -947,6 +848,9 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// MODE STATUS OVERVIEW CARD
+// =============================================================================
 class _ModeStatusCard extends StatelessWidget {
   const _ModeStatusCard({
     required this.hasRead,
@@ -961,33 +865,52 @@ class _ModeStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF172554),
-        borderRadius:
-            BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_darkNavy, _primaryBlue],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x221E3A8A),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: <Widget>[
           Expanded(
             child: _ModeStatus(
               icon: Icons.menu_book_rounded,
-              label: 'Baca',
+              label: 'Mode Baca',
               active: hasRead,
             ),
+          ),
+          Container(
+            height: 28,
+            width: 1,
+            color: Colors.white.withValues(alpha: 0.2),
           ),
           Expanded(
             child: _ModeStatus(
               icon: Icons.headphones_rounded,
-              label: 'Dengar',
+              label: 'Dengarkan',
               active: hasListen,
             ),
           ),
+          Container(
+            height: 28,
+            width: 1,
+            color: Colors.white.withValues(alpha: 0.2),
+          ),
           Expanded(
             child: _ModeStatus(
-              icon:
-                  Icons.auto_awesome_rounded,
-              label: 'Visual',
+              icon: Icons.auto_awesome_rounded,
+              label: 'Visual 3D',
               active: hasVisual,
             ),
           ),
@@ -1013,22 +936,17 @@ class _ModeStatus extends StatelessWidget {
     return Column(
       children: <Widget>[
         Icon(
-          active
-              ? Icons.check_circle_rounded
-              : icon,
-          color: active
-              ? const Color(0xFF86EFAC)
-              : const Color(0xFF94A3B8),
+          active ? Icons.check_circle_rounded : icon,
+          color: active ? const Color(0xFF86EFAC) : const Color(0xFF93C5FD),
+          size: 20,
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
-            color: active
-                ? Colors.white
-                : const Color(0xFF94A3B8),
+          style: GoogleFonts.plusJakartaSans(
+            color: active ? Colors.white : const Color(0xFFDCE9FF),
             fontSize: 11,
-            fontWeight: FontWeight.w800,
+            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
       ],
@@ -1036,6 +954,9 @@ class _ModeStatus extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// FILE PICKER CARD
+// =============================================================================
 class _FilePickerCard extends StatelessWidget {
   const _FilePickerCard({
     required this.icon,
@@ -1057,64 +978,57 @@ class _FilePickerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasFile =
-        selectedPath != null ||
-            existingUrl.isNotEmpty;
-
-    final String fileName =
-        selectedPath != null
-            ? File(selectedPath!)
-                .uri
-                .pathSegments
-                .last
-            : existingUrl.isNotEmpty
-                ? Uri.tryParse(existingUrl)
-                        ?.pathSegments
-                        .last ??
-                    existingUrl
-                : '';
+    final bool hasFile = selectedPath != null || existingUrl.isNotEmpty;
+    final String fileName = selectedPath != null
+        ? File(selectedPath!).uri.pathSegments.last
+        : existingUrl.isNotEmpty
+            ? Uri.tryParse(existingUrl)?.pathSegments.last ?? existingUrl
+            : '';
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
-        borderRadius:
-            BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: const Color(0xFFE2E8F0),
+          color: hasFile ? _success : _border,
+          width: hasFile ? 1.2 : 1,
         ),
       ),
       child: Row(
         children: <Widget>[
-          Icon(
-            icon,
-            color: _primary,
-            size: 30,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (hasFile ? _success : _primaryBlue).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              hasFile ? Icons.check_circle_rounded : icon,
+              color: hasFile ? _success : _primaryBlue,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
                   hasFile ? fileName : title,
                   maxLines: 1,
-                  overflow:
-                      TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _text,
-                    fontWeight:
-                        FontWeight.w800,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    color: _textDark,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
-                  hasFile
-                      ? 'Siap digunakan'
-                      : subtitle,
-                  style: const TextStyle(
-                    color: _muted,
+                  hasFile ? 'File audio siap digunakan' : subtitle,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: hasFile ? _success : _textMuted,
                     fontSize: 11,
                   ),
                 ),
@@ -1127,13 +1041,26 @@ class _FilePickerCard extends StatelessWidget {
               onPressed: onRemove,
               icon: const Icon(
                 Icons.delete_outline_rounded,
-                color: Color(0xFFDC2626),
+                color: _danger,
+                size: 20,
               ),
             ),
           OutlinedButton(
             onPressed: onPick,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _primaryBlue,
+              side: const BorderSide(color: _border),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
             child: Text(
               hasFile ? 'Ganti' : 'Pilih',
+              style: GoogleFonts.poppins(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -1142,6 +1069,9 @@ class _FilePickerCard extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// IMAGE PICKER CARD
+// =============================================================================
 class _ImagePickerCard extends StatelessWidget {
   const _ImagePickerCard({
     required this.selectedPath,
@@ -1157,58 +1087,41 @@ class _ImagePickerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String? resolvedUrl =
-        existingUrl.isEmpty
-            ? null
-            : ApiService.resolveMediaUrl(
-                existingUrl,
-              );
+    final String? resolvedUrl = existingUrl.isEmpty
+        ? null
+        : ApiService.resolveMediaUrl(existingUrl);
 
-    final bool hasImage =
-        selectedPath != null ||
-            resolvedUrl != null;
+    final bool hasImage = selectedPath != null || resolvedUrl != null;
 
     return Container(
-      height: 190,
+      height: 180,
       width: double.infinity,
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
-        borderRadius:
-            BorderRadius.circular(17),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _border),
       ),
       child: hasImage
           ? Stack(
               fit: StackFit.expand,
               children: <Widget>[
                 ClipRRect(
-                  borderRadius:
-                      BorderRadius.circular(
-                    16,
-                  ),
+                  borderRadius: BorderRadius.circular(15),
                   child: selectedPath != null
                       ? Image.file(
-                          File(
-                            selectedPath!,
-                          ),
+                          File(selectedPath!),
                           fit: BoxFit.cover,
                         )
                       : Image.network(
                           resolvedUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (
-                            context,
-                            error,
-                            stackTrace,
-                          ) {
-                            return const Center(
-                              child: Text(
-                                'Gambar gagal dimuat',
-                              ),
-                            );
-                          },
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Center(
+                            child: Text(
+                              'Gambar gagal dimuat',
+                              style: TextStyle(color: _textMuted, fontSize: 11),
+                            ),
+                          ),
                         ),
                 ),
                 Positioned(
@@ -1217,16 +1130,14 @@ class _ImagePickerCard extends StatelessWidget {
                   child: Row(
                     children: <Widget>[
                       _ImageAction(
-                        icon:
-                            Icons.edit_rounded,
-                        tooltip: 'Ganti',
+                        icon: Icons.edit_rounded,
+                        tooltip: 'Ganti gambar',
                         onTap: onPick,
                       ),
                       const SizedBox(width: 6),
                       _ImageAction(
-                        icon:
-                            Icons.delete_rounded,
-                        tooltip: 'Hapus',
+                        icon: Icons.delete_outline_rounded,
+                        tooltip: 'Hapus gambar',
                         onTap: onRemove,
                         danger: true,
                       ),
@@ -1236,33 +1147,37 @@ class _ImagePickerCard extends StatelessWidget {
               ],
             )
           : InkWell(
-              borderRadius:
-                  BorderRadius.circular(17),
+              borderRadius: BorderRadius.circular(16),
               onTap: onPick,
-              child: const Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Icon(
-                    Icons
-                        .add_photo_alternate_outlined,
-                    size: 43,
-                    color: _primary,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Pilih gambar visual',
-                    style: TextStyle(
-                      color: _text,
-                      fontWeight:
-                          FontWeight.w800,
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _primaryBlue.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.add_photo_alternate_rounded,
+                      size: 26,
+                      color: _primaryBlue,
                     ),
                   ),
-                  SizedBox(height: 3),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pilih Gambar Visual',
+                    style: GoogleFonts.poppins(
+                      color: _textDark,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
                   Text(
                     'JPG, JPEG, PNG, GIF, atau WEBP',
-                    style: TextStyle(
-                      color: _muted,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: _textMuted,
                       fontSize: 11,
                     ),
                   ),
@@ -1289,64 +1204,39 @@ class _ImageAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: danger
-          ? const Color(0xFFDC2626)
-          : Colors.white,
+      color: Colors.white,
       shape: const CircleBorder(),
+      elevation: 2,
       child: IconButton(
         tooltip: tooltip,
         onPressed: onTap,
         icon: Icon(
           icon,
-          color:
-              danger ? Colors.white : _text,
-          size: 20,
+          color: danger ? _danger : _textDark,
+          size: 18,
         ),
       ),
     );
   }
 }
 
-String _visualTypeLabel(String type) {
-  switch (type) {
-    case 'comparison':
-      return 'Perbandingan';
-    case 'flow':
-      return 'Alur';
-    case 'chart':
-      return 'Grafik/Data';
-    case 'formula':
-      return 'Rumus';
-    case 'hotspot':
-      return 'Titik Gambar';
-    case 'sequence':
-      return 'Urutan Proses';
-    default:
-      return 'Infografik';
-  }
-}
-
 String _templateFor(String type) {
-  const JsonEncoder encoder =
-      JsonEncoder.withIndent('  ');
+  const JsonEncoder encoder = JsonEncoder.withIndent('  ');
 
   switch (type) {
     case 'comparison':
       return encoder.convert(
         <String, dynamic>{
           'title': 'Judul perbandingan',
-          'description':
-              'Penjelasan singkat.',
+          'description': 'Penjelasan singkat.',
           'items': <Map<String, dynamic>>[
             <String, dynamic>{
               'title': 'Bagian A',
-              'description':
-                  'Penjelasan bagian A.',
+              'description': 'Penjelasan bagian A.',
             },
             <String, dynamic>{
               'title': 'Bagian B',
-              'description':
-                  'Penjelasan bagian B.',
+              'description': 'Penjelasan bagian B.',
             },
           ],
         },
@@ -1357,18 +1247,15 @@ String _templateFor(String type) {
       return encoder.convert(
         <String, dynamic>{
           'title': 'Judul proses',
-          'description':
-              'Penjelasan singkat.',
+          'description': 'Penjelasan singkat.',
           'steps': <Map<String, dynamic>>[
             <String, dynamic>{
               'title': 'Langkah 1',
-              'description':
-                  'Penjelasan langkah pertama.',
+              'description': 'Penjelasan langkah pertama.',
             },
             <String, dynamic>{
               'title': 'Langkah 2',
-              'description':
-                  'Penjelasan langkah kedua.',
+              'description': 'Penjelasan langkah kedua.',
             },
           ],
         },
@@ -1420,8 +1307,7 @@ String _templateFor(String type) {
       return encoder.convert(
         <String, dynamic>{
           'title': 'Bagian gambar',
-          'description':
-              'Titik penting pada gambar.',
+          'description': 'Titik penting pada gambar.',
           'hotspots': <Map<String, dynamic>>[
             <String, dynamic>{
               'id': 'bagian_1',
@@ -1437,18 +1323,15 @@ String _templateFor(String type) {
       return encoder.convert(
         <String, dynamic>{
           'title': 'Judul infografik',
-          'description':
-              'Penjelasan singkat.',
+          'description': 'Penjelasan singkat.',
           'items': <Map<String, dynamic>>[
             <String, dynamic>{
               'title': 'Poin 1',
-              'description':
-                  'Penjelasan poin pertama.',
+              'description': 'Penjelasan poin pertama.',
             },
             <String, dynamic>{
               'title': 'Poin 2',
-              'description':
-                  'Penjelasan poin kedua.',
+              'description': 'Penjelasan poin kedua.',
             },
           ],
         },
