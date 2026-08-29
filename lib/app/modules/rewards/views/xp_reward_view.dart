@@ -8,7 +8,6 @@ const Color _text = Color(0xFF172033);
 const Color _muted = Color(0xFF64748B);
 const Color _primary = Color(0xFF2563EB);
 const Color _success = Color(0xFF16A34A);
-const Color _warning = Color(0xFFF59E0B);
 
 class XpRewardView extends StatelessWidget {
   const XpRewardView({
@@ -592,7 +591,7 @@ class _RewardVisual extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: reward.accentColor
-            .withOpacity(0.10),
+            .withValues(alpha: 0.10),
         borderRadius:
             BorderRadius.circular(
           size * 0.24,

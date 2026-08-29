@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../data/api_service.dart';
+import '../../../widgets/app_snackbar.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../profile/controllers/profile_controller.dart';
 import '../../rewards/controllers/xp_reward_controller.dart';
@@ -207,12 +209,9 @@ class LearningController extends GetxController {
     }
 
     if (!boolValue(levelData['is_unlocked'])) {
-      Get.snackbar(
-        'Level masih terkunci',
-        'Selesaikan level sebelumnya terlebih dahulu.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFFFFE8E8),
-        colorText: const Color(0xFF8C1D18),
+      AppSnackbar.warning(
+        'Level Masih Terkunci',
+        'Selesaikan level sebelumnya terlebih dahulu untuk membuka level ini.',
       );
       return;
     }
@@ -463,22 +462,17 @@ class LearningController extends GetxController {
         ),
       );
 
-      Get.snackbar(
-        'Aktivitas selesai ✓',
-        result['submaterial_completed'] == true
-            ? 'Aktivitas dan checkpoint selesai. Submateri berhasil dituntaskan.'
-            : 'Progres berhasil disimpan. Lanjutkan ke checkpoint.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFFE7F8EE),
-        colorText: const Color(0xFF166534),
-        icon: const Icon(
-          Icons.check_circle_rounded,
-          color: Color(0xFF166534),
-        ),
-        margin: const EdgeInsets.all(14),
-        borderRadius: 16,
-        duration: const Duration(seconds: 3),
-      );
+      if (result['submaterial_completed'] == true) {
+        AppSnackbar.success(
+          'Aktivitas Selesai',
+          'Aktivitas dan checkpoint selesai. Submateri berhasil dituntaskan!',
+        );
+      } else {
+        AppSnackbar.info(
+          'Progres Tersimpan',
+          'Progres belajar disimpan. Lanjutkan ke tahap checkpoint.',
+        );
+      }
 
       return true;
     } catch (e) {
@@ -553,77 +547,27 @@ class LearningController extends GetxController {
       final bool xpAlreadyReceived =
           boolValue(result['xp_already_received']);
 
-      final String checkpointTitle;
-      final String checkpointMessage;
-      final Color checkpointBackground;
-      final Color checkpointText;
-      final IconData checkpointIcon;
-
       if (!correct) {
-        checkpointTitle =
-            'Jawaban belum tepat';
-        checkpointMessage =
-            (result['feedback'] ??
-                    'Pelajari kembali materi lalu coba lagi.')
-                .toString();
-        checkpointBackground =
-            const Color(0xFFFFF3E0);
-        checkpointText =
-            const Color(0xFF9A3412);
-        checkpointIcon =
-            Icons.lightbulb_outline_rounded;
+        AppSnackbar.warning(
+          'Jawaban Belum Tepat',
+          (result['feedback'] ?? 'Pelajari kembali materi lalu coba lagi.').toString(),
+        );
       } else if (checkpointXp > 0) {
-        checkpointTitle =
-            'Checkpoint selesai • +$checkpointXp XP';
-        checkpointMessage =
-            (result['feedback'] ??
-                    'Jawabanmu benar dan progres sudah disimpan.')
-                .toString();
-        checkpointBackground =
-            const Color(0xFFE7F8EE);
-        checkpointText =
-            const Color(0xFF166534);
-        checkpointIcon =
-            Icons.check_circle_rounded;
+        AppSnackbar.success(
+          'Checkpoint Selesai • +$checkpointXp XP',
+          (result['feedback'] ?? 'Jawabanmu benar dan progres sudah disimpan.').toString(),
+        );
       } else if (xpAlreadyReceived) {
-        checkpointTitle =
-            'Checkpoint sudah selesai';
-        checkpointMessage =
-            'Jawabanmu benar. XP dari checkpoint ini sudah pernah diterima.';
-        checkpointBackground =
-            const Color(0xFFEAF1FF);
-        checkpointText =
-            const Color(0xFF1E40AF);
-        checkpointIcon =
-            Icons.info_rounded;
+        AppSnackbar.info(
+          'Checkpoint Sudah Selesai',
+          'Jawabanmu benar. XP dari checkpoint ini sudah pernah diterima.',
+        );
       } else {
-        checkpointTitle = 'Jawaban benar';
-        checkpointMessage =
-            (result['feedback'] ??
-                    'Checkpoint berhasil diselesaikan.')
-                .toString();
-        checkpointBackground =
-            const Color(0xFFE7F8EE);
-        checkpointText =
-            const Color(0xFF166534);
-        checkpointIcon =
-            Icons.check_circle_rounded;
+        AppSnackbar.success(
+          'Jawaban Benar',
+          (result['feedback'] ?? 'Checkpoint berhasil diselesaikan.').toString(),
+        );
       }
-
-      Get.snackbar(
-        checkpointTitle,
-        checkpointMessage,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: checkpointBackground,
-        colorText: checkpointText,
-        icon: Icon(
-          checkpointIcon,
-          color: checkpointText,
-        ),
-        margin: const EdgeInsets.all(14),
-        borderRadius: 16,
-        duration: const Duration(seconds: 4),
-      );
 
       if (correct) {
         await _syncXpRewardsFromResult(
@@ -779,68 +723,27 @@ class LearningController extends GetxController {
       final bool quizXpAlreadyReceived =
           boolValue(result['xp_already_received']);
 
-      final String quizTitle;
-      final String quizMessage;
-      final Color quizBackground;
-      final Color quizText;
-      final IconData quizIcon;
-
       if (!passed) {
-        quizTitle = 'Kuis belum lulus';
-        quizMessage =
-            'Nilai $quizScore. Nilai minimal $passingScore. Pelajari pembahasan lalu coba lagi.';
-        quizBackground =
-            const Color(0xFFFFF3E0);
-        quizText =
-            const Color(0xFF9A3412);
-        quizIcon =
-            Icons.restart_alt_rounded;
+        AppSnackbar.warning(
+          'Kuis Belum Mencapai Target',
+          'Nilai $quizScore (Target Minimal $passingScore). Pelajari pembahasan lalu coba lagi.',
+        );
       } else if (quizXp > 0) {
-        quizTitle =
-            'Kuis lulus • +$quizXp XP';
-        quizMessage =
-            'Nilai $quizScore. Hasil kuis dan XP berhasil disimpan.';
-        quizBackground =
-            const Color(0xFFE7F8EE);
-        quizText =
-            const Color(0xFF166534);
-        quizIcon =
-            Icons.emoji_events_rounded;
+        AppSnackbar.success(
+          'Kuis Lulus • +$quizXp XP',
+          'Nilai $quizScore. Hasil kuis dan hadiah XP berhasil disimpan!',
+        );
       } else if (quizXpAlreadyReceived) {
-        quizTitle = 'Kuis sudah lulus';
-        quizMessage =
-            'Nilai $quizScore. XP kuis ini sudah pernah diterima.';
-        quizBackground =
-            const Color(0xFFEAF1FF);
-        quizText =
-            const Color(0xFF1E40AF);
-        quizIcon = Icons.info_rounded;
+        AppSnackbar.info(
+          'Kuis Sudah Lulus',
+          'Nilai $quizScore. XP kuis ini sudah pernah diterima.',
+        );
       } else {
-        quizTitle = 'Kuis lulus';
-        quizMessage =
-            'Nilai $quizScore. Hasil kuis berhasil disimpan.';
-        quizBackground =
-            const Color(0xFFE7F8EE);
-        quizText =
-            const Color(0xFF166534);
-        quizIcon =
-            Icons.check_circle_rounded;
+        AppSnackbar.success(
+          'Kuis Lulus',
+          'Nilai $quizScore. Hasil kuis berhasil disimpan.',
+        );
       }
-
-      Get.snackbar(
-        quizTitle,
-        quizMessage,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: quizBackground,
-        colorText: quizText,
-        icon: Icon(
-          quizIcon,
-          color: quizText,
-        ),
-        margin: const EdgeInsets.all(14),
-        borderRadius: 16,
-        duration: const Duration(seconds: 4),
-      );
 
       if (passed) {
         await _syncXpRewardsFromResult(
@@ -928,14 +831,9 @@ class LearningController extends GetxController {
         fallback: 50,
       );
 
-      Get.snackbar(
-        'Reward berhasil diklaim',
-        '+$rewardXp XP masuk ke akunmu.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor:
-            const Color(0xFFE7F8EE),
-        colorText:
-            const Color(0xFF166534),
+      AppSnackbar.success(
+        'Reward Berhasil Diklaim',
+        '+$rewardXp XP berhasil masuk ke akun belajarmu!',
       );
 
       if (boolValue(resultMap['level_up'])) {
@@ -1171,12 +1069,9 @@ class LearningController extends GetxController {
   }
 
   void showError(String message) {
-    Get.snackbar(
-      'Tidak dapat melanjutkan',
+    AppSnackbar.error(
+      'Perhatian',
       message,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFFFFE8E8),
-      colorText: const Color(0xFF8C1D18),
     );
   }
 
@@ -1257,48 +1152,120 @@ class _LearningBadgeDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      icon: SizedBox(
-        width: 84,
-        height: 84,
-        child: Image.asset(
-          imagePath,
-          fit: BoxFit.contain,
-          errorBuilder: (
-            context,
-            error,
-            stackTrace,
-          ) {
-            return const Icon(
-              Icons.emoji_events_rounded,
-              color: Color(0xFFF59E0B),
-              size: 68,
-            );
-          },
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      elevation: 0,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 28,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFFFDE68A),
+                  width: 1.5,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Image.asset(
+                imagePath,
+                width: 52,
+                height: 52,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(
+                    Icons.military_tech_rounded,
+                    color: Color(0xFFD97706),
+                    size: 42,
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'LENCANA PENCAPAIAN',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFFB45309),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              badgeName,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Lencana baru berhasil ditambahkan ke profil belajarmu.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                color: const Color(0xFF64748B),
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 22),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: FilledButton(
+                onPressed: () => Get.back<void>(),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Lanjutkan',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13.5,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      title: const Text(
-        'Pencapaian Baru!',
-        textAlign: TextAlign.center,
-      ),
-      content: Text(
-        'Kamu berhasil membuka badge:\n\n$badgeName',
-        textAlign: TextAlign.center,
-      ),
-      actionsAlignment:
-          MainAxisAlignment.center,
-      actions: <Widget>[
-        FilledButton(
-          onPressed: () => Get.back<void>(),
-          child: const Text('Mantap'),
-        ),
-      ],
     );
   }
 }
 
-class _LearningLevelUpDialog
-    extends StatelessWidget {
+class _LearningLevelUpDialog extends StatelessWidget {
   const _LearningLevelUpDialog({
     required this.level,
   });
@@ -1307,28 +1274,106 @@ class _LearningLevelUpDialog
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      icon: const Icon(
-        Icons.rocket_launch_rounded,
-        color: Color(0xFF2563EB),
-        size: 48,
-      ),
-      title: const Text(
-        'Level XP Naik!',
-        textAlign: TextAlign.center,
-      ),
-      content: Text(
-        'Selamat, sekarang kamu mencapai Level XP $level.',
-        textAlign: TextAlign.center,
-      ),
-      actionsAlignment:
-          MainAxisAlignment.center,
-      actions: <Widget>[
-        FilledButton(
-          onPressed: () => Get.back<void>(),
-          child: const Text('Lanjutkan'),
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      elevation: 0,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 28,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
-      ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFFBFDBFE),
+                  width: 1.5,
+                ),
+              ),
+              child: const Icon(
+                Icons.trending_up_rounded,
+                color: Color(0xFF2563EB),
+                size: 38,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'LEVEL BERTAMBAH',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF2563EB),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Naik ke Level $level',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Selamat, pengalaman belajarmu meningkat. Terus pertahankan konsistensimu!',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                color: const Color(0xFF64748B),
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 22),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: FilledButton(
+                onPressed: () => Get.back<void>(),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Lanjutkan Belajar',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13.5,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

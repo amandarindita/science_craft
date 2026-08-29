@@ -64,7 +64,7 @@ class AppSnackbar {
       borderRadius: 16,
       boxShadows: [
         BoxShadow(
-          color: backgroundColor.withOpacity(0.35),
+          color: backgroundColor.withValues(alpha: 0.35),
           blurRadius: 16,
           offset: const Offset(0, 6),
         ),
@@ -74,7 +74,7 @@ class AppSnackbar {
           Container(
             padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -87,11 +87,10 @@ class AppSnackbar {
           Expanded(
             child: Text(
               title,
-              style: GoogleFonts.inter(
-                fontWeight: FontWeight.w800,
-                fontSize: 14.5,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
                 color: Colors.white,
-                letterSpacing: -0.2,
               ),
             ),
           ),
@@ -101,10 +100,10 @@ class AppSnackbar {
         padding: const EdgeInsets.only(left: 33),
         child: Text(
           message,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.plusJakartaSans(
             fontWeight: FontWeight.w500,
-            fontSize: 13,
-            color: Colors.white.withOpacity(0.95),
+            fontSize: 12.5,
+            color: Colors.white.withValues(alpha: 0.95),
             height: 1.35,
           ),
         ),
