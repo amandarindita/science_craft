@@ -31,9 +31,7 @@ class ChatbotView extends GetView<ChatbotController> {
         child: Column(
           children: [
             // Area Obrolan Utama
-            Expanded(
-              child: _buildChatList(context),
-            ),
+            Expanded(child: _buildChatList(context)),
 
             // Area Input Bersih & Modern
             _buildCleanInputArea(),
@@ -53,15 +51,9 @@ class ChatbotView extends GetView<ChatbotController> {
       elevation: 0,
       centerTitle: false,
       titleSpacing: 0,
-      shape: const Border(
-        bottom: BorderSide(color: _borderLight, width: 1),
-      ),
+      shape: const Border(bottom: BorderSide(color: _borderLight, width: 1)),
       leading: IconButton(
-        icon: const Icon(
-          Icons.arrow_back,
-          size: 18,
-          color: _darkNavy,
-        ),
+        icon: const Icon(Icons.arrow_back, size: 18, color: _darkNavy),
         onPressed: () => Get.back(),
         tooltip: 'Kembali',
       ),
@@ -77,11 +69,7 @@ class ChatbotView extends GetView<ChatbotController> {
               border: Border.all(color: const Color(0xFFDBEAFE)),
             ),
             child: const Center(
-              child: Icon(
-                Icons.smart_toy_rounded,
-                size: 20,
-                color: _primary,
-              ),
+              child: Icon(Icons.smart_toy_rounded, size: 20, color: _primary),
             ),
           ),
           const SizedBox(width: 10),
@@ -125,11 +113,7 @@ class ChatbotView extends GetView<ChatbotController> {
       ),
       actions: [
         IconButton(
-          icon: const Icon(
-            Icons.refresh_rounded,
-            size: 22,
-            color: _textMuted,
-          ),
+          icon: const Icon(Icons.refresh_rounded, size: 22, color: _textMuted),
           tooltip: 'Mulai Ulang Percakapan',
           onPressed: () => _confirmClearChat(context),
         ),
@@ -157,17 +141,15 @@ class ChatbotView extends GetView<ChatbotController> {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         children: [
           // Render setiap balon pesan
-          ...messages.map((msg) => _CleanMessageBubble(
-                msg: msg,
-                controller: controller,
-              )),
+          ...messages.map(
+            (msg) => _CleanMessageBubble(msg: msg, controller: controller),
+          ),
 
           // Indikator saat AI sedang berpikir/mengetik
           if (isTyping) const _CleanTypingIndicator(),
 
           // Kartu Saran Pertanyaan Bersih (hanya di awal)
-          if (showSamplePrompts && !isTyping)
-            _buildSamplePromptsSection(),
+          if (showSamplePrompts && !isTyping) _buildSamplePromptsSection(),
         ],
       );
     });
@@ -213,7 +195,9 @@ class ChatbotView extends GetView<ChatbotController> {
                       border: Border.all(color: _border),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF0F172A).withValues(alpha: 0.02),
+                          color: const Color(
+                            0xFF0F172A,
+                          ).withValues(alpha: 0.02),
                           blurRadius: 4,
                           offset: const Offset(0, 1),
                         ),
@@ -258,9 +242,7 @@ class ChatbotView extends GetView<ChatbotController> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: _borderLight, width: 1),
-        ),
+        border: Border(top: BorderSide(color: _borderLight, width: 1)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -328,8 +310,8 @@ class ChatbotView extends GetView<ChatbotController> {
 
           // Tombol Kirim
           Obx(() {
-            final canSend = controller.hasUserTyped.value &&
-                !controller.isBotTyping.value;
+            final canSend =
+                controller.hasUserTyped.value && !controller.isBotTyping.value;
 
             return Material(
               color: Colors.transparent,
@@ -345,24 +327,26 @@ class ChatbotView extends GetView<ChatbotController> {
                     shape: BoxShape.circle,
                   ),
                   child: Center(
-                    child: controller.isBotTyping.value
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                    child:
+                        controller.isBotTyping.value
+                            ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
+                            )
+                            : Icon(
+                              Icons.arrow_upward_rounded,
+                              color:
+                                  canSend
+                                      ? Colors.white
+                                      : const Color(0xFF94A3B8),
+                              size: 20,
                             ),
-                          )
-                        : Icon(
-                            Icons.arrow_upward_rounded,
-                            color: canSend
-                                ? Colors.white
-                                : const Color(0xFF94A3B8),
-                            size: 20,
-                          ),
                   ),
                 ),
               ),
@@ -380,59 +364,62 @@ class ChatbotView extends GetView<ChatbotController> {
     HapticFeedback.lightImpact();
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text(
-          'Mulai Ulang Percakapan?',
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: _darkNavy,
-          ),
-        ),
-        content: Text(
-          'Semua pesan obrolan dengan SENA akan dihapus dan dimulai kembali.',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 13,
-            color: _textMuted,
-            height: 1.4,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              'Batal',
+      builder:
+          (ctx) => AlertDialog(
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            title: Text(
+              'Mulai Ulang Percakapan?',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: _darkNavy,
+              ),
+            ),
+            content: Text(
+              'Semua pesan obrolan dengan SENA akan dihapus dan dimulai kembali.',
               style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
                 color: _textMuted,
-                fontWeight: FontWeight.w600,
+                height: 1.4,
               ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: Text(
+                  'Batal',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: _textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  controller.clearMessages();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  'Mulai Ulang',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              controller.clearMessages();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _primary,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: Text(
-              'Mulai Ulang',
-              style: GoogleFonts.plusJakartaSans(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -444,10 +431,7 @@ class _CleanMessageBubble extends StatelessWidget {
   final ChatMessage msg;
   final ChatbotController controller;
 
-  const _CleanMessageBubble({
-    required this.msg,
-    required this.controller,
-  });
+  const _CleanMessageBubble({required this.msg, required this.controller});
 
   String _formatTime(DateTime time) {
     final hour = time.hour.toString().padLeft(2, '0');
@@ -648,7 +632,8 @@ class _CleanMessageBubble extends StatelessWidget {
                     isSpeaking ? 'Berhenti' : 'Dengarkan',
                     style: GoogleFonts.plusJakartaSans(
                       fontSize: 11,
-                      fontWeight: isSpeaking ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight:
+                          isSpeaking ? FontWeight.w700 : FontWeight.w500,
                       color: isSpeaking ? _primary : _textMuted,
                     ),
                   ),
@@ -669,11 +654,7 @@ class _CleanMessageBubble extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.copy_rounded,
-                  size: 13,
-                  color: _textMuted,
-                ),
+                const Icon(Icons.copy_rounded, size: 13, color: _textMuted),
                 const SizedBox(width: 4),
                 Text(
                   'Salin',
@@ -693,10 +674,7 @@ class _CleanMessageBubble extends StatelessWidget {
         // Waktu
         Text(
           _formatTime(msg.timestamp),
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 10,
-            color: _textLight,
-          ),
+          style: GoogleFonts.plusJakartaSans(fontSize: 10, color: _textLight),
         ),
       ],
     );

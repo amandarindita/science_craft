@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get_storage/get_storage.dart';
 
 import '../../../data/api_service.dart';
 import '../../../widgets/app_snackbar.dart';
@@ -363,6 +364,31 @@ class LearningController extends GetxController {
       }
 
       selectedModule.value = result;
+      try {
+        final box = GetStorage();
+        final dynamic rawList = box.read('accessed_module_ids');
+        final List<int> accessedIds = <int>[];
+        if (rawList is List) {
+          for (final item in rawList) {
+            final int id = int.tryParse(item.toString()) ?? 0;
+            if (id > 0 && !accessedIds.contains(id)) {
+              accessedIds.add(id);
+            }
+          }
+        }
+        accessedIds.remove(materialId);
+        accessedIds.insert(0, materialId);
+        if (accessedIds.length > 5) {
+          accessedIds.removeLast();
+        }
+        box.write('accessed_module_ids', accessedIds);
+        box.write('last_accessed_module_id', materialId);
+
+        if (Get.isRegistered<DashboardController>()) {
+          Get.find<DashboardController>().fetchInProgressMaterials();
+        }
+      } catch (_) {}
+
       return true;
     } catch (e) {
       showError('Gagal membuka modul: $e');

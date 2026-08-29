@@ -523,11 +523,13 @@ class _DashboardViewState extends State<DashboardView> {
         final List<MaterialItem> items = controller.inProgressMaterials;
 
         if (items.isEmpty) {
-          return const _EmptyCard(
+          return _EmptyCard(
             icon: Icons.rocket_launch_rounded,
             title: 'Mulai Petualangan Sainsmu',
             message:
-                'Materi yang sedang kamu pelajari akan otomatis muncul di sini.',
+                'Kamu belum memulai materi apapun. Yuk, jelajahi materi pertamamu di Jalur Belajar!',
+            actionLabel: 'Buka Jalur Belajar',
+            onAction: () => Get.toNamed(Routes.LEARNING),
           );
         }
 
@@ -2250,11 +2252,15 @@ class _EmptyCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.message,
+    this.actionLabel,
+    this.onAction,
   });
 
   final IconData icon;
   final String title;
   final String message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -2266,7 +2272,7 @@ class _EmptyCard extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FBFF),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: const Color(0xFFDBEAFE),
         ),
@@ -2274,8 +2280,8 @@ class _EmptyCard extends StatelessWidget {
       child: Column(
         children: <Widget>[
           Container(
-            width: 44,
-            height: 44,
+            width: 46,
+            height: 46,
             decoration: const BoxDecoration(
               color: Color(0xFFEFF6FF),
               shape: BoxShape.circle,
@@ -2283,7 +2289,7 @@ class _EmptyCard extends StatelessWidget {
             child: Icon(
               icon,
               color: _blue,
-              size: 22,
+              size: 24,
             ),
           ),
           const SizedBox(height: 10),
@@ -2292,8 +2298,8 @@ class _EmptyCard extends StatelessWidget {
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
               color: _text,
-              fontSize: 14,
-                fontWeight: FontWeight.w700,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 4),
@@ -2306,6 +2312,31 @@ class _EmptyCard extends StatelessWidget {
               height: 1.4,
             ),
           ),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: onAction,
+              style: FilledButton.styleFrom(
+                backgroundColor: _blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 9,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(Icons.route_rounded, size: 16),
+              label: Text(
+                actionLabel!,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
