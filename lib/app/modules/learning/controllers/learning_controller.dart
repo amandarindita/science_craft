@@ -9,6 +9,13 @@ import '../../profile/controllers/profile_controller.dart';
 import '../../rewards/controllers/xp_reward_controller.dart';
 
 class LearningController extends GetxController {
+  static LearningController ensureRegistered() {
+    if (Get.isRegistered<LearningController>()) {
+      return Get.find<LearningController>();
+    }
+    return Get.put(LearningController(), permanent: true);
+  }
+
   final RxBool isLoadingLevels = false.obs;
   final RxBool isLoadingModules = false.obs;
   final RxBool isLoadingModuleDetail = false.obs;
