@@ -15,8 +15,8 @@ import '../modules/password_recovery/views/otp_verification_view.dart';
 import '../modules/password_recovery/views/reset_password_view.dart';
 import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
-import '../modules/profile/bindings/profile_binding.dart';
-import '../modules/profile/views/profile_view.dart';
+import '../modules/profile_learning/bindings/profile_learning_binding.dart';
+import '../modules/profile_learning/views/profile_learning_view.dart';
 import '../modules/root/bindings/root_binding.dart';
 import '../modules/root/views/root_view.dart';
 import '../modules/materi/bindings/materi_binding.dart';
@@ -113,8 +113,8 @@ class AppPages {
     ),
      GetPage(
       name: _Paths.PROFILE,
-      page: () => const ProfileView(),
-      binding: ProfileBinding(),
+      page: () => const ProfileLearningView(),
+      binding: ProfileLearningBinding(),
     ),
     GetPage(
       name: _Paths.NOTIFICATION,

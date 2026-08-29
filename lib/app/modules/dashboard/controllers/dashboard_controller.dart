@@ -398,79 +398,54 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
   }
 }
 
+ // =====================================================
+  // 2. AMBIL MATERI YANG BELUM SELESAI DARI LEARNING PROGRESS
+  // =====================================================
   Future<void> fetchInProgressMaterials() async {
     isLoading.value = true;
 
     try {
-      final response = await http.get(
-        Uri.parse('${ApiService.baseUrl}/admin/materials'),
-        headers: {
-          'Authorization': 'Bearer ${Get.find<AuthService>().token}',
-        },
-      );
+      // Menggunakan endpoint learning progress yang baru
+      final Map<String, dynamic>? data = await ApiService.getLearningProgress();
 
-      if (response.statusCode == 200) {
-        List<dynamic> data = jsonDecode(response.body);
-
-        Map<dynamic, double> serverProgressMap = {};
-
-        try {
-          serverProgressMap = await ApiService.getAllProgress();
-        } catch (_) {}
-
-        List<MaterialItem> tempResult = [];
-
-        for (final dynamic materialRaw
-            in data) {
-          final Map<String, dynamic> material =
-              Map<String, dynamic>.from(
-            materialRaw as Map,
-          );
-
-          dynamic rawProgress = 0.0;
-
-          if (serverProgressMap.containsKey(
-            material['id'],
-          )) {
-            rawProgress =
-                serverProgressMap[
-                  material['id']
-                ];
-          } else if (
-              serverProgressMap.containsKey(
-                material['id'].toString(),
-              )) {
-            rawProgress =
-                serverProgressMap[
-                  material['id']
-                      .toString()
-                ];
-          }
-
-          final double progress =
-              _normalizeProgress(
-            rawProgress,
-          );
-
-          // Lanjutkan Belajar hanya memuat progres
-          // lebih dari 0% dan kurang dari 100%.
-          if (progress > 0.0 &&
-              progress < 1.0) {
-            tempResult.add(
-              MaterialItem.fromMap({
-                ...material,
-                'progress': progress,
-              }),
-            );
-          }
-        }
-
-        if (tempResult.length > 3) {
-          tempResult = tempResult.sublist(0, 3);
-        }
-
-        inProgressMaterials.assignAll(tempResult);
+      if (data == null || data['success'] == false) {
+        inProgressMaterials.clear();
+        return;
       }
+
+      final List<Map<String, dynamic>> modules = _mapList(
+        data['modules'],
+      ).where(
+        (Map<String, dynamic> item) => !_toBool(item['legacy_mode']),
+      ).toList();
+
+      List<MaterialItem> tempResult = [];
+
+      for (final Map<String, dynamic> module in modules) {
+        final double progress = _normalizeProgress(
+          module['progress'],
+        );
+
+        // "Lanjutkan Belajar" memuat modul dengan progres > 0% dan < 100%
+        if (progress > 0.0 && progress < 1.0) {
+          tempResult.add(
+            MaterialItem.fromMap({
+              'id': module['id'],
+              'title': module['title'],
+              'category': module['category'] ?? 'Sains',
+              'image_url': module['image_url'], // Mengikuti struktur data modul baru
+              'progress': progress,
+            }),
+          );
+        }
+      }
+
+      // Batasi maksimal 3 item yang ditampilkan di dashboard
+      if (tempResult.length > 3) {
+        tempResult = tempResult.sublist(0, 3);
+      }
+
+      inProgressMaterials.assignAll(tempResult);
     } catch (e) {
       print("[Dashboard] Error fetchInProgress: $e");
     } finally {

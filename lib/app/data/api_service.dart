@@ -5,9 +5,6 @@ import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // Gunakan domain ini jika backend Step 5 sudah di-deploy.
-  // Android Emulator + Flask lokal: http://10.0.2.2:5000
-  // HP fisik + Flask lokal: http://IP_LAPTOP:5000https://sciencecraft-app.my.id
   static const String baseUrl = 'https://dangling-unpainted-manhole.ngrok-free.dev';
 
   static const Duration _timeout = Duration(seconds: 25);

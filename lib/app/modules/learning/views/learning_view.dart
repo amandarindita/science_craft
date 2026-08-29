@@ -114,70 +114,116 @@ class LearningView extends GetView<LearningController> {
     );
   }
 }
-
 class _LearningHeader extends StatelessWidget {
   const _LearningHeader();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(22),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: <Color>[
-            _primaryDark,
-            _primary,
+            Color(0xFF1E3A8A), // _primaryDark
+            Color(0xFF3B82F6), // Sedikit lebih terang dari _primary
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: _primary.withValues(alpha: 0.22),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
+            color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: const Row(
-        children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+      child: Stack(
+        children: [
+          // Aksen Dekoratif Latar Belakang
+          Positioned(
+            right: -30,
+            top: -30,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 40,
+            bottom: -40,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          
+          // Konten Utama Header
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                Text(
-                  'Belajar secara bertahap',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w800,
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'Petualangan Sains',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Tuntaskan materi, kuis, dan praktikum virtual untuk membuka level selanjutnya.',
+                        style: TextStyle(
+                          color: Color(0xFFE0E7FF), // Warna biru pudar yang elegan
+                          height: 1.5,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(height: 8),
-                Text(
-                  'Selesaikan materi, checkpoint, kuis, dan laboratorium untuk membuka level berikutnya.',
-                  style: TextStyle(
-                    color: Color(0xFFDCE9FF),
-                    height: 1.45,
+                const SizedBox(width: 16),
+                
+                // Ikon dengan efek Glassmorphism tipis
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.biotech_rounded, // Pakai ikon biotech agar lebih berasa sains
+                    size: 48,
+                    color: Colors.white,
                   ),
                 ),
               ],
             ),
-          ),
-          SizedBox(width: 14),
-          Icon(
-            Icons.science_rounded,
-            size: 64,
-            color: Colors.white,
           ),
         ],
       ),
     );
   }
 }
-
 
 class _LearningFilters extends StatelessWidget {
   const _LearningFilters({

@@ -63,35 +63,41 @@ class ChatbotView extends GetView<ChatbotController> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded),
+              child: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
             ),
           ),
           const SizedBox(width: 14),
           Container(
-            width: 58,
-            height: 58,
+            width: 50,
+            height: 50,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(colors: [primary, cyan]),
             ),
-            child: const Icon(Icons.smart_toy_rounded,
-                color: Colors.white, size: 32),
+            // Pakai icon science biar lebih cocok dengan SENA
+            child: const Icon(Icons.science_rounded,
+                color: Colors.white, size: 26),
           ),
           const SizedBox(width: 12),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Aira AI",
-                  style: TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
-                      color: text)),
-              Text("Biology Inquiry Assistant",
-                  style: TextStyle(color: Colors.grey)),
-            ],
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("SENA",
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: text)),
+                Text("Science Education Navigator",
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                    overflow: TextOverflow.ellipsis),
+              ],
+            ),
           ),
-          const Spacer(),
-          const Icon(Icons.more_vert_rounded)
+          IconButton(
+            icon: const Icon(Icons.more_vert_rounded, color: text),
+            onPressed: () {},
+          )
         ],
       ),
     );
@@ -103,45 +109,64 @@ class ChatbotView extends GetView<ChatbotController> {
         return _welcome();
       }
 
+      // Tambahkan 1 item ekstra jika isBotTyping true
+      final itemCount = controller.messages.length + (controller.isBotTyping.value ? 1 : 0);
+
       return ListView.builder(
         controller: controller.scrollController,
         padding: const EdgeInsets.all(18),
-        itemCount: controller.messages.length,
-        itemBuilder: (_, i) => _bubble(controller.messages[i]),
+        itemCount: itemCount,
+        itemBuilder: (_, i) {
+          // Jika indeks mencapai panjang pesan, berarti ini giliran indikator mengetik
+          if (i == controller.messages.length) {
+            return _typingIndicator();
+          }
+          return _bubble(controller.messages[i]);
+        },
       );
     });
   }
 
   Widget _welcome() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 90,
-            height: 90,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(colors: [primary, cyan]),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(colors: [primary, cyan]),
+                boxShadow: [
+                  BoxShadow(
+                    color: primary.withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  )
+                ],
+              ),
+              child: const Icon(Icons.science_rounded,
+                  color: Colors.white, size: 45),
             ),
-            child: const Icon(Icons.auto_awesome,
-                color: Colors.white, size: 45),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            "Halo, saya Aira 👋",
-            style: TextStyle(
-              fontSize: 25,
-              fontWeight: FontWeight.w900,
-              color: text,
+            const SizedBox(height: 24),
+            const Text(
+              "Halo, aku SENA 👋",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: text,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            "Asisten AI untuk pembelajaran Biologi",
-            style: TextStyle(color: Colors.grey),
-          ),
-        ],
+            const SizedBox(height: 8),
+            const Text(
+              "Teman sains ceria yang siap\nbantu kamu jelajahi dunia sains!",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey, height: 1.5),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -152,22 +177,28 @@ class ChatbotView extends GetView<ChatbotController> {
     return Align(
       alignment: user ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.all(16),
-        constraints: const BoxConstraints(maxWidth: 330),
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        constraints: const BoxConstraints(maxWidth: 300),
         decoration: BoxDecoration(
           gradient: user
               ? const LinearGradient(colors: [primary, cyan])
               : null,
-          color: user ? null : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(24),
+          color: user ? null : const Color(0xFFF8FAFC),
+          border: user ? null : Border.all(color: const Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(20),
+            topRight: const Radius.circular(20),
+            bottomLeft: user ? const Radius.circular(20) : const Radius.circular(4),
+            bottomRight: user ? const Radius.circular(4) : const Radius.circular(20),
+          ),
         ),
         child: MarkdownBody(
           data: msg.text,
           styleSheet: MarkdownStyleSheet(
             p: TextStyle(
               color: user ? Colors.white : text,
-              fontSize: 14,
+              fontSize: 14.5,
               height: 1.5,
             ),
           ),
@@ -176,59 +207,98 @@ class ChatbotView extends GetView<ChatbotController> {
     );
   }
 
+  Widget _typingIndicator() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        constraints: const BoxConstraints(maxWidth: 200),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+            bottomLeft: Radius.circular(4),
+            bottomRight: Radius.circular(20),
+          ),
+        ),
+        child: const Text(
+          "SENA sedang memikirkan sains...",
+          style: TextStyle(
+            color: Colors.grey, 
+            fontSize: 13, 
+            fontStyle: FontStyle.italic
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _actions() {
     final list = [
-      "Jelaskan konsep",
-      "Buat analogi",
-      "Buat soal",
+      "🔬 Jelaskan konsep",
+      "💡 Buat analogi",
+      "🧪 Ide eksperimen",
     ];
 
     return SizedBox(
-      height: 55,
-      child: ListView(
+      height: 40,
+      child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        children: list
-            .map((e) => Container(
-                  margin: const EdgeInsets.only(right: 10),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      controller.textController.text = e;
-                      controller.sendMessage();
-                    },
-                    child: Text(e),
-                  ),
-                ))
-            .toList(),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: list.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, index) {
+          final e = list[index];
+          return ActionChip(
+            label: Text(e, style: const TextStyle(fontSize: 13, color: primary, fontWeight: FontWeight.w600)),
+            backgroundColor: bg,
+            side: BorderSide.none,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            onPressed: () {
+              controller.textController.text = e.substring(3); 
+              controller.sendMessage();
+            },
+          );
+        },
       ),
     );
   }
 
   Widget _input() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Row(
         children: [
           Expanded(
             child: TextField(
               controller: controller.textController,
               decoration: InputDecoration(
-                hintText: "Tanyakan sesuatu...",
+                hintText: "Tanyakan sesuatu tentang sains...",
+                hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
                 filled: true,
                 fillColor: bg,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(25),
                   borderSide: BorderSide.none,
                 ),
               ),
+              // Opsional: Tekan enter/done di keyboard langsung ngirim pesan
+              onSubmitted: (_) => controller.sendMessage(),
             ),
           ),
           const SizedBox(width: 10),
-          CircleAvatar(
-            backgroundColor: primary,
+          Container(
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(colors: [primary, cyan]),
+            ),
             child: IconButton(
               onPressed: controller.sendMessage,
-              icon: const Icon(Icons.send, color: Colors.white),
+              icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
             ),
           )
         ],

@@ -67,39 +67,8 @@ class _DashboardNewViewState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _background,
-      appBar: AppBar(
-        title: const Text(
-          'Dashboard',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        backgroundColor: _background,
-        foregroundColor: _text,
-        surfaceTintColor: _background,
-        elevation: 0,
-      ),
-      floatingActionButton:
-          FloatingActionButton.extended(
-        onPressed: () =>
-            Get.toNamed(
-          Routes.CHATBOT,
-        ),
-        backgroundColor: _blue,
-        foregroundColor: Colors.white,
-        elevation: 7,
-        icon: const Icon(
-          Icons.smart_toy_rounded,
-        ),
-        label: const Text(
-          'Tanya Aira',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ),
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.endFloat,
+      
+      // Tombol FAB "Tanya Aira" sudah dihapus dari sini
       body: RefreshIndicator(
         onRefresh: () async {
           controller.refreshDashboardData();
@@ -129,7 +98,7 @@ class _DashboardNewViewState
       padding:
           const EdgeInsets.fromLTRB(
         20,
-        12,
+        50,
         20,
         122,
       ),
@@ -267,7 +236,7 @@ class _DashboardNewViewState
           padding:
               const EdgeInsets.fromLTRB(
             20,
-            118,
+            90,
             20,
             110,
           ),
