@@ -9,10 +9,6 @@ class ApiService {
 
   static bool get hasToken => ApiClient.hasToken;
 
-  static String? get _token => ApiClient.token;
-
-  static Map<String, String> get _headers => ApiClient.defaultHeaders();
-
   static Map<String, dynamic> _decodeMap(String body) =>
       ApiClient.decodeMap(body);
 
@@ -240,6 +236,28 @@ class ApiService {
       return <String, dynamic>{
         'success': false,
         'error': 'Gagal terhubung ke server: $e',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getSubmaterialTtsAudio(
+    int submaterialId,
+  ) async {
+    try {
+      final response = await ApiClient.get(
+        Uri.parse('$baseUrl/learning/submaterial/$submaterialId/tts-audio'),
+      );
+
+      if (response.statusCode == 200) {
+        return _decodeMap(response.body);
+      }
+
+      return _failureData(response);
+    } catch (e) {
+      debugPrint('[API] Error getSubmaterialTtsAudio: $e');
+      return <String, dynamic>{
+        'success': false,
+        'error': 'Gagal terhubung ke server TTS: $e',
       };
     }
   }

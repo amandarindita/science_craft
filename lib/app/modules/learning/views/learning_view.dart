@@ -2625,12 +2625,19 @@ class _ListenContentState extends State<_ListenContent> {
   bool _ttsPaused = false;
   String? _errorMessage;
 
+  String? _neuralTtsAudioUrl;
+  bool _isLoadingNeural = false;
+
   int _listenedMilliseconds = 0;
   Duration _lastTrackedPosition = Duration.zero;
   bool _readyWasReported = false;
 
-  String? get _audioUrl =>
+  String? get _directAudioUrl =>
       ApiService.resolveMediaUrl(widget.submaterial['audio_url']?.toString());
+
+  String? get _effectiveAudioUrl => _directAudioUrl ?? _neuralTtsAudioUrl;
+
+  bool get _usesAudioFile => _effectiveAudioUrl != null;
 
   String get _narrationText {
     final String ttsText =
@@ -2642,8 +2649,6 @@ class _ListenContentState extends State<_ListenContent> {
 
     return widget.submaterial['read_content']?.toString().trim() ?? '';
   }
-
-  bool get _usesAudioFile => _audioUrl != null;
 
   bool get _isPlaying {
     if (_usesAudioFile) {
@@ -2658,6 +2663,45 @@ class _ListenContentState extends State<_ListenContent> {
     super.initState();
     _configureAudioPlayer();
     _configureTts();
+
+    if (_directAudioUrl == null) {
+      _loadNeuralTtsAudio();
+    }
+  }
+
+  Future<void> _loadNeuralTtsAudio() async {
+    final int submaterialId =
+        LearningController.intValue(widget.submaterial['id']);
+    if (submaterialId <= 0) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingNeural = true;
+    });
+
+    try {
+      final res = await ApiService.getSubmaterialTtsAudio(submaterialId);
+      if (res != null && res['success'] == true && res['audio_url'] != null) {
+        final String? resolved =
+            ApiService.resolveMediaUrl(res['audio_url'].toString());
+        if (mounted && resolved != null && resolved.isNotEmpty) {
+          setState(() {
+            _neuralTtsAudioUrl = resolved;
+            _isLoadingNeural = false;
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('[Audio] Gagal memuat audio narasi: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoadingNeural = false;
+      });
+    }
   }
 
   void _configureAudioPlayer() {
@@ -2831,6 +2875,20 @@ class _ListenContentState extends State<_ListenContent> {
       return;
     }
 
+    if (_directAudioUrl == null &&
+        _neuralTtsAudioUrl == null &&
+        _isLoadingNeural) {
+      setState(() {
+        _isBusy = true;
+      });
+      await _loadNeuralTtsAudio();
+      if (mounted) {
+        setState(() {
+          _isBusy = false;
+        });
+      }
+    }
+
     if (_usesAudioFile) {
       await _toggleAudioFile();
     } else {
@@ -2839,7 +2897,7 @@ class _ListenContentState extends State<_ListenContent> {
   }
 
   Future<void> _toggleAudioFile() async {
-    final String? url = _audioUrl;
+    final String? url = _effectiveAudioUrl;
 
     if (url == null) {
       return;
@@ -2984,76 +3042,100 @@ class _ListenContentState extends State<_ListenContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // ==========================================
+          // VIBRANT ROYAL BLUE GRADIENT PLAYER CARD
+          // ==========================================
           Container(
-            padding: const EdgeInsets.all(17),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
                 colors: <Color>[Color(0xFF1E3A8A), Color(0xFF2563EB)],
               ),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.28),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Column(
               children: <Widget>[
                 Row(
                   children: <Widget>[
+                    // Translucent Circular Play Button
                     Container(
-                      width: 54,
-                      height: 54,
+                      width: 52,
+                      height: 52,
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.18),
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.30),
+                          width: 1.5,
+                        ),
                       ),
                       child: IconButton(
                         onPressed: canPlay && !_isBusy ? _togglePlayback : null,
-                        icon:
-                            _isBusy
-                                ? const SizedBox(
-                                  width: 21,
-                                  height: 21,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                                : Icon(
-                                  _isPlaying
-                                      ? Icons.pause_rounded
-                                      : Icons.play_arrow_rounded,
+                        icon: _isBusy || _isLoadingNeural
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
                                   color: Colors.white,
-                                  size: 32,
                                 ),
+                              )
+                            : Icon(
+                                _isPlaying
+                                    ? Icons.pause_rounded
+                                    : Icons.play_arrow_rounded,
+                                color: Colors.white,
+                                size: 30,
+                              ),
                       ),
                     ),
                     const SizedBox(width: 14),
+                    // Track Title & Clean Status Subtitle
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            _usesAudioFile ? 'Rekaman audio' : 'Text-to-Speech',
-                            style: const TextStyle(
+                            'Audio Pembelajaran',
+                            style: GoogleFonts.poppins(
                               color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 3),
                           Text(
-                            _usesAudioFile
-                                ? 'Audio dari materi pembelajaran'
-                                : 'Narasi otomatis Bahasa Indonesia',
-                            style: const TextStyle(
-                              color: Color(0xFFDCE9FF),
+                            _isPlaying
+                                ? 'Sedang memutar audio materi...'
+                                : (_position > Duration.zero
+                                    ? 'Audio sedang dijeda'
+                                    : 'Dengarkan penjelasan materi'),
+                            style: GoogleFonts.plusJakartaSans(
+                              color: const Color(0xFFDCE9FF),
                               fontSize: 12,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    // Stop Button
                     IconButton(
                       tooltip: 'Berhenti',
                       onPressed: canPlay ? _stopPlayback : null,
-                      icon: const Icon(Icons.stop_rounded, color: Colors.white),
+                      icon: const Icon(
+                        Icons.stop_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                   ],
                 ),
@@ -3064,81 +3146,92 @@ class _ListenContentState extends State<_ListenContent> {
                       activeTrackColor: Colors.white,
                       inactiveTrackColor: Colors.white.withValues(alpha: 0.25),
                       thumbColor: Colors.white,
-                      overlayColor: Colors.white.withValues(alpha: 0.12),
+                      overlayColor: Colors.white.withValues(alpha: 0.15),
+                      trackHeight: 4,
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 6,
+                      ),
                     ),
                     child: Slider(
                       min: 0,
-                      max:
-                          _duration.inMilliseconds > 0
-                              ? _duration.inMilliseconds.toDouble()
-                              : 1,
+                      max: _duration.inMilliseconds > 0
+                          ? _duration.inMilliseconds.toDouble()
+                          : 1,
                       value: _safeSliderValue(),
                       onChanged: _duration.inMilliseconds > 0 ? _seekTo : null,
                     ),
                   ),
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        _formatDuration(_position),
-                        style: const TextStyle(
-                          color: Color(0xFFDCE9FF),
-                          fontSize: 11,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Text(
+                          _formatDuration(_position),
+                          style: GoogleFonts.poppins(
+                            color: const Color(0xFFDCE9FF),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        _formatDuration(_duration),
-                        style: const TextStyle(
-                          color: Color(0xFFDCE9FF),
-                          fontSize: 11,
+                        Text(
+                          _formatDuration(_duration),
+                          style: GoogleFonts.poppins(
+                            color: const Color(0xFFDCE9FF),
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ],
             ),
           ),
+
           const SizedBox(height: 16),
-          const Text(
-            'Kecepatan',
-            style: TextStyle(color: _text, fontWeight: FontWeight.w900),
+
+          // Speed Section
+          Text(
+            'Kecepatan Suara',
+            style: GoogleFonts.poppins(
+              color: _text,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 9),
           Wrap(
             spacing: 9,
             runSpacing: 9,
-            children:
-                <double>[0.75, 1.0, 1.25, 1.5].map((speed) {
-                  final bool selected = _speed == speed;
+            children: <double>[0.75, 1.0, 1.25, 1.5].map((speed) {
+              final bool selected = _speed == speed;
 
-                  return ChoiceChip(
-                    label: Text(
-                      '${speed.toStringAsFixed(speed == 1.0 ? 0 : 2)}x',
-                    ),
-                    selected: selected,
-                    onSelected: (_) => _changeSpeed(speed),
-                    selectedColor: const Color(0xFFEAF1FF),
-                    side: BorderSide(
-                      color: selected ? _primary : const Color(0xFFE2E8F0),
-                    ),
-                    labelStyle: TextStyle(
-                      color: selected ? _primary : _muted,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  );
-                }).toList(),
+              return ChoiceChip(
+                label: Text(
+                  '${speed.toStringAsFixed(speed == 1.0 ? 0 : 2)}x',
+                ),
+                selected: selected,
+                onSelected: (_) => _changeSpeed(speed),
+                selectedColor: const Color(0xFFEFF6FF),
+                backgroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                side: BorderSide(
+                  color: selected ? _primary : const Color(0xFFE2E8F0),
+                  width: selected ? 1.5 : 1,
+                ),
+                labelStyle: GoogleFonts.plusJakartaSans(
+                  color: selected ? _primary : _muted,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  fontSize: 12.5,
+                ),
+              );
+            }).toList(),
           ),
-          const SizedBox(height: 14),
-          _AudioCompletionProgress(
-            progress:
-                _usesAudioFile && _duration.inMilliseconds > 0
-                    ? (_listenedMilliseconds / _duration.inMilliseconds)
-                        .clamp(0.0, 1.0)
-                        .toDouble()
-                    : (_readyWasReported ? 1.0 : 0.0),
-            isTts: !_usesAudioFile,
-          ),
+
           if (_errorMessage != null) ...<Widget>[
             const SizedBox(height: 14),
             Container(
@@ -3151,30 +3244,14 @@ class _ListenContentState extends State<_ListenContent> {
               ),
               child: Text(
                 _errorMessage!,
-                style: const TextStyle(color: Color(0xFF9A3412), height: 1.4),
+                style: GoogleFonts.plusJakartaSans(
+                  color: const Color(0xFF9A3412),
+                  fontSize: 12.5,
+                  height: 1.4,
+                ),
               ),
             ),
           ],
-          const SizedBox(height: 18),
-          ExpansionTile(
-            tilePadding: EdgeInsets.zero,
-            childrenPadding: const EdgeInsets.only(bottom: 8),
-            title: const Text(
-              'Lihat naskah audio',
-              style: TextStyle(color: _text, fontWeight: FontWeight.w900),
-            ),
-            children: <Widget>[
-              Align(
-                alignment: Alignment.centerLeft,
-                child: SelectableText(
-                  hasNarration
-                      ? _narrationText
-                      : 'Naskah audio belum tersedia.',
-                  style: const TextStyle(color: _text, height: 1.65),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -3193,69 +3270,6 @@ class _ListenContentState extends State<_ListenContent> {
 
     return '${minutes.toString().padLeft(2, '0')}:'
         '${seconds.toString().padLeft(2, '0')}';
-  }
-}
-
-class _AudioCompletionProgress extends StatelessWidget {
-  const _AudioCompletionProgress({required this.progress, required this.isTts});
-
-  final double progress;
-  final bool isTts;
-
-  @override
-  Widget build(BuildContext context) {
-    final int percent = (progress * 100).round();
-    final bool ready = progress >= 0.90;
-
-    return Container(
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: ready ? const Color(0xFFE7F8EE) : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: ready ? const Color(0xFF86EFAC) : const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(
-                ready ? Icons.check_circle_rounded : Icons.hearing_rounded,
-                color: ready ? _success : _primary,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  ready
-                      ? 'Syarat dengarkan terpenuhi'
-                      : isTts
-                      ? 'Dengarkan narasi sampai selesai'
-                      : '$percent% telah didengarkan',
-                  style: TextStyle(
-                    color: ready ? _success : _text,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (!isTts) ...<Widget>[
-            const SizedBox(height: 9),
-            LinearProgressIndicator(
-              value: progress,
-              minHeight: 7,
-              borderRadius: BorderRadius.circular(20),
-              color: ready ? _success : _primary,
-              backgroundColor: const Color(0xFFE2E8F0),
-            ),
-          ],
-        ],
-      ),
-    );
   }
 }
 
