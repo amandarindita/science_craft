@@ -127,33 +127,8 @@ class NotificationView extends GetView<NotificationController> {
               ),
 
               // Action Buttons
-              Row(
-                children: [
-                  // Test Notification Button
-                  Tooltip(
-                    message: "Kirim Notif Tes",
-                    child: Material(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(14),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(14),
-                        onTap: controller.triggerTestNotification,
-                        child: const Padding(
-                          padding: EdgeInsets.all(10),
-                          child: Icon(
-                            Icons.science_rounded,
-                            color: Color(0xFFFDE047),
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // More Options Menu
-                  PopupMenuButton<String>(
-                    elevation: 8,
+              PopupMenuButton<String>(
+                elevation: 8,
                     color: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -225,9 +200,7 @@ class NotificationView extends GetView<NotificationController> {
                   ),
                 ],
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
           // Subtitle & Live Unread Indicator
           Obx(() {
@@ -402,29 +375,6 @@ class NotificationView extends GetView<NotificationController> {
                 fontSize: 14,
                 color: _textMuted,
                 height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: controller.triggerTestNotification,
-              icon: const Icon(Icons.science_rounded, size: 18),
-              label: Text(
-                'Kirim Notifikasi Uji Coba',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13.5,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _primaryBlue,
-                foregroundColor: Colors.white,
-                elevation: 2,
-                shadowColor: _primaryBlue.withValues(alpha: 0.4),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 22, vertical: 13),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
               ),
             ),
           ],

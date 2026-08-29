@@ -225,15 +225,46 @@ class NotificationController extends GetxController {
   String _formatTimestamp(String? raw) {
     if (raw == null || raw.trim().isEmpty) return 'Baru Saja';
     try {
-      final dt = DateTime.tryParse(raw);
+      final cleanRaw = raw.trim();
+      DateTime? dt;
+
+      // Cek apakah ada penanda timezone eksplisit
+      final bool hasTimezone = cleanRaw.endsWith('Z') ||
+          cleanRaw.contains('+') ||
+          cleanRaw.contains('GMT') ||
+          cleanRaw.contains('UTC');
+
+      if (!hasTimezone) {
+        // Backend mengirim timestamp UTC tanpa suffix 'Z' (cth: "2026-08-29 17:35:10")
+        // Tambahkan 'Z' dan ubah spasi ke 'T' agar dibaca sebagai UTC lalu dikonversi ke waktu lokal (WIB/UTC+7)
+        final formattedUtc = '${cleanRaw.replaceFirst(' ', 'T')}Z';
+        dt = DateTime.tryParse(formattedUtc)?.toLocal();
+      }
+
+      // Fallback parse standar jika belum berhasil
+      dt ??= DateTime.tryParse(cleanRaw)?.toLocal();
       if (dt == null) return raw;
-      final diff = DateTime.now().difference(dt);
-      if (diff.inMinutes < 1) return 'Baru Saja';
-      if (diff.inMinutes < 60) return '${diff.inMinutes} mnt lalu';
-      if (diff.inHours < 24) return '${diff.inHours} jam lalu';
-      if (diff.inDays == 1) return 'Kemarin';
-      if (diff.inDays < 7) return '${diff.inDays} hari lalu';
-      return '${dt.day}/${dt.month}/${dt.year}';
+
+      final now = DateTime.now();
+      final diff = now.difference(dt);
+
+      // Tangani clock skew (jika waktu server sedikit mendahului perangkat) atau baru saja dibuat
+      if (diff.isNegative || diff.inSeconds < 60) {
+        return 'Baru Saja';
+      }
+      if (diff.inMinutes < 60) {
+        return '${diff.inMinutes} mnt lalu';
+      }
+      if (diff.inHours < 24) {
+        return '${diff.inHours} jam lalu';
+      }
+      if (diff.inDays == 1) {
+        return 'Kemarin';
+      }
+      if (diff.inDays < 7) {
+        return '${diff.inDays} hari lalu';
+      }
+      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
     } catch (_) {
       return raw;
     }
@@ -264,30 +295,6 @@ class NotificationController extends GetxController {
   // ========================================================================
   // KATEGORI A: INSTANT TRIGGERS (Lokal + Feedback Nyata)
   // ========================================================================
-
-  void triggerTestNotification() {
-    const String title = "Materi Baru: Reaksi Kimia";
-    const String body =
-        "Modul eksperimen baru dan quest harian sudah siap untuk kamu jelajahi.";
-
-    _notifHelper.showInstantNotification(
-      id: 99,
-      title: title,
-      body: body,
-    );
-    _addToHistory(
-      title,
-      body,
-      Icons.menu_book_rounded,
-      const Color(0xFF06B6D4),
-      "Materi",
-    );
-
-    AppSnackbar.success(
-      'Notifikasi Terkirim',
-      'Notifikasi uji coba info materi berhasil ditampilkan.',
-    );
-  }
 
   void checkXPMilestone(int currentXP) {
     if (currentXP > 0 && currentXP % 500 == 0) {

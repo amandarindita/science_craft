@@ -773,482 +773,333 @@ class _DashboardViewState extends State<DashboardView> {
     int initialStreak,
     _StreakTier initialTier,
   ) {
-    int currentPreview = initialStreak;
-
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (BuildContext ctx) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            final _StreakTier tier = _StreakTier.fromDays(currentPreview);
-            final bool isTier7 = currentPreview >= 7 && currentPreview < 14;
-            final bool isTier14 = currentPreview >= 14;
+        final int streak = controller.userStreak.value;
+        final _StreakTier tier = _StreakTier.fromDays(streak);
+        final bool isTier7 = streak >= 7 && streak < 14;
+        final bool isTier14 = streak >= 14;
 
-            return Container(
-              padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        return Container(
+          padding: const EdgeInsets.fromLTRB(22, 14, 22, 28),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              // Drag indicator bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  // Drag indicator bar
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE2E8F0),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
-                  // Super Spectacular Animated Burning Flame
-                  _AnimatedBurningFlame(
-                    size: 104,
-                    streak: currentPreview,
-                    tier: tier,
-                  ),
-                  const SizedBox(height: 10),
+              // Super Spectacular Animated Burning Flame
+              _AnimatedBurningFlame(
+                size: 104,
+                streak: streak,
+                tier: tier,
+              ),
+              const SizedBox(height: 10),
 
-                  // Title & Count
-                  Text(
-                    '$currentPreview Hari Streak',
-                    style: GoogleFonts.poppins(
-                      color: _text,
-                      fontSize: 23,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
+              // Title & Count
+              Text(
+                '$streak Hari Streak',
+                style: GoogleFonts.poppins(
+                  color: _text,
+                  fontSize: 23,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 4),
 
-                  // Tier Level Badge & Milestone Pill
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4.5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: tier.bgColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border:
-                              Border.all(color: tier.borderColor, width: 1.2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: tier.glowColor.withValues(alpha: 0.25),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (isTier7 || isTier14) ...[
-                              Icon(
-                                isTier14 ? Icons.military_tech_rounded : Icons.auto_awesome,
-                                size: 14,
-                                color: isTier14 ? const Color(0xFF9333EA) : const Color(0xFFD97706),
-                              ),
-                              const SizedBox(width: 4),
-                            ],
-                            Text(
-                              tier.levelName,
-                              style: GoogleFonts.poppins(
-                                color: tier.textColor,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (isTier7 || isTier14) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 9,
-                            vertical: 4.5,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: isTier14
-                                  ? [const Color(0xFFFAF5FF), const Color(0xFFF3E8FF)]
-                                  : [const Color(0xFFFEF08A), const Color(0xFFFDE047)],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isTier14 ? const Color(0xFFC084FC) : const Color(0xFFF59E0B),
-                              width: 1.2,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                isTier14 ? Icons.workspace_premium_rounded : Icons.local_fire_department_rounded,
-                                size: 13,
-                                color: isTier14 ? const Color(0xFF7E22CE) : const Color(0xFFB45309),
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                isTier14 ? '14+ HARI ULTIMATE!' : '7+ HARI!',
-                                style: GoogleFonts.poppins(
-                                  color: isTier14 ? const Color(0xFF6B21A8) : const Color(0xFF78350F),
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Motivation text
-                  Text(
-                    tier.desc,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.plusJakartaSans(
-                      color: const Color(0xFF475569),
-                      fontSize: 12.5,
-                      height: 1.45,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 7-Day Activity Indicator
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Aktivitas Belajar Pekan Ini',
-                              style: GoogleFonts.poppins(
-                                color: _text,
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            Text(
-                              tier.isMaxTier
-                                  ? 'Target Puncak Tercapai! 👑'
-                                  : 'Target: ${tier.nextGoalDays} Hari',
-                              style: GoogleFonts.plusJakartaSans(
-                                color: tier.textColor,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Builder(
-                          builder: (BuildContext _) {
-                            final int todayWeekday = DateTime.now().weekday;
-                            final int todayIndex = todayWeekday - 1;
-
-                            return Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: List.generate(7, (int index) {
-                                const List<String> days = <String>[
-                                  'Sen',
-                                  'Sel',
-                                  'Rab',
-                                  'Kam',
-                                  'Jum',
-                                  'Sab',
-                                  'Min',
-                                ];
-                                final bool isToday = index == todayIndex;
-                                final bool isActive =
-                                    currentPreview > 0 &&
-                                    index <= todayIndex &&
-                                    index > (todayIndex - currentPreview);
-
-                                return Column(
-                                  children: <Widget>[
-                                    AnimatedContainer(
-                                      duration:
-                                          const Duration(milliseconds: 250),
-                                      width: 34,
-                                      height: 34,
-                                      decoration: BoxDecoration(
-                                        color: isActive
-                                            ? tier.bgColor
-                                            : Colors.white,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: isActive
-                                              ? tier.borderColor
-                                              : (isToday
-                                                  ? _blue
-                                                  : const Color(0xFFE2E8F0)),
-                                          width: isToday || isActive ? 1.5 : 1,
-                                        ),
-                                        boxShadow: isActive
-                                            ? [
-                                                BoxShadow(
-                                                  color: tier.glowColor
-                                                      .withValues(alpha: 0.25),
-                                                  blurRadius: 8,
-                                                ),
-                                              ]
-                                            : null,
-                                      ),
-                                      child: Icon(
-                                        isActive
-                                            ? Icons.local_fire_department_rounded
-                                            : (isToday
-                                                ? Icons
-                                                    .radio_button_unchecked_rounded
-                                                : Icons.circle_outlined),
-                                        color: isActive
-                                            ? tier.iconColor
-                                            : (isToday
-                                                ? _blue
-                                                : const Color(0xFFCBD5E1)),
-                                        size: isActive ? 18 : 12,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 5),
-                                    Text(
-                                      days[index],
-                                      style: GoogleFonts.plusJakartaSans(
-                                        color: isToday
-                                            ? _blueDark
-                                            : (isActive ? _text : _muted),
-                                        fontSize: 10.5,
-                                        fontWeight: isToday || isActive
-                                            ? FontWeight.w800
-                                            : FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Simple & Clean Preview Chips Selector (Mode Testing)
-                  Container(
-                    width: double.infinity,
+              // Tier Level Badge & Milestone Pill
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      horizontal: 12,
+                      vertical: 4.5,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.science_rounded,
-                              size: 14,
-                              color: _blue,
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              'Coba Pratinjau Level Api:',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: _text,
-                              ),
-                            ),
-                          ],
+                    decoration: BoxDecoration(
+                      color: tier.bgColor,
+                      borderRadius: BorderRadius.circular(12),
+                      border:
+                          Border.all(color: tier.borderColor, width: 1.2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: tier.glowColor.withValues(alpha: 0.25),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
                         ),
-                        const SizedBox(height: 8),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          child: Row(
-                            children: <Widget>[
-                              _buildPreviewChip(
-                                days: 0,
-                                label: '0 Hari',
-                                current: currentPreview,
-                                onSelected: () {
-                                  setModalState(() => currentPreview = 0);
-                                  controller.userStreak.value = 0;
-                                },
-                              ),
-                              const SizedBox(width: 6),
-                              _buildPreviewChip(
-                                days: 2,
-                                label: '2 Hari (Spark)',
-                                current: currentPreview,
-                                onSelected: () {
-                                  setModalState(() => currentPreview = 2);
-                                  controller.userStreak.value = 2;
-                                },
-                              ),
-                              const SizedBox(width: 6),
-                              _buildPreviewChip(
-                                days: 7,
-                                label: '7 Hari (Super Flame!) 🔥',
-                                current: currentPreview,
-                                isSpecial: true,
-                                onSelected: () {
-                                  setModalState(() => currentPreview = 7);
-                                  controller.userStreak.value = 7;
-                                },
-                              ),
-                              const SizedBox(width: 6),
-                              _buildPreviewChip(
-                                days: 14,
-                                label: '14 Hari (Ultimate PALING WOW!) 👑',
-                                current: currentPreview,
-                                isSpecial: true,
-                                isUltimate: true,
-                                onSelected: () {
-                                  setModalState(() => currentPreview = 14);
-                                  controller.userStreak.value = 14;
-                                },
-                              ),
-                            ],
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isTier7 || isTier14) ...[
+                          Icon(
+                            isTier14
+                                ? Icons.military_tech_rounded
+                                : Icons.auto_awesome,
+                            size: 14,
+                            color: isTier14
+                                ? const Color(0xFF9333EA)
+                                : const Color(0xFFD97706),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                        Text(
+                          tier.levelName,
+                          style: GoogleFonts.poppins(
+                            color: tier.textColor,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
-
-                  // Close Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 46,
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _blue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                  if (isTier7 || isTier14) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4.5,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isTier14
+                              ? [
+                                  const Color(0xFFFAF5FF),
+                                  const Color(0xFFF3E8FF)
+                                ]
+                              : [
+                                  const Color(0xFFFEF08A),
+                                  const Color(0xFFFDE047)
+                                ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isTier14
+                              ? const Color(0xFFC084FC)
+                              : const Color(0xFFF59E0B),
+                          width: 1.2,
                         ),
                       ),
-                      child: Text(
-                        'Tutup Pratinjau',
-                        style: GoogleFonts.poppins(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isTier14
+                                ? Icons.workspace_premium_rounded
+                                : Icons.local_fire_department_rounded,
+                            size: 13,
+                            color: isTier14
+                                ? const Color(0xFF7E22CE)
+                                : const Color(0xFFB45309),
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            isTier14 ? '14+ HARI ULTIMATE!' : '7+ HARI!',
+                            style: GoogleFonts.poppins(
+                              color: isTier14
+                                  ? const Color(0xFF6B21A8)
+                                  : const Color(0xFF78350F),
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
-            );
-          },
+              const SizedBox(height: 12),
+
+              // Motivation text
+              Text(
+                tier.desc,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  color: const Color(0xFF475569),
+                  fontSize: 12.5,
+                  height: 1.45,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // 7-Day Activity Indicator
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Aktivitas Belajar Pekan Ini',
+                          style: GoogleFonts.poppins(
+                            color: _text,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          tier.isMaxTier
+                              ? 'Target Puncak Tercapai! 👑'
+                              : 'Target: ${tier.nextGoalDays} Hari',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: tier.textColor,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Builder(
+                      builder: (BuildContext _) {
+                        final int todayWeekday = DateTime.now().weekday;
+                        final int todayIndex = todayWeekday - 1;
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: List.generate(7, (int index) {
+                            const List<String> days = <String>[
+                              'Sen',
+                              'Sel',
+                              'Rab',
+                              'Kam',
+                              'Jum',
+                              'Sab',
+                              'Min',
+                            ];
+                            final bool isToday = index == todayIndex;
+                            final bool isActive = streak > 0 &&
+                                index <= todayIndex &&
+                                index > (todayIndex - streak);
+
+                            return Column(
+                              children: <Widget>[
+                                AnimatedContainer(
+                                  duration:
+                                      const Duration(milliseconds: 250),
+                                  width: 34,
+                                  height: 34,
+                                  decoration: BoxDecoration(
+                                    color: isActive
+                                        ? tier.bgColor
+                                        : Colors.white,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: isActive
+                                          ? tier.borderColor
+                                          : (isToday
+                                              ? _blue
+                                              : const Color(0xFFE2E8F0)),
+                                      width:
+                                          isToday || isActive ? 1.5 : 1,
+                                    ),
+                                    boxShadow: isActive
+                                        ? [
+                                            BoxShadow(
+                                              color: tier.glowColor
+                                                  .withValues(alpha: 0.25),
+                                              blurRadius: 8,
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Icon(
+                                    isActive
+                                        ? Icons
+                                            .local_fire_department_rounded
+                                        : (isToday
+                                            ? Icons
+                                                .radio_button_unchecked_rounded
+                                            : Icons.circle_outlined),
+                                    color: isActive
+                                        ? tier.iconColor
+                                        : (isToday
+                                            ? _blue
+                                            : const Color(0xFFCBD5E1)),
+                                    size: isActive ? 18 : 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  days[index],
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: isToday
+                                        ? _blueDark
+                                        : (isActive ? _text : _muted),
+                                    fontSize: 10.5,
+                                    fontWeight: isToday || isActive
+                                        ? FontWeight.w800
+                                        : FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            );
+                          }),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // Action / Close Button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.local_fire_department_rounded,
+                    size: 18,
+                  ),
+                  label: Text(
+                    'Pertahankan Semangat Belajar!',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         );
       },
-    );
-  }
-
-  Widget _buildPreviewChip({
-    required int days,
-    required String label,
-    required int current,
-    required VoidCallback onSelected,
-    bool isSpecial = false,
-    bool isUltimate = false,
-  }) {
-    final bool isSelected = current == days;
-    final _StreakTier chipTier = _StreakTier.fromDays(days);
-
-    return InkWell(
-      onTap: onSelected,
-      borderRadius: BorderRadius.circular(10),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5.5),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isUltimate
-                  ? const Color(0xFFF3E8FF)
-                  : (isSpecial ? const Color(0xFFFEF3C7) : chipTier.bgColor))
-              : (isUltimate
-                  ? const Color(0xFFFAF5FF)
-                  : (isSpecial ? const Color(0xFFFFFBEB) : Colors.white)),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected
-                ? (isUltimate
-                    ? const Color(0xFF9333EA)
-                    : (isSpecial ? const Color(0xFFD97706) : chipTier.borderColor))
-                : (isUltimate
-                    ? const Color(0xFFD8B4FE)
-                    : (isSpecial ? const Color(0xFFFDE68A) : const Color(0xFFCBD5E1))),
-            width: isSelected || isSpecial ? 1.5 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: chipTier.glowColor.withValues(alpha: 0.35),
-                    blurRadius: 8,
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isUltimate
-                  ? Icons.workspace_premium_rounded
-                  : (isSpecial ? Icons.auto_awesome : Icons.local_fire_department_rounded),
-              color: isUltimate
-                  ? const Color(0xFF9333EA)
-                  : (isSpecial ? const Color(0xFFD97706) : chipTier.iconColor),
-              size: 13.5,
-            ),
-            const SizedBox(width: 4.5),
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontSize: 10.5,
-                fontWeight: isSelected || isSpecial
-                    ? FontWeight.w700
-                    : FontWeight.w500,
-                color: isSelected
-                    ? (isUltimate
-                        ? const Color(0xFF6B21A8)
-                        : (isSpecial ? const Color(0xFF92400E) : chipTier.textColor))
-                    : (isUltimate
-                        ? const Color(0xFF7E22CE)
-                        : (isSpecial ? const Color(0xFFB45309) : _text)),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

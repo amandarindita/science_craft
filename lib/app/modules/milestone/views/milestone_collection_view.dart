@@ -6,12 +6,14 @@ import '../controllers/milestone_controller.dart';
 import '../models/milestone_reward.dart';
 import '../widgets/milestone_avatar_frame.dart';
 
-const Color _background = Color(0xFFF4F8FF);
-const Color _primary = Color(0xFF2563EB);
+const Color _bg = Color(0xFFF8FAFC);
+const Color _primaryBlue = Color(0xFF2563EB);
+const Color _darkNavy = Color(0xFF1E3A8A);
 const Color _purple = Color(0xFF7C3AED);
-const Color _text = Color(0xFF172033);
-const Color _muted = Color(0xFF64748B);
-const Color _success = Color(0xFF16A34A);
+const Color _textDark = Color(0xFF0F172A);
+const Color _textMuted = Color(0xFF64748B);
+const Color _success = Color(0xFF10B981);
+const Color _warning = Color(0xFFF59E0B);
 const Color _border = Color(0xFFE2E8F0);
 
 class MilestoneCollectionView extends StatefulWidget {
@@ -38,68 +40,102 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: _background,
+        backgroundColor: _bg,
         appBar: AppBar(
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          backgroundColor: Colors.white,
+          foregroundColor: _textDark,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, size: 20),
+            onPressed: () => Get.back(),
+          ),
+          centerTitle: true,
           title: Text(
             'Milestone & Koleksi',
             style: GoogleFonts.poppins(
+              color: _textDark,
               fontWeight: FontWeight.w700,
-              fontSize: 18,
+              fontSize: 17,
+              letterSpacing: -0.2,
             ),
           ),
-          centerTitle: true,
-          backgroundColor: Colors.white,
-          foregroundColor: _text,
-          elevation: 0.5,
-          shadowColor: Colors.black12,
-        ),
-        body: Column(
-          children: <Widget>[
-            _XpJourneyHeader(controller: controller),
-            Container(
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(56),
+            child: Container(
               color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
               child: Container(
-                height: 46,
+                height: 44,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: TabBar(
                   dividerColor: Colors.transparent,
                   indicatorSize: TabBarIndicatorSize.tab,
                   indicator: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(11),
+                    borderRadius: BorderRadius.circular(10),
                     boxShadow: const <BoxShadow>[
                       BoxShadow(
                         color: Color(0x140F172A),
                         blurRadius: 8,
-                        offset: Offset(0, 3),
+                        offset: Offset(0, 2),
                       ),
                     ],
                   ),
-                  labelColor: _primary,
-                  unselectedLabelColor: _muted,
+                  labelColor: _primaryBlue,
+                  unselectedLabelColor: _textMuted,
                   labelStyle: GoogleFonts.poppins(
                     fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                    fontSize: 12.5,
+                  ),
+                  unselectedLabelStyle: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12.5,
                   ),
                   tabs: const <Widget>[
-                    Tab(text: 'Milestone'),
-                    Tab(text: 'Koleksi'),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.emoji_events_rounded, size: 16),
+                          SizedBox(width: 6),
+                          Text('Milestone XP'),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.auto_awesome_rounded, size: 16),
+                          SizedBox(width: 6),
+                          Text('Koleksi Sains'),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
+          ),
+        ),
+        body: Column(
+          children: <Widget>[
+            _XpJourneyHeader(controller: controller),
             Expanded(
               child: Obx(
                 () {
                   if (controller.isLoading.value &&
                       controller.rewards.isEmpty) {
                     return const Center(
-                      child: CircularProgressIndicator(),
+                      child: CircularProgressIndicator(
+                        color: _primaryBlue,
+                      ),
                     );
                   }
 
@@ -126,27 +162,33 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
     );
   }
 
+  // ===========================================================================
+  // TAB 1: MILESTONE XP ROADMAP
+  // ===========================================================================
   Widget _buildMilestoneTab() {
     final List<MilestoneReward> rewards = controller.rewards.toList();
     final String? nextId = controller.nextReward.value?.id;
 
     return RefreshIndicator(
+      color: _primaryBlue,
       onRefresh: controller.loadMilestones,
       child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 18, 16, 120),
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
         children: <Widget>[
           const _SectionHeading(
-            title: 'Perjalanan Milestone',
+            title: 'Perjalanan Milestone XP',
             subtitle:
-                'XP adalah jejak aktivitas belajar. Hadiah tidak membuka materi atau Level Pembelajaran.',
+                'Setiap XP yang kamu kumpulkan otomatis membuka lencana, kartu penemuan, dan bingkai eksklusif!',
           ),
           const SizedBox(height: 16),
           if (rewards.isEmpty)
             const _EmptyCard(
               icon: Icons.route_rounded,
-              title: 'Milestone belum tersedia',
-              subtitle: 'Tarik layar ke bawah untuk memuat ulang.',
+              title: 'Milestone Belum Tersedia',
+              subtitle: 'Tarik layar ke bawah untuk memuat ulang data.',
             )
           else
             ...List<Widget>.generate(
@@ -172,22 +214,28 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
     );
   }
 
+  // ===========================================================================
+  // TAB 2: KOLEKSI PENEMUAN & BINGKAI
+  // ===========================================================================
   Widget _buildCollectionTab() {
     return RefreshIndicator(
+      color: _primaryBlue,
       onRefresh: controller.loadMilestones,
       child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
         slivers: <Widget>[
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
             sliver: SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   const _SectionHeading(
-                    title: 'Koleksi Penemuan',
+                    title: 'Galeri Koleksi Sains',
                     subtitle:
-                        'Enrichment sains yang terbuka otomatis ketika milestone XP tercapai.',
+                        'Eksplorasi kartu ilmuwan, fenomena menakjubkan, dan koleksi bingkai avatar profilmu.',
                   ),
                   const SizedBox(height: 14),
                   _collectionTypeSwitch(),
@@ -216,15 +264,16 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF1FF),
+        color: const Color(0xFFEFF6FF),
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFDBEAFE)),
       ),
       child: Row(
         children: <Widget>[
           Expanded(
             child: _MiniSegment(
-              icon: Icons.auto_awesome_rounded,
-              label: 'Penemuan',
+              icon: Icons.science_rounded,
+              label: 'Kartu Penemuan',
               selected: !showFrames,
               onTap: () => setState(() => showFrames = false),
             ),
@@ -232,8 +281,8 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
           const SizedBox(width: 4),
           Expanded(
             child: _MiniSegment(
-              icon: Icons.hexagon_outlined,
-              label: 'Bingkai',
+              icon: Icons.workspace_premium_rounded,
+              label: 'Bingkai Avatar',
               selected: showFrames,
               onTap: () => setState(() => showFrames = true),
             ),
@@ -246,7 +295,7 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
   Widget _categoryFilters() {
     final List<_CategoryChoice> choices = <_CategoryChoice>[
       const _CategoryChoice(null, 'Semua'),
-      const _CategoryChoice(DiscoveryCategory.scientist, 'Tokoh'),
+      const _CategoryChoice(DiscoveryCategory.scientist, 'Tokoh Sains'),
       const _CategoryChoice(DiscoveryCategory.phenomenon, 'Fenomena'),
       const _CategoryChoice(DiscoveryCategory.application, 'Penerapan'),
       const _CategoryChoice(DiscoveryCategory.technology, 'Teknologi'),
@@ -254,28 +303,43 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
       child: Row(
         children: choices.map((_CategoryChoice choice) {
           final bool selected = selectedCategory == choice.category;
           return Padding(
             padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(choice.label),
-              selected: selected,
-              onSelected: (_) {
-                setState(() => selectedCategory = choice.category);
-              },
-              selectedColor: const Color(0xFFDCE9FF),
-              backgroundColor: Colors.white,
-              side: BorderSide(
-                color: selected ? const Color(0xFF93B4F8) : _border,
+            child: InkWell(
+              onTap: () => setState(() => selectedCategory = choice.category),
+              borderRadius: BorderRadius.circular(20),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                decoration: BoxDecoration(
+                  color: selected ? _primaryBlue : Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: selected ? _primaryBlue : _border,
+                  ),
+                  boxShadow: selected
+                      ? [
+                          BoxShadow(
+                            color: _primaryBlue.withValues(alpha: 0.25),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  choice.label,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: selected ? Colors.white : _textMuted,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
               ),
-              labelStyle: TextStyle(
-                color: selected ? _primary : _muted,
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                fontSize: 12,
-              ),
-              showCheckmark: false,
             ),
           );
         }).toList(),
@@ -300,25 +364,25 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
 
     if (cards.isEmpty) {
       return const SliverPadding(
-        padding: EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 20),
         sliver: SliverToBoxAdapter(
           child: _EmptyCard(
             icon: Icons.collections_bookmark_outlined,
-            title: 'Belum ada kartu pada kategori ini',
-            subtitle: 'Pilih kategori lain untuk melihat koleksi.',
+            title: 'Belum Ada Kartu pada Kategori Ini',
+            subtitle: 'Pilih kategori lain untuk melihat koleksi penemuan.',
           ),
         ),
       );
     }
 
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.68,
+          mainAxisSpacing: 14,
+          childAspectRatio: 0.66,
         ),
         delegate: SliverChildBuilderDelegate(
           (BuildContext context, int index) {
@@ -348,25 +412,25 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
 
     if (frames.isEmpty) {
       return const SliverPadding(
-        padding: EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 20),
         sliver: SliverToBoxAdapter(
           child: _EmptyCard(
-            icon: Icons.hexagon_outlined,
-            title: 'Belum ada bingkai',
-            subtitle: 'Bingkai avatar akan muncul sebagai reward milestone.',
+            icon: Icons.workspace_premium_rounded,
+            title: 'Belum Ada Bingkai Avatar',
+            subtitle: 'Bingkai avatar akan terbuka sebagai reward milestone XP.',
           ),
         ),
       );
     }
 
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.82,
+          mainAxisSpacing: 14,
+          childAspectRatio: 0.78,
         ),
         delegate: SliverChildBuilderDelegate(
           (BuildContext context, int index) {
@@ -390,13 +454,23 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
 
   void _showLockedMessage(MilestoneReward reward) {
     Get.snackbar(
-      'Belum Terbuka',
-      'Capai ${reward.requiredXp} XP untuk membuka reward ini.',
+      'Koleksi Masih Terkunci',
+      'Kumpulkan hingga ${reward.requiredXp} XP untuk membuka ${reward.title}.',
       snackPosition: SnackPosition.BOTTOM,
       margin: const EdgeInsets.all(16),
       backgroundColor: Colors.white,
-      colorText: _text,
-      icon: const Icon(Icons.lock_outline_rounded, color: _primary),
+      colorText: _textDark,
+      borderRadius: 16,
+      borderColor: const Color(0xFFCBD5E1),
+      borderWidth: 1,
+      icon: const Icon(Icons.lock_rounded, color: _warning),
+      boxShadows: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.08),
+          blurRadius: 16,
+          offset: const Offset(0, 4),
+        ),
+      ],
     );
   }
 
@@ -405,7 +479,7 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
       Get.dialog<void>(
         Dialog(
           backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
           child: SingleChildScrollView(
             child: _FullCollectibleCardView(
               reward: reward,
@@ -420,7 +494,7 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
     Get.bottomSheet<void>(
       SafeArea(
         child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: const EdgeInsets.fromLTRB(22, 14, 22, 28),
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -431,11 +505,11 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
             children: <Widget>[
               Center(
                 child: Container(
-                  width: 44,
-                  height: 5,
+                  width: 42,
+                  height: 4,
                   decoration: BoxDecoration(
                     color: const Color(0xFFCBD5E1),
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               ),
@@ -455,17 +529,17 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
                       children: <Widget>[
                         Text(
                           reward.title,
-                          style: const TextStyle(
-                            color: _text,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
+                          style: GoogleFonts.poppins(
+                            color: _textDark,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                         const SizedBox(height: 3),
                         Text(
                           '${reward.subtitle} • ${reward.requiredXp} XP',
-                          style: const TextStyle(
-                            color: _muted,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: _textMuted,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
@@ -477,40 +551,40 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
                     const Icon(
                       Icons.check_circle_rounded,
                       color: _success,
-                      size: 28,
+                      size: 26,
                     ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
               Text(
                 reward.description,
-                style: const TextStyle(
-                  color: _text,
-                  fontSize: 14,
-                  height: 1.55,
+                style: GoogleFonts.plusJakartaSans(
+                  color: const Color(0xFF334155),
+                  fontSize: 13,
+                  height: 1.5,
                 ),
               ),
               if (reward.isAvatarFrame) ...<Widget>[
-                const SizedBox(height: 18),
+                const SizedBox(height: 20),
                 Center(
                   child: MilestoneFramePlaceholder(
                     frameId: reward.id,
-                    size: 132,
+                    size: 136,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(13),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: reward.isEquipped
-                        ? const Color(0xFFEAF8EF)
-                        : const Color(0xFFF4F7FF),
-                    borderRadius: BorderRadius.circular(14),
+                        ? const Color(0xFFF0FDF4)
+                        : const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: reward.isEquipped
-                          ? const Color(0xFFB8E6C7)
-                          : const Color(0xFFDCE7FA),
+                          ? const Color(0xFFBBF7D0)
+                          : const Color(0xFFBFDBFE),
                     ),
                   ),
                   child: Row(
@@ -519,27 +593,30 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
                         reward.isEquipped
                             ? Icons.verified_rounded
                             : Icons.auto_awesome_rounded,
-                        color: reward.isEquipped ? _success : _primary,
+                        color: reward.isEquipped ? _success : _primaryBlue,
+                        size: 20,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           reward.isEquipped
-                              ? 'Bingkai ini sedang digunakan di Profil Pembelajaran.'
-                              : 'Gunakan bingkai ini untuk menghias avatar Profil Pembelajaran.',
-                          style: const TextStyle(
-                            color: _muted,
+                              ? 'Bingkai ini sedang aktif digunakan di Profil Pembelajaranmu.'
+                              : 'Gunakan bingkai ini untuk mempercantik avatar Profil Pembelajaranmu.',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: _textDark,
                             fontSize: 12,
                             height: 1.4,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
+                  height: 48,
                   child: reward.isEquipped
                       ? OutlinedButton.icon(
                           onPressed: () async {
@@ -547,7 +624,7 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
                                 await controller.clearEquippedFrame();
                             if (!success) {
                               Get.snackbar(
-                                'Bingkai belum berubah',
+                                'Gagal Melepas',
                                 controller.errorMessage.value.isEmpty
                                     ? 'Coba lagi beberapa saat.'
                                     : controller.errorMessage.value,
@@ -559,17 +636,26 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
 
                             Get.back();
                             Get.snackbar(
-                              'Bingkai dilepas',
+                              'Bingkai Dilepas',
                               'Avatar kembali menggunakan tampilan standar.',
                               snackPosition: SnackPosition.BOTTOM,
                               margin: const EdgeInsets.all(16),
+                              backgroundColor: Colors.white,
+                              colorText: _textDark,
+                              icon: const Icon(Icons.check_circle_rounded, color: _success),
                             );
                           },
-                          icon: const Icon(Icons.close_rounded),
-                          label: const Text('Lepas Bingkai'),
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          label: Text(
+                            'Lepas Bingkai',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13.5,
+                            ),
+                          ),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: _primary,
-                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            foregroundColor: _textMuted,
+                            side: const BorderSide(color: _border),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
@@ -581,7 +667,7 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
                                 await controller.equipFrame(reward);
                             if (!success) {
                               Get.snackbar(
-                                'Bingkai belum digunakan',
+                                'Gagal Menggunakan',
                                 controller.errorMessage.value.isEmpty
                                     ? 'Coba lagi beberapa saat.'
                                     : controller.errorMessage.value,
@@ -593,24 +679,26 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
 
                             Get.back();
                             Get.snackbar(
-                              'Bingkai digunakan',
-                              '${reward.title} sekarang aktif di profilmu.',
+                              'Bingkai Dipasang! ✨',
+                              '${reward.title} sekarang aktif menghias profilmu.',
                               snackPosition: SnackPosition.BOTTOM,
                               margin: const EdgeInsets.all(16),
                               backgroundColor: Colors.white,
-                              colorText: _text,
-                              icon: const Icon(
-                                Icons.check_circle_rounded,
-                                color: _success,
-                              ),
+                              colorText: _textDark,
+                              icon: const Icon(Icons.verified_rounded, color: _success),
                             );
                           },
-                          icon: const Icon(Icons.check_rounded),
-                          label: const Text('Gunakan Bingkai'),
+                          icon: const Icon(Icons.check_rounded, size: 18),
+                          label: Text(
+                            'Gunakan Bingkai Ini',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13.5,
+                            ),
+                          ),
                           style: FilledButton.styleFrom(
-                            backgroundColor: _primary,
+                            backgroundColor: _primaryBlue,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 13),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
@@ -626,9 +714,11 @@ class _MilestoneCollectionViewState extends State<MilestoneCollectionView> {
       backgroundColor: Colors.transparent,
     );
   }
-
 }
 
+// =============================================================================
+// XP JOURNEY HEADER (PREMIUM GLASS CARD)
+// =============================================================================
 class _XpJourneyHeader extends StatelessWidget {
   const _XpJourneyHeader({required this.controller});
 
@@ -644,19 +734,21 @@ class _XpJourneyHeader extends StatelessWidget {
 
         return Container(
           color: Colors.white,
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
           child: Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: <Color>[Color(0xFF1D4ED8), Color(0xFF7C3AED)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: <Color>[_darkNavy, _primaryBlue, _purple],
               ),
-              borderRadius: BorderRadius.circular(22),
-              boxShadow: const <BoxShadow>[
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x242563EB),
-                  blurRadius: 18,
-                  offset: Offset(0, 8),
+                  color: _primaryBlue.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
@@ -666,16 +758,19 @@ class _XpJourneyHeader extends StatelessWidget {
                 Row(
                   children: <Widget>[
                     Container(
-                      width: 42,
-                      height: 42,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.16),
-                        borderRadius: BorderRadius.circular(13),
+                        color: Colors.white.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25),
+                        ),
                       ),
                       child: const Icon(
                         Icons.bolt_rounded,
-                        color: Colors.white,
-                        size: 26,
+                        color: Color(0xFFFDE047),
+                        size: 28,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -683,20 +778,44 @@ class _XpJourneyHeader extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text(
-                            '$current XP',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 26,
-                              fontWeight: FontWeight.w900,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                '$current XP',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '${controller.unlockedCount.value}/${controller.totalCount.value} Terbuka',
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const Text(
-                            'Terus belajar, milestone berikutnya semakin dekat!',
-                            style: TextStyle(
-                              color: Color(0xFFE8EEFF),
+                          Text(
+                            'Jejak akumulasi aktivitas belajarmu di Science Craft',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: const Color(0xFFE2E8F0),
                               fontSize: 11,
-                              height: 1.35,
+                              height: 1.3,
                             ),
                           ),
                         ],
@@ -709,79 +828,75 @@ class _XpJourneyHeader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                   child: LinearProgressIndicator(
                     value: next == null ? 1 : controller.progressToNext.value,
-                    minHeight: 9,
-                    backgroundColor: Colors.white.withOpacity(0.18),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    minHeight: 8,
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFF67E8F9),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        next == null ? 'Semua milestone terbuka' : '$current / $target XP',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
+                    Text(
+                      next == null ? 'Semua Milestone Terbuka! 👑' : '$current / $target XP',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (next != null)
+                      Text(
+                        'Kurang ${controller.remainingXpToNext.value} XP lagi',
+                        style: GoogleFonts.plusJakartaSans(
+                          color: const Color(0xFFFDE047),
+                          fontSize: 10.5,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ),
-                    Text(
-                      '${controller.unlockedCount.value}/${controller.totalCount.value} terbuka',
-                      style: const TextStyle(
-                        color: Color(0xFFE8EEFF),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withOpacity(0.14)),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Icon(
-                        next == null ? Icons.verified_rounded : Icons.lock_open_rounded,
-                        color: Colors.white,
-                        size: 22,
+                if (next != null) ...<Widget>[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 9,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.15),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(
-                              next == null ? 'Koleksi milestone lengkap' : 'Berikutnya: ${next.title}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              next == null
-                                  ? 'Semua reward yang tersedia sudah kamu buka.'
-                                  : '${next.subtitle} • ${next.requiredXp} XP • kurang ${controller.remainingXpToNext.value} XP',
-                              style: const TextStyle(
-                                color: Color(0xFFE8EEFF),
-                                fontSize: 10,
-                              ),
-                            ),
-                          ],
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        const Icon(
+                          Icons.radar_rounded,
+                          color: Color(0xFF67E8F9),
+                          size: 18,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Target Berikutnya: ${next.title} (${next.requiredXp} XP)',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.plusJakartaSans(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -791,6 +906,9 @@ class _XpJourneyHeader extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// JOURNEY ROADMAP ITEM (VERTICAL TIMELINE)
+// =============================================================================
 class _JourneyItem extends StatelessWidget {
   const _JourneyItem({
     required this.reward,
@@ -809,32 +927,50 @@ class _JourneyItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool unlocked = reward.unlocked;
-    final Color stateColor = unlocked ? _success : (isNext ? _primary : const Color(0xFF94A3B8));
+    final Color stateColor = unlocked
+        ? _success
+        : (isNext ? _primaryBlue : const Color(0xFF94A3B8));
 
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           SizedBox(
-            width: 42,
+            width: 38,
             child: Column(
               children: <Widget>[
-                Container(
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
                     color: unlocked
-                        ? const Color(0xFFE8F7ED)
+                        ? const Color(0xFFDCFCE7)
                         : isNext
-                            ? const Color(0xFFE8F0FF)
+                            ? const Color(0xFFDBEAFE)
                             : const Color(0xFFF1F5F9),
                     shape: BoxShape.circle,
-                    border: Border.all(color: stateColor, width: 2),
+                    border: Border.all(
+                      color: stateColor,
+                      width: isNext || unlocked ? 2.5 : 1.5,
+                    ),
+                    boxShadow: isNext
+                        ? [
+                            BoxShadow(
+                              color: _primaryBlue.withValues(alpha: 0.3),
+                              blurRadius: 10,
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Icon(
-                    unlocked ? Icons.check_rounded : Icons.lock_outline_rounded,
+                    unlocked
+                        ? Icons.check_rounded
+                        : (isNext
+                            ? Icons.radar_rounded
+                            : Icons.lock_outline_rounded),
                     color: stateColor,
-                    size: 17,
+                    size: 16,
                   ),
                 ),
                 if (!isLast)
@@ -842,39 +978,52 @@ class _JourneyItem extends StatelessWidget {
                     child: Container(
                       width: 2,
                       margin: const EdgeInsets.symmetric(vertical: 4),
-                      color: unlocked ? const Color(0xFFA7E1B8) : const Color(0xFFD7DEE8),
+                      decoration: BoxDecoration(
+                        color: unlocked
+                            ? const Color(0xFF86EFAC)
+                            : const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(1),
+                      ),
                     ),
                   ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 14),
               child: InkWell(
                 onTap: onTap,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isNext ? const Color(0xFF9AB8F5) : _border,
-                      width: isNext ? 1.5 : 1,
+                      color: isNext
+                          ? const Color(0xFF93C5FD)
+                          : (unlocked ? const Color(0xFFBBF7D0) : _border),
+                      width: isNext ? 1.8 : 1,
                     ),
-                    boxShadow: const <BoxShadow>[
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x0A0F172A),
+                        color: isNext
+                            ? _primaryBlue.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.02),
                         blurRadius: 10,
-                        offset: Offset(0, 4),
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Row(
                     children: <Widget>[
-                      _RewardIconBox(reward: reward, size: 46, muted: hideIdentity),
+                      _RewardIconBox(
+                        reward: reward,
+                        size: 48,
+                        muted: hideIdentity,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -882,56 +1031,91 @@ class _JourneyItem extends StatelessWidget {
                           children: <Widget>[
                             Row(
                               children: <Widget>[
-                                Text(
-                                  '${reward.requiredXp} XP',
-                                  style: TextStyle(
-                                    color: stateColor,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: unlocked
+                                        ? const Color(0xFFDCFCE7)
+                                        : (isNext
+                                            ? const Color(0xFFDBEAFE)
+                                            : const Color(0xFFF1F5F9)),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.bolt_rounded,
+                                        size: 11,
+                                        color: stateColor,
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        '${reward.requiredXp} XP',
+                                        style: GoogleFonts.poppins(
+                                          color: stateColor,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 if (isNext) ...<Widget>[
-                                  const SizedBox(width: 7),
+                                  const SizedBox(width: 6),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE8F0FF),
-                                      borderRadius: BorderRadius.circular(999),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2.5,
                                     ),
-                                    child: const Text(
-                                      'BERIKUTNYA',
-                                      style: TextStyle(
-                                        color: _primary,
-                                        fontSize: 8,
-                                        fontWeight: FontWeight.w900,
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [_primaryBlue, _purple],
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      'TARGET BERIKUTNYA',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white,
+                                        fontSize: 8.5,
+                                        fontWeight: FontWeight.w800,
                                       ),
                                     ),
                                   ),
                                 ],
                               ],
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 5),
                             Text(
-                              hideIdentity ? '???' : reward.title,
-                              style: const TextStyle(
-                                color: _text,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w900,
+                              hideIdentity ? 'Hadiah Rahasia' : reward.title,
+                              style: GoogleFonts.poppins(
+                                color: _textDark,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 3),
+                            const SizedBox(height: 2),
                             Text(
-                              hideIdentity ? 'Hadiah masih rahasia' : reward.subtitle,
-                              style: const TextStyle(
-                                color: _muted,
-                                fontSize: 10,
+                              hideIdentity
+                                  ? 'Buka dengan mengumpulkan XP materi sains'
+                                  : reward.subtitle,
+                              style: GoogleFonts.plusJakartaSans(
+                                color: _textMuted,
+                                fontSize: 11,
                               ),
                             ),
                           ],
                         ),
                       ),
                       if (unlocked)
-                        const Icon(Icons.chevron_right_rounded, color: _muted),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: _textMuted,
+                        ),
                     ],
                   ),
                 ),
@@ -944,6 +1128,9 @@ class _JourneyItem extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// DISCOVERY COLLECTIBLE CARD (TRADING CARD GAME STYLE)
+// =============================================================================
 class _DiscoveryCollectibleCard extends StatelessWidget {
   const _DiscoveryCollectibleCard({
     required this.reward,
@@ -970,14 +1157,16 @@ class _DiscoveryCollectibleCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: unlocked ? colors.first.withOpacity(0.42) : _border,
+            color: unlocked ? colors.first.withValues(alpha: 0.4) : _border,
             width: unlocked ? 1.5 : 1,
           ),
-          boxShadow: const <BoxShadow>[
+          boxShadow: [
             BoxShadow(
-              color: Color(0x0C0F172A),
+              color: unlocked
+                  ? colors.first.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
-              offset: Offset(0, 5),
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -1006,35 +1195,47 @@ class _DiscoveryCollectibleCard extends StatelessWidget {
                         child: imageAsset != null
                             ? ColorFiltered(
                                 colorFilter: unlocked
-                                    ? const ColorFilter.mode(Colors.transparent, BlendMode.dst)
-                                    : const ColorFilter.mode(Colors.grey, BlendMode.saturation),
+                                    ? const ColorFilter.mode(
+                                        Colors.transparent,
+                                        BlendMode.dst,
+                                      )
+                                    : const ColorFilter.mode(
+                                        Colors.grey,
+                                        BlendMode.saturation,
+                                      ),
                                 child: _buildRewardImageWidget(
                                   imageAsset,
                                   fit: BoxFit.cover,
-                                  errorBuilder: () => _buildFallbackIcon(unlocked, reward),
+                                  errorBuilder: () =>
+                                      _buildFallbackIcon(unlocked, reward),
                                 ),
                               )
                             : _buildFallbackIcon(unlocked, reward),
                       ),
+                      // Category Tag
                       Positioned(
                         top: 8,
                         left: 8,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.45),
-                            borderRadius: BorderRadius.circular(6),
+                            color: Colors.black.withValues(alpha: 0.55),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             reward.resolvedRarity,
-                            style: const TextStyle(
+                            style: GoogleFonts.poppins(
                               color: Colors.white,
-                              fontSize: 8,
-                              fontWeight: FontWeight.w900,
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ),
                       ),
+                      // Status Lock/Check
                       Positioned(
                         top: 8,
                         right: 8,
@@ -1042,13 +1243,15 @@ class _DiscoveryCollectibleCard extends StatelessWidget {
                           width: 24,
                           height: 24,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.92),
+                            color: Colors.white.withValues(alpha: 0.92),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            unlocked ? Icons.check_rounded : Icons.lock_outline_rounded,
-                            color: unlocked ? _success : _muted,
-                            size: 15,
+                            unlocked
+                                ? Icons.check_rounded
+                                : Icons.lock_outline_rounded,
+                            color: unlocked ? _success : _textMuted,
+                            size: 14,
                           ),
                         ),
                       ),
@@ -1067,32 +1270,44 @@ class _DiscoveryCollectibleCard extends StatelessWidget {
                         reveal ? reward.subtitle : 'Koleksi Penemuan',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: unlocked ? colors.first : _muted,
+                        style: GoogleFonts.poppins(
+                          color: unlocked ? colors.first : _textMuted,
                           fontSize: 9,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 2),
                       Text(
                         reveal ? reward.title : '???',
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: _text,
-                          fontSize: 13,
-                          height: 1.15,
-                          fontWeight: FontWeight.w900,
+                        style: GoogleFonts.poppins(
+                          color: _textDark,
+                          fontSize: 12.5,
+                          height: 1.2,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                       const Spacer(),
-                      Text(
-                        unlocked ? 'Koleksi terbuka' : '${reward.requiredXp} XP',
-                        style: const TextStyle(
-                          color: _muted,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.bolt_rounded,
+                            size: 11,
+                            color: unlocked ? _success : _textMuted,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            unlocked
+                                ? 'Terbuka'
+                                : '${reward.requiredXp} XP',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: unlocked ? _success : _textMuted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -1108,22 +1323,118 @@ class _DiscoveryCollectibleCard extends StatelessWidget {
   Widget _buildFallbackIcon(bool unlocked, MilestoneReward reward) {
     return Center(
       child: Container(
-        width: 64,
-        height: 64,
+        width: 60,
+        height: 60,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(unlocked ? 0.2 : 0.7),
+          color: Colors.white.withValues(alpha: unlocked ? 0.25 : 0.7),
           shape: BoxShape.circle,
         ),
         child: Icon(
           unlocked ? _rewardIcon(reward) : Icons.lock_rounded,
           color: unlocked ? Colors.white : const Color(0xFF94A3B8),
-          size: unlocked ? 34 : 28,
+          size: unlocked ? 32 : 26,
         ),
       ),
     );
   }
 }
 
+// =============================================================================
+// FRAME COLLECTION CARD
+// =============================================================================
+class _FrameCollectionCard extends StatelessWidget {
+  const _FrameCollectionCard({required this.reward, required this.onTap});
+
+  final MilestoneReward reward;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool unlocked = reward.unlocked;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: reward.isEquipped
+                ? _primaryBlue
+                : (unlocked ? const Color(0xFFBFDBFE) : _border),
+            width: reward.isEquipped ? 1.8 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: <Widget>[
+            Expanded(
+              child: Center(
+                child: MilestoneFramePlaceholder(
+                  frameId: reward.id,
+                  size: 96,
+                  locked: !unlocked,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              unlocked ? reward.title : '???',
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                color: _textDark,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+              decoration: BoxDecoration(
+                color: reward.isEquipped
+                    ? const Color(0xFFDCFCE7)
+                    : unlocked
+                        ? const Color(0xFFDBEAFE)
+                        : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                reward.isEquipped
+                    ? 'Sedang Aktif'
+                    : unlocked
+                        ? 'Pasang Bingkai'
+                        : '${reward.requiredXp} XP',
+                style: GoogleFonts.poppins(
+                  color: reward.isEquipped
+                      ? _success
+                      : unlocked
+                          ? _primaryBlue
+                          : _textMuted,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// FULL COLLECTIBLE CARD VIEW (3D / MODAL TCG DISPLAY)
+// =============================================================================
 class _FullCollectibleCardView extends StatelessWidget {
   const _FullCollectibleCardView({
     required this.reward,
@@ -1150,14 +1461,15 @@ class _FullCollectibleCardView extends StatelessWidget {
   Widget build(BuildContext context) {
     final String? imageAsset = reward.resolvedVisualAsset;
     final List<CardHighlight> highlights = reward.resolvedHighlights;
-    final int totalDiscoveryCards = controller.rewards.where((r) => r.isDiscoveryCard).length;
+    final int totalDiscoveryCards =
+        controller.rewards.where((r) => r.isDiscoveryCard).length;
     final int unlockedDiscoveryCards = controller.unlockedDiscoveryCards.length;
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFDCE7FA), width: 2),
+        border: Border.all(color: const Color(0xFFDBEAFE), width: 2),
         boxShadow: const <BoxShadow>[
           BoxShadow(
             color: Color(0x280F172A),
@@ -1169,33 +1481,32 @@ class _FullCollectibleCardView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          // Top Ribbon & Badges
+          // Top Ribbon
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+            padding: const EdgeInsets.fromLTRB(16, 14, 14, 0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: <Color>[Color(0xFF8B5CF6), Color(0xFF6366F1)],
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: const <BoxShadow>[
-                      BoxShadow(color: Color(0x227C3AED), blurRadius: 6, offset: Offset(0, 3)),
-                    ],
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
                     children: <Widget>[
-                      const Icon(Icons.science_rounded, color: Colors.white, size: 14),
+                      const Icon(Icons.science_rounded,
+                          color: Colors.white, size: 13),
                       const SizedBox(width: 5),
                       Text(
                         reward.category.label.toUpperCase(),
-                        style: const TextStyle(
+                        style: GoogleFonts.poppins(
                           color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -1205,23 +1516,25 @@ class _FullCollectibleCardView extends StatelessWidget {
                 Row(
                   children: <Widget>[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 9, vertical: 4),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: <Color>[Color(0xFF3B82F6), Color(0xFF2563EB)],
+                          colors: <Color>[Color(0xFF3B82F6), _primaryBlue],
                         ),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         children: <Widget>[
-                          const Icon(Icons.star_rounded, color: Colors.white, size: 13),
-                          const SizedBox(width: 4),
+                          const Icon(Icons.star_rounded,
+                              color: Colors.white, size: 12),
+                          const SizedBox(width: 3),
                           Text(
                             reward.resolvedRarity,
-                            style: const TextStyle(
+                            style: GoogleFonts.poppins(
                               color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ],
@@ -1231,21 +1544,20 @@ class _FullCollectibleCardView extends StatelessWidget {
                     IconButton(
                       onPressed: () => Get.back(),
                       visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.close_rounded, color: _muted),
+                      icon: const Icon(Icons.close_rounded, color: _textMuted),
                     ),
                   ],
                 ),
               ],
             ),
           ),
-
           const SizedBox(height: 8),
 
-          // Illustration Image Container
+          // Illustration Image
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
-              height: 220,
+              height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
@@ -1265,135 +1577,92 @@ class _FullCollectibleCardView extends StatelessWidget {
                       child: _buildRewardImageWidget(
                         imageAsset,
                         fit: BoxFit.contain,
-                        errorBuilder: () => Icon(_rewardIcon(reward), size: 80, color: _primary),
+                        errorBuilder: () => Icon(_rewardIcon(reward),
+                            size: 70, color: _primaryBlue),
                       ),
                     )
                   else
-                    Icon(_rewardIcon(reward), size: 80, color: _primary),
-                  Positioned(
-                    bottom: -1,
-                    child: Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: <BoxShadow>[
-                          BoxShadow(color: Color(0x180F172A), blurRadius: 6, offset: Offset(0, 2)),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.auto_awesome_rounded,
-                        color: Color(0xFF7C3AED),
-                        size: 16,
-                      ),
+                    Icon(_rewardIcon(reward), size: 70, color: _primaryBlue),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Title Card
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                children: <Widget>[
+                  Text(
+                    reward.title,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      color: _textDark,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    reward.subtitle,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: _primaryBlue,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-
           const SizedBox(height: 12),
 
-          // Title Pill Banner
+          // Description
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
-                boxShadow: const <BoxShadow>[
-                  BoxShadow(color: Color(0x0F0F172A), blurRadius: 10, offset: Offset(0, 4)),
-                ],
-              ),
-              child: Column(
-                children: <Widget>[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      const Icon(Icons.eco_rounded, color: Color(0xFF93C5FD), size: 18),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          reward.title,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Color(0xFF0F172A),
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.eco_rounded, color: Color(0xFF93C5FD), size: 18),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Container(width: 20, height: 1, color: const Color(0xFF94A3B8)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text(
-                          reward.subtitle,
-                          style: const TextStyle(
-                            color: _primary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      Container(width: 20, height: 1, color: const Color(0xFF94A3B8)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 14),
-
-          // Biography
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Text(
               reward.description,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF334155),
-                fontSize: 12,
-                height: 1.5,
+              style: GoogleFonts.plusJakartaSans(
+                color: const Color(0xFF334155),
+                fontSize: 11.5,
+                height: 1.45,
               ),
             ),
           ),
-
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // Highlights Grid
           if (highlights.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: highlights.map((CardHighlight item) {
                   return Expanded(
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
                       child: Column(
                         children: <Widget>[
                           Container(
-                            width: 32,
-                            height: 32,
+                            width: 28,
+                            height: 28,
                             decoration: const BoxDecoration(
                               color: Color(0xFFE0E7FF),
                               shape: BoxShape.circle,
@@ -1401,31 +1670,31 @@ class _FullCollectibleCardView extends StatelessWidget {
                             child: Icon(
                               _getHighlightIcon(item.icon.toString()),
                               color: const Color(0xFF4338CA),
-                              size: 18,
+                              size: 15,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Text(
                             item.title,
                             textAlign: TextAlign.center,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFF1E293B),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
+                            style: GoogleFonts.poppins(
+                              color: _textDark,
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           Text(
                             item.description,
                             textAlign: TextAlign.center,
                             maxLines: 4,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFF64748B),
-                              fontSize: 8,
-                              height: 1.3,
+                            style: GoogleFonts.plusJakartaSans(
+                              color: _textMuted,
+                              fontSize: 7.5,
+                              height: 1.25,
                             ),
                           ),
                         ],
@@ -1435,16 +1704,16 @@ class _FullCollectibleCardView extends StatelessWidget {
                 }).toList(),
               ),
             ),
-
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
           // Quote Box
           if (reward.resolvedQuote.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 9, horizontal: 14),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(14),
@@ -1454,20 +1723,20 @@ class _FullCollectibleCardView extends StatelessWidget {
                     Text(
                       '"${reward.resolvedQuote}"',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color(0xFF475569),
-                        fontSize: 11,
+                      style: GoogleFonts.plusJakartaSans(
+                        color: const Color(0xFF475569),
+                        fontSize: 10.5,
                         fontStyle: FontStyle.italic,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     if (reward.resolvedYears.isNotEmpty) ...<Widget>[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
                         '— ${reward.resolvedYears} —',
-                        style: const TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 10,
+                        style: GoogleFonts.poppins(
+                          color: _textMuted,
+                          fontSize: 9.5,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -1476,12 +1745,11 @@ class _FullCollectibleCardView extends StatelessWidget {
                 ),
               ),
             ),
-
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // Footer Collection Bar
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
             decoration: const BoxDecoration(
               color: Color(0xFFF8FAFC),
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(26)),
@@ -1489,31 +1757,32 @@ class _FullCollectibleCardView extends StatelessWidget {
             child: Row(
               children: <Widget>[
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 28,
+                  height: 28,
                   decoration: const BoxDecoration(
                     color: Color(0xFFDBEAFE),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.emoji_events_rounded,
-                    color: _primary,
-                    size: 18,
+                    color: _primaryBlue,
+                    size: 16,
                   ),
                 ),
-                const SizedBox(width: 10),
-                const Expanded(
+                const SizedBox(width: 8),
+                Expanded(
                   child: Text(
-                    'KOLEKSI ILMUWAN',
-                    style: TextStyle(
-                      color: Color(0xFF1E293B),
+                    'Koleksi Kartu Penemuan',
+                    style: GoogleFonts.poppins(
+                      color: _textDark,
                       fontSize: 11,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(999),
@@ -1521,10 +1790,10 @@ class _FullCollectibleCardView extends StatelessWidget {
                   ),
                   child: Text(
                     '$unlockedDiscoveryCards / $totalDiscoveryCards',
-                    style: const TextStyle(
-                      color: _primary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
+                    style: GoogleFonts.poppins(
+                      color: _primaryBlue,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
@@ -1537,95 +1806,9 @@ class _FullCollectibleCardView extends StatelessWidget {
   }
 }
 
-class _FrameCollectionCard extends StatelessWidget {
-  const _FrameCollectionCard({required this.reward, required this.onTap});
-
-  final MilestoneReward reward;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final bool unlocked = reward.unlocked;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: reward.isEquipped ? const Color(0xFF86A9F3) : _border,
-            width: reward.isEquipped ? 1.6 : 1,
-          ),
-          boxShadow: const <BoxShadow>[
-            BoxShadow(
-              color: Color(0x0C0F172A),
-              blurRadius: 10,
-              offset: Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          children: <Widget>[
-            Expanded(
-              child: Center(
-                child: MilestoneFramePlaceholder(
-                  frameId: reward.id,
-                  size: 108,
-                  locked: !unlocked,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              unlocked ? reward.title : '???',
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: _text,
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: reward.isEquipped
-                    ? const Color(0xFFE8F7ED)
-                    : unlocked
-                        ? const Color(0xFFE8F0FF)
-                        : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                reward.isEquipped
-                    ? 'Digunakan'
-                    : unlocked
-                        ? 'Ketuk untuk gunakan'
-                        : '${reward.requiredXp} XP',
-                style: TextStyle(
-                  color: reward.isEquipped
-                      ? _success
-                      : unlocked
-                          ? _primary
-                          : _muted,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
+// =============================================================================
+// HELPER WIDGETS
+// =============================================================================
 class _RewardIconBox extends StatelessWidget {
   const _RewardIconBox({
     required this.reward,
@@ -1652,7 +1835,7 @@ class _RewardIconBox extends StatelessWidget {
       ),
       child: Icon(
         muted ? Icons.question_mark_rounded : _rewardIcon(reward),
-        color: muted ? _muted : Colors.white,
+        color: muted ? _textMuted : Colors.white,
         size: size * 0.5,
       ),
     );
@@ -1679,7 +1862,7 @@ class _MiniSegment extends StatelessWidget {
       borderRadius: BorderRadius.circular(11),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 9),
         decoration: BoxDecoration(
           color: selected ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(11),
@@ -1696,14 +1879,14 @@ class _MiniSegment extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(icon, size: 17, color: selected ? _primary : _muted),
+            Icon(icon, size: 16, color: selected ? _primaryBlue : _textMuted),
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(
-                color: selected ? _primary : _muted,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
+              style: GoogleFonts.poppins(
+                color: selected ? _primaryBlue : _textMuted,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -1727,18 +1910,19 @@ class _SectionHeading extends StatelessWidget {
         Text(
           title,
           style: GoogleFonts.poppins(
-            color: _text,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
+            color: _textDark,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.2,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 3),
         Text(
           subtitle,
-          style: GoogleFonts.inter(
-            color: _muted,
-            fontSize: 12,
-            height: 1.45,
+          style: GoogleFonts.plusJakartaSans(
+            color: _textMuted,
+            fontSize: 11.5,
+            height: 1.4,
           ),
         ),
       ],
@@ -1747,7 +1931,11 @@ class _SectionHeading extends StatelessWidget {
 }
 
 class _EmptyCard extends StatelessWidget {
-  const _EmptyCard({required this.icon, required this.title, required this.subtitle});
+  const _EmptyCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
 
   final IconData icon;
   final String title;
@@ -1757,26 +1945,33 @@ class _EmptyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _border),
       ),
       child: Column(
         children: <Widget>[
-          Icon(icon, color: _primary, size: 34),
-          const SizedBox(height: 10),
+          Icon(icon, color: _primaryBlue, size: 36),
+          const SizedBox(height: 12),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: _text, fontWeight: FontWeight.w900),
+            style: GoogleFonts.poppins(
+              color: _textDark,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: _muted, fontSize: 11),
+            style: GoogleFonts.plusJakartaSans(
+              color: _textMuted,
+              fontSize: 11.5,
+            ),
           ),
         ],
       ),
@@ -1797,7 +1992,7 @@ class _LoadError extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: _EmptyCard(
           icon: Icons.cloud_off_rounded,
-          title: 'Milestone belum dapat dimuat',
+          title: 'Milestone Belum Dapat Dimuat',
           subtitle: message,
         ),
       ),
@@ -1813,7 +2008,7 @@ class _CategoryChoice {
 }
 
 IconData _rewardIcon(MilestoneReward reward) {
-  if (reward.isAvatarFrame) return Icons.hexagon_outlined;
+  if (reward.isAvatarFrame) return Icons.workspace_premium_rounded;
 
   switch (reward.category) {
     case DiscoveryCategory.scientist:
@@ -1834,11 +2029,11 @@ List<Color> _categoryGradient(DiscoveryCategory category) {
     case DiscoveryCategory.scientist:
       return const <Color>[Color(0xFF2563EB), Color(0xFF7C3AED)];
     case DiscoveryCategory.phenomenon:
-      return const <Color>[Color(0xFF0F9F94), Color(0xFF7C3AED)];
+      return const <Color>[Color(0xFF0D9488), Color(0xFF0284C7)];
     case DiscoveryCategory.application:
-      return const <Color>[Color(0xFF16A34A), Color(0xFFF59E0B)];
+      return const <Color>[Color(0xFF16A34A), Color(0xFFD97706)];
     case DiscoveryCategory.technology:
-      return const <Color>[Color(0xFF0891B2), Color(0xFF2563EB)];
+      return const <Color>[Color(0xFF0284C7), Color(0xFF4F46E5)];
     case DiscoveryCategory.none:
       return const <Color>[Color(0xFF2563EB), Color(0xFF7C3AED)];
   }
