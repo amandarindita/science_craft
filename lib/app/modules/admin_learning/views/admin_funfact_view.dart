@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../widgets/app_snackbar.dart';
 import '../../../widgets/science_shimmer.dart';
 import '../controllers/admin_learning_controller.dart';
 
@@ -266,26 +267,12 @@ class _AdminFunFactViewState extends State<AdminFunFactView> {
       return;
     }
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFFD97706),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          content: Text(
-            funFactId == null
-                ? 'Fakta sains berhasil ditambahkan.'
-                : 'Fakta sains berhasil diperbarui.',
-            style: GoogleFonts.plusJakartaSans(
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      );
+    AppSnackbar.success(
+      funFactId == null ? 'Fakta Sains Ditambahkan' : 'Fakta Sains Diperbarui',
+      funFactId == null
+          ? 'Fakta sains baru berhasil ditambahkan.'
+          : 'Perubahan fakta sains berhasil disimpan.',
+    );
   }
 }
 
@@ -677,6 +664,10 @@ class _FunFactFormDialogState extends State<_FunFactFormDialog> {
       setState(() {
         _validationMessage = 'Isi fakta sains tidak boleh kosong.';
       });
+      AppSnackbar.warning(
+        'Form Belum Lengkap',
+        'Isi teks fakta sains tidak boleh kosong.',
+      );
       return;
     }
 

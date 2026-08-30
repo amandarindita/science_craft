@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../widgets/app_snackbar.dart';
 import '../controllers/admin_learning_controller.dart';
 
 const Color _bg = Color(0xFFF8FAFC);
@@ -663,6 +664,10 @@ class _AdminQuestionFormViewState extends State<AdminQuestionFormView> {
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
+      AppSnackbar.warning(
+        'Form Belum Lengkap',
+        'Mohon periksa dan lengkapi teks pertanyaan serta pilihan opsi.',
+      );
       return;
     }
 
@@ -685,6 +690,12 @@ class _AdminQuestionFormViewState extends State<AdminQuestionFormView> {
 
     if (success) {
       Get.back<bool>(result: true);
+      AppSnackbar.success(
+        widget.question != null ? 'Soal Diperbarui' : 'Soal Ditambahkan',
+        widget.question != null
+            ? 'Perubahan soal kuis berhasil disimpan.'
+            : 'Soal kuis baru berhasil ditambahkan.',
+      );
     }
   }
 }

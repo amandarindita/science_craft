@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../data/api_service.dart';
+import '../../../widgets/app_snackbar.dart';
 import '../controllers/admin_learning_controller.dart';
 
 const Color _bg = Color(0xFFF8FAFC);
@@ -644,6 +645,10 @@ class _AdminModuleFormViewState extends State<AdminModuleFormView> {
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
+      AppSnackbar.warning(
+        'Form Belum Lengkap',
+        'Mohon periksa dan lengkapi kolom yang wajib diisi.',
+      );
       return;
     }
 
@@ -669,6 +674,12 @@ class _AdminModuleFormViewState extends State<AdminModuleFormView> {
 
     if (success) {
       Get.back<bool>(result: true);
+      AppSnackbar.success(
+        widget.isEditing ? 'Modul Diperbarui' : 'Modul Berhasil Dibuat',
+        widget.isEditing
+            ? 'Perubahan data modul berhasil disimpan.'
+            : 'Modul pembelajaran baru telah ditambahkan.',
+      );
     }
   }
 }

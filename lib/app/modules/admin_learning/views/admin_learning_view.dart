@@ -318,6 +318,8 @@ class _AdminHeroHeader extends StatelessWidget {
                     )
                     .length;
 
+            final draftCount = totalCount - publishedCount;
+
             return Row(
               children: [
                 _HeaderStatItem(
@@ -340,10 +342,10 @@ class _AdminHeroHeader extends StatelessWidget {
                   width: 1,
                   color: Colors.white.withValues(alpha: 0.2),
                 ),
-                const _HeaderStatItem(
-                  label: 'Mata Pelajaran',
-                  value: '3 Bidang',
-                  icon: Icons.science_rounded,
+                _HeaderStatItem(
+                  label: 'Draft',
+                  value: '$draftCount',
+                  icon: Icons.edit_note_rounded,
                 ),
               ],
             );

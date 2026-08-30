@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../data/api_service.dart';
+import '../../../widgets/app_snackbar.dart';
 import '../controllers/admin_learning_controller.dart';
 import 'admin_visual_builder.dart';
 
@@ -362,11 +363,12 @@ class _AdminSubmaterialFormViewState extends State<AdminSubmaterialFormView> {
             // 4. MODE VISUAL & VISUAL BUILDER
             _SectionCard(
               title: 'Mode Visual Interaktif',
-              subtitle: 'Gambar pendukung dan visual builder interaktif.',
+              subtitle:
+                  'Ilustrasi visual & model interaktif untuk memperkuat pemahaman sains siswa.',
               icon: Icons.auto_awesome_rounded,
               children: <Widget>[
                 Text(
-                  'Gambar Utama Submateri',
+                  'Ilustrasi / Gambar Utama Submateri (Opsional)',
                   style: GoogleFonts.poppins(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
@@ -381,7 +383,9 @@ class _AdminSubmaterialFormViewState extends State<AdminSubmaterialFormView> {
                   onPick: _pickImage,
                   onRemove: _removeImage,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
+                const Divider(height: 1, color: _border),
+                const SizedBox(height: 18),
                 Obx(() {
                   final List<Map<String, dynamic>> types =
                       controller.visualTypes;
@@ -694,6 +698,10 @@ class _AdminSubmaterialFormViewState extends State<AdminSubmaterialFormView> {
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
+      AppSnackbar.warning(
+        'Form Belum Lengkap',
+        'Mohon periksa dan lengkapi judul serta urutan submateri.',
+      );
       return;
     }
 
@@ -705,7 +713,7 @@ class _AdminSubmaterialFormViewState extends State<AdminSubmaterialFormView> {
     );
 
     if (visualError != null) {
-      controller.showError(visualError);
+      AppSnackbar.warning('Data Visual Belum Lengkap', visualError);
       return;
     }
 
@@ -724,8 +732,9 @@ class _AdminSubmaterialFormViewState extends State<AdminSubmaterialFormView> {
         _visualJsonHasContent();
 
     if (!hasAnyMode) {
-      controller.showError(
-        'Isi minimal satu mode: Baca, Dengarkan, atau Visual.',
+      AppSnackbar.warning(
+        'Mode Pembelajaran Kosong',
+        'Isi minimal satu mode: Baca, Dengarkan (Suara/Audio), atau Visual.',
       );
       return;
     }
@@ -761,6 +770,12 @@ class _AdminSubmaterialFormViewState extends State<AdminSubmaterialFormView> {
 
     if (success) {
       Get.back<bool>(result: true);
+      AppSnackbar.success(
+        widget.submaterial != null ? 'Submateri Diperbarui' : 'Submateri Berhasil Dibuat',
+        widget.submaterial != null
+            ? 'Perubahan konten submateri berhasil disimpan.'
+            : 'Submateri baru berhasil ditambahkan ke modul ini.',
+      );
     }
   }
 }
