@@ -366,7 +366,16 @@ class LearningController extends GetxController {
       selectedModule.value = result;
       try {
         final box = GetStorage();
-        final dynamic rawList = box.read('accessed_module_ids');
+        final String? currentUserId = box.read('userId')?.toString();
+        final String? currentUserEmail = box.read('userEmail')?.toString();
+        final String storageKey =
+            (currentUserId != null && currentUserId.isNotEmpty)
+                ? 'accessed_module_ids_$currentUserId'
+                : (currentUserEmail != null && currentUserEmail.isNotEmpty)
+                    ? 'accessed_module_ids_$currentUserEmail'
+                    : 'accessed_module_ids';
+
+        final dynamic rawList = box.read(storageKey);
         final List<int> accessedIds = <int>[];
         if (rawList is List) {
           for (final item in rawList) {
@@ -381,8 +390,13 @@ class LearningController extends GetxController {
         if (accessedIds.length > 5) {
           accessedIds.removeLast();
         }
-        box.write('accessed_module_ids', accessedIds);
-        box.write('last_accessed_module_id', materialId);
+        box.write(storageKey, accessedIds);
+        box.write(
+          (currentUserId != null && currentUserId.isNotEmpty)
+              ? 'last_accessed_module_id_$currentUserId'
+              : 'last_accessed_module_id',
+          materialId,
+        );
 
         if (Get.isRegistered<DashboardController>()) {
           Get.find<DashboardController>().fetchInProgressMaterials();

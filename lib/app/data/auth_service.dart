@@ -27,7 +27,13 @@ class AuthService extends GetxService {
   }
 
   // --- LOGIKA TERPUSAT (Anti-Gagal) ---
-  void _handleLoginResult(Map<String, dynamic> data) async {
+  void _handleLoginResult(
+    Map<String, dynamic> data, {
+    bool isNewUser = false,
+    String? customTitle,
+    String? customMessage,
+    bool suppressSnackbar = false,
+  }) async {
     debugPrint('[AuthService] 🔑 Menangani hasil login...');
     debugPrint('[AuthService] Raw data keys: ${data.keys.toList()}');
 
@@ -38,6 +44,18 @@ class AuthService extends GetxService {
     if (data['refresh_token'] != null) {
       await _storage.write('refreshToken', data['refresh_token']);
       debugPrint('[AuthService] ✅ refreshToken tersimpan');
+    }
+
+    // Simpan userId dan email jika ada
+    if (data['user'] != null) {
+      if (data['user']['id'] != null) {
+        await _storage.write('userId', data['user']['id'].toString());
+      }
+      if (data['user']['email'] != null) {
+        await _storage.write('userEmail', data['user']['email'].toString());
+      }
+    } else if (data['user_id'] != null) {
+      await _storage.write('userId', data['user_id'].toString());
     }
 
     // Nangkep role dari manapun asalnya
@@ -51,10 +69,21 @@ class AuthService extends GetxService {
     await _storage.write('userRole', userRole);
     debugPrint("[AuthService] ✅ User Role = $userRole");
 
-    AppSnackbar.success(
-      'Login Berhasil',
-      'Selamat datang kembali di Science Craft!',
-    );
+    // Tampilkan snackbar yang sesuai (User Baru vs User Lama)
+    if (!suppressSnackbar) {
+      if (isNewUser) {
+        AppSnackbar.success(
+          customTitle ?? 'Selamat Datang',
+          customMessage ??
+              'Akun berhasil dibuat. Selamat datang di Science Craft!',
+        );
+      } else {
+        AppSnackbar.success(
+          customTitle ?? 'Login Berhasil',
+          customMessage ?? 'Selamat datang kembali di Science Craft!',
+        );
+      }
+    }
 
     // Navigasi
     if (userRole.toLowerCase() == 'admin') {
@@ -206,7 +235,19 @@ class AuthService extends GetxService {
 
       if (response.statusCode == 200) {
         debugPrint('[GoogleAuth] 🎉 Autentikasi Google sukses di server!');
-        _handleLoginResult(ApiClient.decodeMap(response.body));
+        final Map<String, dynamic> resData = ApiClient.decodeMap(response.body);
+        final bool isNew = resData['is_new_user'] == true ||
+            resData['is_new'] == true ||
+            resData['new_user'] == true;
+
+        _handleLoginResult(
+          resData,
+          isNewUser: isNew,
+          customTitle: isNew ? 'Selamat Datang 🎉' : 'Login Berhasil',
+          customMessage: isNew
+              ? 'Akun Google berhasil terdaftar. Selamat datang di Science Craft!'
+              : 'Selamat datang kembali di Science Craft!',
+        );
       } else {
         final resData = ApiClient.decodeMap(response.body);
         final String message =
@@ -292,11 +333,13 @@ class AuthService extends GetxService {
 
         // Jika backend langsung mengembalikan access_token (direct login)
         if (resData['access_token'] != null) {
-          AppSnackbar.success(
-            'Registrasi Berhasil 🎉',
-            'Akun kamu berhasil dibuat. Selamat datang di Science Craft!',
+          _handleLoginResult(
+            resData,
+            isNewUser: true,
+            customTitle: 'Registrasi Berhasil 🎉',
+            customMessage:
+                'Akun kamu berhasil dibuat. Selamat datang di Science Craft!',
           );
-          _handleLoginResult(resData);
         } else {
           // Backend mengirimkan OTP ke email
           final String message = resData['message'] ??
@@ -366,11 +409,13 @@ class AuthService extends GetxService {
 
       final resData = ApiClient.decodeMap(response.body);
       if (response.statusCode == 200 || response.statusCode == 201) {
-        AppSnackbar.success(
-          'Akun Terverifikasi 🎉',
-          resData['message'] ?? 'Selamat! Akun kamu berhasil diverifikasi.',
+        _handleLoginResult(
+          resData,
+          isNewUser: true,
+          customTitle: 'Akun Terverifikasi 🎉',
+          customMessage:
+              resData['message'] ?? 'Selamat! Akun kamu berhasil diverifikasi.',
         );
-        _handleLoginResult(resData);
         return true;
       } else {
         final String message = resData['error'] ??
@@ -394,9 +439,26 @@ class AuthService extends GetxService {
 
   void logout() async {
     debugPrint('[AuthService] 🚪 Melakukan logout...');
+    final String? userId = _storage.read('userId')?.toString();
+    final String? userEmail = _storage.read('userEmail')?.toString();
+
     await _storage.remove('authToken');
     await _storage.remove('refreshToken');
     await _storage.remove('userRole');
+    await _storage.remove('userId');
+    await _storage.remove('userEmail');
+    await _storage.remove('accessed_module_ids');
+    await _storage.remove('last_accessed_module_id');
+
+    if (userId != null && userId.isNotEmpty) {
+      await _storage.remove('accessed_module_ids_$userId');
+      await _storage.remove('last_accessed_module_id_$userId');
+    }
+    if (userEmail != null && userEmail.isNotEmpty) {
+      await _storage.remove('accessed_module_ids_$userEmail');
+      await _storage.remove('last_accessed_module_id_$userEmail');
+    }
+
     await DatabaseHelper.instance.clearUserData();
     try {
       await _googleSignIn.signOut();

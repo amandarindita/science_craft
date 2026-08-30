@@ -190,6 +190,13 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
       final userData = await ApiService.getUserData();
 
       if (userData != null) {
+        if (userData['id'] != null) {
+          GetStorage().write('userId', userData['id'].toString());
+        }
+        if (userData['email'] != null) {
+          GetStorage().write('userEmail', userData['email'].toString());
+        }
+
         userName.value = (userData['username'] ?? 'Sobat Sains').toString();
         userEmail.value = (userData['email'] ?? '').toString();
 
@@ -352,8 +359,18 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
             .where((Map<String, dynamic> item) => !_toBool(item['legacy_mode']))
             .toList();
 
-        // 1. Ambil daftar ID modul yang pernah diakses / dibuka user
-        final dynamic rawAccessed = GetStorage().read('accessed_module_ids');
+        // 1. Ambil daftar ID modul yang pernah diakses / dibuka user ini
+        final String? currentUserId = GetStorage().read('userId')?.toString();
+        final String? currentUserEmail =
+            GetStorage().read('userEmail')?.toString();
+        final String storageKey =
+            (currentUserId != null && currentUserId.isNotEmpty)
+                ? 'accessed_module_ids_$currentUserId'
+                : (currentUserEmail != null && currentUserEmail.isNotEmpty)
+                    ? 'accessed_module_ids_$currentUserEmail'
+                    : 'accessed_module_ids';
+
+        final dynamic rawAccessed = GetStorage().read(storageKey);
         final List<int> accessedIds = <int>[];
         if (rawAccessed is List) {
           for (final item in rawAccessed) {
@@ -363,8 +380,11 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
             }
           }
         }
-        final int? singleLast =
-            GetStorage().read<int>('last_accessed_module_id');
+        final int? singleLast = GetStorage().read<int>(
+          (currentUserId != null && currentUserId.isNotEmpty)
+              ? 'last_accessed_module_id_$currentUserId'
+              : 'last_accessed_module_id',
+        );
         if (singleLast != null &&
             singleLast > 0 &&
             !accessedIds.contains(singleLast)) {
