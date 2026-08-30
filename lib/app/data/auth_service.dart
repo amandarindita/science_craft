@@ -1,29 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'api_client.dart';
 import 'api_service.dart';
 import '../routes/app_pages.dart';
-import 'db/database_helper.dart'; 
+import '../widgets/app_snackbar.dart';
+import 'db/database_helper.dart';
 
 class AuthService extends GetxService {
   final _storage = GetStorage();
   final _googleSignIn = GoogleSignIn(
-    serverClientId: '90764646083-urjenubpi8uoa5bbbmqsgia36pg62gl5.apps.googleusercontent.com',
+    serverClientId:
+        '911457315564-3kvld75e6jneg80m4fql95to0n2n45mh.apps.googleusercontent.com',
+    scopes: ['email', 'profile'],
   );
 
   String get token => _storage.read('authToken') ?? '';
+  String get refreshToken => _storage.read('refreshToken') ?? '';
 
   bool isLoggedIn() {
-    return _storage.hasData('authToken');
+    return _storage.hasData('authToken') || _storage.hasData('refreshToken');
   }
 
   // --- LOGIKA TERPUSAT (Anti-Gagal) ---
   void _handleLoginResult(Map<String, dynamic> data) async {
-    await _storage.write('authToken', data['access_token']);
-    
+    debugPrint('[AuthService] 🔑 Menangani hasil login...');
+    debugPrint('[AuthService] Raw data keys: ${data.keys.toList()}');
+
+    if (data['access_token'] != null) {
+      await _storage.write('authToken', data['access_token']);
+      debugPrint('[AuthService] ✅ authToken tersimpan');
+    }
+    if (data['refresh_token'] != null) {
+      await _storage.write('refreshToken', data['refresh_token']);
+      debugPrint('[AuthService] ✅ refreshToken tersimpan');
+    }
+
     // Nangkep role dari manapun asalnya
     String userRole = 'user';
     if (data['user'] != null && data['user']['role'] != null) {
@@ -31,90 +47,281 @@ class AuthService extends GetxService {
     } else if (data['role'] != null) {
       userRole = data['role'].toString();
     }
-    
+
     await _storage.write('userRole', userRole);
-    print("DEBUG: User Role = $userRole");
+    debugPrint("[AuthService] ✅ User Role = $userRole");
+
+    AppSnackbar.success(
+      'Login Berhasil',
+      'Selamat datang kembali di Science Craft!',
+    );
 
     // Navigasi
     if (userRole.toLowerCase() == 'admin') {
+      debugPrint('[AuthService] Navigasi ke Halaman ADMIN');
       Get.offAllNamed(Routes.ADMIN);
     } else {
+      debugPrint('[AuthService] Navigasi ke Halaman ROOT');
       Get.offAllNamed(Routes.ROOT);
     }
   }
 
   Future<void> login(String email, String password) async {
     try {
-      Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
+      debugPrint('==================================================');
+      debugPrint('[AuthService] 🚀 Memulai login email: $email');
+      Get.dialog(
+        const Center(
+          child: CircularProgressIndicator(color: Color(0xFF2563EB)),
+        ),
+        barrierDismissible: false,
+      );
+      final targetUrl = Uri.parse('${ApiService.baseUrl}/auth/login');
+      debugPrint('[AuthService] 📡 Mengirim POST ke $targetUrl');
       final response = await http.post(
-        Uri.parse('${ApiService.baseUrl}/auth/login'),
+        targetUrl,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
-      Get.back(); 
+      if (Get.isDialogOpen ?? false) Get.back();
+
+      debugPrint(
+        '[AuthService] 📥 Login Response Status: ${response.statusCode}',
+      );
+      debugPrint('[AuthService] 📥 Login Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        _handleLoginResult(jsonDecode(response.body));
+        _handleLoginResult(ApiClient.decodeMap(response.body));
       } else {
-        Get.snackbar('Login Gagal', 'Email atau password salah.');
+        final resData = ApiClient.decodeMap(response.body);
+        final String message =
+            resData['message'] ??
+            resData['error'] ??
+            'Email atau kata sandi tidak sesuai.';
+        debugPrint('[AuthService] ❌ Login gagal: $message');
+        AppSnackbar.error('Login Gagal', message);
       }
-    } catch (e) {
-      Get.back();
-      Get.snackbar('Error', 'Gagal konek ke server.');
+    } catch (e, stackTrace) {
+      if (Get.isDialogOpen ?? false) Get.back();
+      debugPrint('[AuthService] ❌ Error Login Exception: $e');
+      debugPrint('[AuthService] ❌ StackTrace: $stackTrace');
+      AppSnackbar.error(
+        'Gangguan Koneksi',
+        'Tidak dapat terhubung ke server: ${e.toString().split('\n').first}',
+      );
     }
   }
 
   Future<void> loginWithGoogle() async {
     try {
-      Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
-      await _googleSignIn.signOut();
+      debugPrint('==================================================');
+      debugPrint('[GoogleAuth] 🚀 Memulai alur Login with Google...');
+      debugPrint(
+        '[GoogleAuth] 🔧 Server Client ID: ${_googleSignIn.serverClientId}',
+      );
+
+      Get.dialog(
+        const Center(
+          child: CircularProgressIndicator(color: Color(0xFF2563EB)),
+        ),
+        barrierDismissible: false,
+      );
+
+      debugPrint(
+        '[GoogleAuth] 🔄 Memanggil signOut() untuk memastikan akun bersih...',
+      );
+      try {
+        await _googleSignIn.signOut();
+      } catch (signOutErr) {
+        debugPrint(
+          '[GoogleAuth] ⚠️ Info: signOut error (dapat diabaikan): $signOutErr',
+        );
+      }
+
+      debugPrint('[GoogleAuth] 📱 Membuka Google Sign-In prompt...');
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) { Get.back(); return; }
-      
-      final String? idToken = (await googleUser.authentication).idToken;
+
+      if (googleUser == null) {
+        debugPrint(
+          '[GoogleAuth] ⚠️ Pengguna membatalkan dialog pemilihan akun Google.',
+        );
+        if (Get.isDialogOpen ?? false) Get.back();
+        return;
+      }
+
+      debugPrint('[GoogleAuth] ✅ Akun Google berhasil dipilih:');
+      debugPrint('[GoogleAuth]    - Email: ${googleUser.email}');
+      debugPrint('[GoogleAuth]    - Nama: ${googleUser.displayName}');
+      debugPrint('[GoogleAuth]    - ID: ${googleUser.id}');
+
+      debugPrint(
+        '[GoogleAuth] 🔐 Mengambil authentication tokens (idToken & accessToken)...',
+      );
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+      final String? accessToken = googleAuth.accessToken;
+
+      debugPrint(
+        '[GoogleAuth] 🔑 idToken: ${idToken != null ? "Ada (panjang: ${idToken.length} karakter, prefix: ${idToken.substring(0, idToken.length > 25 ? 25 : idToken.length)}...)" : "NULL ⚠️"}',
+      );
+      debugPrint(
+        '[GoogleAuth] 🔑 accessToken: ${accessToken != null ? "Ada (panjang: ${accessToken.length} karakter)" : "NULL ⚠️"}',
+      );
+
+      if (idToken == null || idToken.isEmpty) {
+        debugPrint('[GoogleAuth] ❌ KRITIS: idToken bernilai NULL!');
+        debugPrint('[GoogleAuth] 💡 Penyebab umum:');
+        debugPrint(
+          '[GoogleAuth]    1. SHA-1 Fingerprint debug.keystore belum dimasukkan ke Google Cloud Console / Firebase.',
+        );
+        debugPrint(
+          '[GoogleAuth]    2. serverClientId harus berupa Web Application Client ID (bukan Android Client ID).',
+        );
+        debugPrint(
+          '[GoogleAuth]    3. Package name di Google Cloud Console tidak cocok dengan "com.amanda.sciencecraft".',
+        );
+
+        if (Get.isDialogOpen ?? false) Get.back();
+        AppSnackbar.error(
+          'Google Token Kosong',
+          'Gagal mendapatkan idToken dari Google. Periksa konfigurasi SHA-1 / Web Client ID di Google Cloud Console.',
+        );
+        return;
+      }
+
+      final targetUrl = Uri.parse('${ApiService.baseUrl}/auth/google');
+      debugPrint('[GoogleAuth] 📡 Mengirim idToken ke Backend: $targetUrl');
+
       final response = await http.post(
-        Uri.parse('${ApiService.baseUrl}/auth/google'),
+        targetUrl,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'token': idToken}),
       );
-      Get.back(); 
+
+      if (Get.isDialogOpen ?? false) Get.back();
+
+      debugPrint('[GoogleAuth] 📥 Response Status: ${response.statusCode}');
+      debugPrint('[GoogleAuth] 📥 Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        _handleLoginResult(jsonDecode(response.body));
+        debugPrint('[GoogleAuth] 🎉 Autentikasi Google sukses di server!');
+        _handleLoginResult(ApiClient.decodeMap(response.body));
       } else {
-        Get.snackbar('Login Gagal', 'Google Auth gagal.');
+        final resData = ApiClient.decodeMap(response.body);
+        final String message =
+            resData['message'] ??
+            resData['error'] ??
+            'Gagal masuk menggunakan akun Google (Status ${response.statusCode}).';
+        debugPrint('[GoogleAuth] ❌ Server menolak login Google: $message');
+        AppSnackbar.error('Autentikasi Gagal', message);
       }
-    } catch (e) {
-      Get.back();
-      Get.snackbar('Error', 'Kesalahan koneksi.');
+    } catch (e, stackTrace) {
+      if (Get.isDialogOpen ?? false) Get.back();
+
+      debugPrint('==================================================');
+      debugPrint('[GoogleAuth] ❌ EXCEPTION TERJADI: $e');
+      debugPrint('[GoogleAuth] ❌ Tipe Exception: ${e.runtimeType}');
+
+      if (e is PlatformException) {
+        debugPrint('[GoogleAuth] 🚨 PlatformException Details:');
+        debugPrint('[GoogleAuth]    - Code: ${e.code}');
+        debugPrint('[GoogleAuth]    - Message: ${e.message}');
+        debugPrint('[GoogleAuth]    - Details: ${e.details}');
+
+        if (e.code == 'sign_in_failed' ||
+            e.toString().contains('10') ||
+            e.toString().contains('12500')) {
+          debugPrint(
+            '[GoogleAuth] 💡 ANALISIS ERROR GOOGLE (Code 10 / 12500 / sign_in_failed):',
+          );
+          debugPrint(
+            '[GoogleAuth]    1. SHA-1 Fingerprint belum didaftarkan di Google Cloud Console.',
+          );
+          debugPrint(
+            '[GoogleAuth]    2. Package name "com.amanda.sciencecraft" belum terdaftar di OAuth Android Client.',
+          );
+          debugPrint(
+            '[GoogleAuth]    3. serverClientId harus Web Client ID yang satu project Google Cloud.',
+          );
+        }
+      }
+
+      debugPrint('[GoogleAuth] ❌ STACKTRACE:\n$stackTrace');
+      debugPrint('==================================================');
+
+      AppSnackbar.error(
+        'Gangguan Google Sign-In',
+        'Error: ${e.toString().split('\n').first}',
+      );
     }
   }
 
   Future<void> register(String username, String email, String password) async {
     try {
-      Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
-      final response = await http.post(
-        Uri.parse('${ApiService.baseUrl}/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': username, 'email': email, 'password': password}),
+      debugPrint('==================================================');
+      debugPrint(
+        '[AuthService] 🚀 Memulai registrasi akun: $username ($email)',
       );
-      Get.back(); 
+      Get.dialog(
+        const Center(
+          child: CircularProgressIndicator(color: Color(0xFF2563EB)),
+        ),
+        barrierDismissible: false,
+      );
+      final targetUrl = Uri.parse('${ApiService.baseUrl}/auth/register');
+      debugPrint('[AuthService] 📡 Mengirim POST ke $targetUrl');
+      final response = await http.post(
+        targetUrl,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': username,
+          'email': email,
+          'password': password,
+        }),
+      );
+      if (Get.isDialogOpen ?? false) Get.back();
+
+      debugPrint(
+        '[AuthService] 📥 Register Response Status: ${response.statusCode}',
+      );
+      debugPrint('[AuthService] 📥 Register Response Body: ${response.body}');
 
       if (response.statusCode == 201) {
-        _handleLoginResult(jsonDecode(response.body));
+        AppSnackbar.success(
+          'Registrasi Berhasil 🎉',
+          'Akun kamu berhasil dibuat. Selamat datang di Science Craft!',
+        );
+        _handleLoginResult(ApiClient.decodeMap(response.body));
       } else {
-        Get.snackbar('Register Gagal', 'Cek email lu lagi.');
+        final resData = ApiClient.decodeMap(response.body);
+        final String message =
+            resData['message'] ??
+            resData['error'] ??
+            'Gagal mendaftarkan akun. Email/Username mungkin sudah terdaftar.';
+        debugPrint('[AuthService] ❌ Register gagal: $message');
+        AppSnackbar.error('Registrasi Gagal', message);
       }
-    } catch (e) {
-      Get.back();
-      Get.snackbar('Error', 'Gagal konek.');
+    } catch (e, stackTrace) {
+      if (Get.isDialogOpen ?? false) Get.back();
+      debugPrint('[AuthService] ❌ Error Register Exception: $e');
+      debugPrint('[AuthService] ❌ StackTrace: $stackTrace');
+      AppSnackbar.error(
+        'Gangguan Koneksi',
+        'Tidak dapat terhubung ke server pendaftaran: ${e.toString().split('\n').first}',
+      );
     }
   }
 
   void logout() async {
+    debugPrint('[AuthService] 🚪 Melakukan logout...');
     await _storage.remove('authToken');
+    await _storage.remove('refreshToken');
     await _storage.remove('userRole');
     await DatabaseHelper.instance.clearUserData();
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
     Get.offAllNamed(Routes.LOGIN);
   }
 }

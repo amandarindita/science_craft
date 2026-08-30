@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../data/api_service.dart';
 import '../controllers/learning_controller.dart';
@@ -10,6 +11,7 @@ const Color _checkpointMuted = Color(0xFF64748B);
 const Color _checkpointBackground = Color(0xFFF5F8FF);
 const Color _checkpointSuccess = Color(0xFF16A34A);
 const Color _checkpointDanger = Color(0xFFDC2626);
+const Color _checkpointBorder = Color(0xFFE2E8F0);
 
 class CheckpointExerciseView extends StatefulWidget {
   const CheckpointExerciseView({
@@ -24,26 +26,21 @@ class CheckpointExerciseView extends StatefulWidget {
       _CheckpointExerciseViewState();
 }
 
-class _CheckpointExerciseViewState
-    extends State<CheckpointExerciseView> {
-  final TextEditingController _textController =
-      TextEditingController();
+class _CheckpointExerciseViewState extends State<CheckpointExerciseView> {
+  final TextEditingController _textController = TextEditingController();
 
   String? _selectedOptionId;
   bool? _trueFalseAnswer;
   String? _selectedHotspotId;
   Map<String, dynamic>? _selectedHotspot;
 
-  final Map<String, String> _matchingAnswers =
-      <String, String>{};
+  final Map<String, String> _matchingAnswers = <String, String>{};
 
-  List<Map<String, dynamic>> _orderingItems =
-      <Map<String, dynamic>>[];
+  List<Map<String, dynamic>> _orderingItems = <Map<String, dynamic>>[];
 
   Map<String, dynamic>? _submitResult;
 
-  LearningController get _controller =>
-      Get.find<LearningController>();
+  LearningController get _controller => Get.find<LearningController>();
 
   String get _type =>
       widget.checkpoint['checkpoint_type']
@@ -53,19 +50,13 @@ class _CheckpointExerciseViewState
       '';
 
   Map<String, dynamic> get _content =>
-      LearningController.mapValue(
-        widget.checkpoint['content'],
-      );
+      LearningController.mapValue(widget.checkpoint['content']);
 
   int get _checkpointId =>
-      LearningController.intValue(
-        widget.checkpoint['id'],
-      );
+      LearningController.intValue(widget.checkpoint['id']);
 
   bool get _alreadyCompleted =>
-      LearningController.boolValue(
-        widget.checkpoint['is_completed'],
-      );
+      LearningController.boolValue(widget.checkpoint['is_completed']);
 
   @override
   void initState() {
@@ -100,18 +91,27 @@ class _CheckpointExerciseViewState
     return Scaffold(
       backgroundColor: _checkpointBackground,
       appBar: AppBar(
-        title: const Text('Checkpoint'),
+        title: Text(
+          'Latihan Checkpoint',
+          style: GoogleFonts.poppins(
+            fontSize: 16.5,
+            fontWeight: FontWeight.w700,
+            color: _checkpointDark,
+          ),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: _checkpointDark,
         elevation: 0,
+        centerTitle: false,
+        shape: const Border(
+          bottom: BorderSide(color: _checkpointBorder, width: 1),
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          18,
-          18,
-          18,
-          34,
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
         ),
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
         children: <Widget>[
           _CheckpointHeader(
             checkpoint: widget.checkpoint,
@@ -127,78 +127,96 @@ class _CheckpointExerciseViewState
             const SizedBox(height: 16),
             _ResultCard(result: _submitResult!),
           ],
-          const SizedBox(height: 22),
-          if (completedNow)
-            SizedBox(
-              height: 52,
-              child: FilledButton.icon(
-                onPressed: Get.back,
-                icon: const Icon(Icons.check_rounded),
-                label: const Text(
-                  'Kembali ke Submateri',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                style: FilledButton.styleFrom(
-                  backgroundColor:
-                      _checkpointSuccess,
-                  shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-            )
-          else
-            Obx(
-              () {
-                final submitting =
-                    _controller.isSubmittingCheckpoint(
-                  _checkpointId,
-                );
-
-                return SizedBox(
-                  height: 52,
-                  child: FilledButton.icon(
-                    onPressed: submitting
-                        ? null
-                        : _submit,
-                    icon: submitting
-                        ? const SizedBox(
-                            width: 19,
-                            height: 19,
-                            child:
-                                CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.send_rounded,
-                          ),
-                    label: Text(
-                      submitting
-                          ? 'Memeriksa...'
-                          : 'Kirim Jawaban',
-                      style: const TextStyle(
-                        fontWeight:
-                            FontWeight.w800,
-                      ),
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor:
-                          _checkpointPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
         ],
+      ),
+      bottomNavigationBar: _buildBottomBar(completedNow),
+    );
+  }
+
+  Widget _buildBottomBar(bool completedNow) {
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: BorderSide(color: _checkpointBorder, width: 1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x08000000),
+              blurRadius: 10,
+              offset: Offset(0, -3),
+            ),
+          ],
+        ),
+        child: completedNow
+            ? SizedBox(
+                height: 48,
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Get.back<void>(),
+                  icon: const Icon(Icons.check_circle_rounded, size: 18),
+                  label: Text(
+                    'Selesai & Kembali ke Submateri',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _checkpointSuccess,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              )
+            : Obx(
+                () {
+                  final bool submitting = _controller.isSubmittingCheckpoint(
+                    _checkpointId,
+                  );
+
+                  return SizedBox(
+                    height: 48,
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: submitting ? null : _submit,
+                      icon: submitting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.send_rounded, size: 17),
+                      label: Text(
+                        submitting ? 'Memeriksa Jawaban...' : 'Kirim Jawaban',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13.5,
+                          color: Colors.white,
+                        ),
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _checkpointPrimary,
+                        disabledBackgroundColor: _checkpointPrimary,
+                        disabledForegroundColor:
+                            Colors.white.withValues(alpha: 0.9),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -219,7 +237,7 @@ class _CheckpointExerciseViewState
         return _buildDataInterpretation();
       default:
         return _buildTextAnswer(
-          title: 'Jawaban',
+          title: 'Jawaban Kamu',
           hint: 'Ketik jawabanmu di sini.',
         );
     }
@@ -234,24 +252,20 @@ class _CheckpointExerciseViewState
 
     if (options.isEmpty) {
       return const _ConfigurationWarning(
-        message:
-            'Pilihan jawaban belum diisi oleh admin.',
+        message: 'Pilihan jawaban belum diisi oleh pembuat modul.',
       );
     }
 
     return _AnswerCard(
-      title: 'Pilih satu jawaban',
+      title: 'Pilih Satu Jawaban yang Tepat',
+      icon: Icons.checklist_rounded,
       child: Column(
         children: options.map((option) {
-          final String id =
-              option['id'].toString();
-          final bool selected =
-              _selectedOptionId == id;
+          final String id = option['id'].toString();
+          final bool selected = _selectedOptionId == id;
 
           return Padding(
-            padding: const EdgeInsets.only(
-              bottom: 10,
-            ),
+            padding: const EdgeInsets.only(bottom: 10),
             child: _SelectableAnswer(
               label: option['text'].toString(),
               leadingText: id,
@@ -271,7 +285,8 @@ class _CheckpointExerciseViewState
 
   Widget _buildTrueFalse() {
     return _AnswerCard(
-      title: 'Tentukan benar atau salah',
+      title: 'Tentukan Benar atau Salah',
+      icon: Icons.rule_rounded,
       child: Row(
         children: <Widget>[
           Expanded(
@@ -279,8 +294,7 @@ class _CheckpointExerciseViewState
               label: 'Benar',
               icon: Icons.check_circle_rounded,
               selected: _trueFalseAnswer == true,
-              selectedColor:
-                  _checkpointSuccess,
+              selectedColor: _checkpointSuccess,
               onTap: () {
                 setState(() {
                   _trueFalseAnswer = true;
@@ -294,8 +308,7 @@ class _CheckpointExerciseViewState
             child: _BooleanAnswer(
               label: 'Salah',
               icon: Icons.cancel_rounded,
-              selected:
-                  _trueFalseAnswer == false,
+              selected: _trueFalseAnswer == false,
               selectedColor: _checkpointDanger,
               onTap: () {
                 setState(() {
@@ -327,77 +340,83 @@ class _CheckpointExerciseViewState
 
     if (leftItems.isEmpty || rightItems.isEmpty) {
       return const _ConfigurationWarning(
-        message:
-            'Data pasangan kiri dan kanan belum lengkap.',
+        message: 'Data pasangan pernyataan belum lengkap.',
       );
     }
 
     return _AnswerCard(
-      title: 'Pasangkan setiap pernyataan',
+      title: 'Pasangkan Setiap Pernyataan',
+      icon: Icons.compare_arrows_rounded,
       child: Column(
         children: leftItems.map((left) {
-          final String leftId =
-              left['id'].toString();
-          final String? selected =
-              _matchingAnswers[leftId];
+          final String leftId = left['id'].toString();
+          final String? selected = _matchingAnswers[leftId];
 
           return Container(
-            margin: const EdgeInsets.only(
-              bottom: 12,
-            ),
+            margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
-              borderRadius:
-                  BorderRadius.circular(15),
-              border: Border.all(
-                color: const Color(0xFFE2E8F0),
-              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _checkpointBorder),
             ),
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
                   left['text'].toString(),
-                  style: const TextStyle(
+                  style: GoogleFonts.poppins(
                     color: _checkpointDark,
-                    fontWeight:
-                        FontWeight.w800,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13.5,
                   ),
                 ),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
-                  key: ValueKey<String>(
-                    '$leftId-${selected ?? 'empty'}',
-                  ),
-                  value: selected,
+                  key: ValueKey<String>('$leftId-${selected ?? 'empty'}'),
+                  initialValue: selected,
                   isExpanded: true,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: _checkpointDark,
+                    fontSize: 13,
+                  ),
                   decoration: InputDecoration(
-                    hintText: 'Pilih pasangan',
+                    hintText: 'Pilih pasangan...',
+                    hintStyle: GoogleFonts.plusJakartaSans(
+                      color: _checkpointMuted,
+                      fontSize: 12.5,
+                    ),
                     filled: true,
                     fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
                     ),
-                    enabledBorder:
-                        OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(
-                        color:
-                            Color(0xFFE2E8F0),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: _checkpointBorder),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: _checkpointBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: _checkpointPrimary,
+                        width: 1.5,
                       ),
                     ),
                   ),
                   items: rightItems.map((right) {
                     return DropdownMenuItem<String>(
-                      value:
-                          right['id'].toString(),
+                      value: right['id'].toString(),
                       child: Text(
                         right['text'].toString(),
+                        style: GoogleFonts.plusJakartaSans(
+                          color: _checkpointDark,
+                          fontSize: 13,
+                        ),
                       ),
                     );
                   }).toList(),
@@ -407,8 +426,7 @@ class _CheckpointExerciseViewState
                     }
 
                     setState(() {
-                      _matchingAnswers[leftId] =
-                          value;
+                      _matchingAnswers[leftId] = value;
                       _submitResult = null;
                     });
                   },
@@ -424,17 +442,16 @@ class _CheckpointExerciseViewState
   Widget _buildOrdering() {
     if (_orderingItems.isEmpty) {
       return const _ConfigurationWarning(
-        message:
-            'Daftar yang harus diurutkan belum tersedia.',
+        message: 'Daftar urutan belum tersedia.',
       );
     }
 
     return _AnswerCard(
-      title: 'Geser untuk menyusun urutan',
+      title: 'Geser untuk Menyusun Urutan',
+      icon: Icons.reorder_rounded,
       child: ReorderableListView.builder(
         shrinkWrap: true,
-        physics:
-            const NeverScrollableScrollPhysics(),
+        physics: const NeverScrollableScrollPhysics(),
         buildDefaultDragHandles: false,
         itemCount: _orderingItems.length,
         onReorder: (oldIndex, newIndex) {
@@ -443,12 +460,8 @@ class _CheckpointExerciseViewState
               newIndex -= 1;
             }
 
-            final moved =
-                _orderingItems.removeAt(oldIndex);
-            _orderingItems.insert(
-              newIndex,
-              moved,
-            );
+            final moved = _orderingItems.removeAt(oldIndex);
+            _orderingItems.insert(newIndex, moved);
             _submitResult = null;
           });
         },
@@ -456,46 +469,41 @@ class _CheckpointExerciseViewState
           final item = _orderingItems[index];
 
           return Container(
-            key: ValueKey<String>(
-              item['_key'].toString(),
-            ),
-            margin: const EdgeInsets.only(
-              bottom: 10,
-            ),
-            padding: const EdgeInsets.all(13),
+            key: ValueKey<String>(item['_key'].toString()),
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
-              borderRadius:
-                  BorderRadius.circular(14),
-              border: Border.all(
-                color: const Color(0xFFE2E8F0),
-              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _checkpointBorder),
             ),
             child: Row(
               children: <Widget>[
-                CircleAvatar(
-                  radius: 15,
-                  backgroundColor:
-                      const Color(0xFFEAF1FF),
-                  foregroundColor:
-                      _checkpointPrimary,
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
                   child: Text(
                     '${index + 1}',
-                    style: const TextStyle(
+                    style: GoogleFonts.poppins(
                       fontSize: 12,
-                      fontWeight:
-                          FontWeight.w900,
+                      fontWeight: FontWeight.w700,
+                      color: _checkpointPrimary,
                     ),
                   ),
                 ),
-                const SizedBox(width: 11),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     item['text'].toString(),
-                    style: const TextStyle(
+                    style: GoogleFonts.plusJakartaSans(
                       color: _checkpointDark,
-                      fontWeight:
-                          FontWeight.w700,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
                     ),
                   ),
                 ),
@@ -504,8 +512,9 @@ class _CheckpointExerciseViewState
                   child: const Padding(
                     padding: EdgeInsets.all(6),
                     child: Icon(
-                      Icons.drag_handle_rounded,
+                      Icons.drag_indicator_rounded,
                       color: _checkpointMuted,
+                      size: 20,
                     ),
                   ),
                 ),
@@ -519,48 +528,43 @@ class _CheckpointExerciseViewState
 
   Widget _buildImageHotspot() {
     final hotspots = _hotspotsFrom(
-      _content['hotspots'] ??
-          _content['points'],
+      _content['hotspots'] ?? _content['points'],
     );
 
     final imageUrl = ApiService.resolveMediaUrl(
-      widget.checkpoint['image_url']
-          ?.toString(),
+      widget.checkpoint['image_url']?.toString(),
     );
 
     if (hotspots.isEmpty) {
       return const _ConfigurationWarning(
-        message:
-            'Titik gambar belum diatur oleh admin.',
+        message: 'Titik gambar belum diatur oleh pembuat modul.',
       );
     }
 
     return _AnswerCard(
-      title: 'Sentuh bagian gambar yang benar',
+      title: 'Sentuh Bagian Gambar yang Benar',
+      icon: Icons.touch_app_rounded,
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           AspectRatio(
             aspectRatio: 16 / 9,
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return ClipRRect(
-                  borderRadius:
-                      BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16),
                   child: Stack(
                     fit: StackFit.expand,
                     children: <Widget>[
                       if (imageUrl == null)
                         Container(
-                          color:
-                              const Color(0xFFE2E8F0),
+                          color: const Color(0xFFE2E8F0),
                           alignment: Alignment.center,
-                          child: const Text(
+                          child: Text(
                             'Gambar checkpoint belum tersedia',
-                            style: TextStyle(
-                              color:
-                                  _checkpointMuted,
+                            style: GoogleFonts.plusJakartaSans(
+                              color: _checkpointMuted,
+                              fontSize: 12,
                             ),
                           ),
                         )
@@ -568,94 +572,57 @@ class _CheckpointExerciseViewState
                         Image.network(
                           imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (
-                            context,
-                            error,
-                            stackTrace,
-                          ) {
+                          errorBuilder: (context, error, stackTrace) {
                             return Container(
-                              color: const Color(
-                                0xFFE2E8F0,
-                              ),
-                              alignment:
-                                  Alignment.center,
-                              child: const Text(
+                              color: const Color(0xFFE2E8F0),
+                              alignment: Alignment.center,
+                              child: Text(
                                 'Gambar tidak dapat dimuat',
-                                style: TextStyle(
-                                  color:
-                                      _checkpointMuted,
+                                style: GoogleFonts.plusJakartaSans(
+                                  color: _checkpointMuted,
+                                  fontSize: 12,
                                 ),
                               ),
                             );
                           },
                         ),
                       ...hotspots.map((hotspot) {
-                        final String id =
-                            hotspot['id'].toString();
-                        final double x =
-                            _coordinate(
-                          hotspot['x'],
-                        );
-                        final double y =
-                            _coordinate(
-                          hotspot['y'],
-                        );
-                        final bool selected =
-                            _selectedHotspotId ==
-                                id;
+                        final String id = hotspot['id'].toString();
+                        final double x = _coordinate(hotspot['x']);
+                        final double y = _coordinate(hotspot['y']);
+                        final bool selected = _selectedHotspotId == id;
 
                         return Positioned(
-                          left: x *
-                              (constraints.maxWidth -
-                                  42),
-                          top: y *
-                              (constraints.maxHeight -
-                                  42),
+                          left: x * (constraints.maxWidth - 42),
+                          top: y * (constraints.maxHeight - 42),
                           child: Tooltip(
-                            message:
-                                hotspot['label']
-                                    .toString(),
+                            message: hotspot['label'].toString(),
                             child: GestureDetector(
                               onTap: () {
                                 setState(() {
-                                  _selectedHotspotId =
-                                      id;
-                                  _selectedHotspot =
-                                      hotspot;
-                                  _submitResult =
-                                      null;
+                                  _selectedHotspotId = id;
+                                  _selectedHotspot = hotspot;
+                                  _submitResult = null;
                                 });
                               },
-                              child:
-                                  AnimatedContainer(
-                                duration:
-                                    const Duration(
-                                  milliseconds: 180,
-                                ),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
                                 width: 42,
                                 height: 42,
-                                decoration:
-                                    BoxDecoration(
-                                  shape:
-                                      BoxShape.circle,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
                                   color: selected
                                       ? _checkpointPrimary
-                                      : Colors.white
-                                          .withValues(
-                                          alpha: 0.88,
-                                        ),
+                                      : Colors.white.withValues(alpha: 0.88),
                                   border: Border.all(
                                     color: selected
                                         ? Colors.white
                                         : _checkpointPrimary,
                                     width: 3,
                                   ),
-                                  boxShadow: <
-                                      BoxShadow>[
+                                  boxShadow: <BoxShadow>[
                                     BoxShadow(
-                                      color: Colors
-                                          .black
-                                          .withValues(
+                                      color: Colors.black.withValues(
                                         alpha: 0.16,
                                       ),
                                       blurRadius: 8,
@@ -664,10 +631,8 @@ class _CheckpointExerciseViewState
                                 ),
                                 child: Icon(
                                   selected
-                                      ? Icons
-                                          .check_rounded
-                                      : Icons
-                                          .touch_app_rounded,
+                                      ? Icons.check_rounded
+                                      : Icons.touch_app_rounded,
                                   color: selected
                                       ? Colors.white
                                       : _checkpointPrimary,
@@ -684,13 +649,18 @@ class _CheckpointExerciseViewState
               },
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Text(
             _selectedHotspotId == null
                 ? 'Belum ada bagian yang dipilih.'
                 : 'Bagian dipilih: ${_hotspotLabel(hotspots, _selectedHotspotId!)}',
-            style: const TextStyle(
-              color: _checkpointMuted,
+            style: GoogleFonts.plusJakartaSans(
+              color: _selectedHotspotId == null
+                  ? _checkpointMuted
+                  : _checkpointPrimary,
+              fontWeight: _selectedHotspotId == null
+                  ? FontWeight.normal
+                  : FontWeight.w600,
               fontSize: 12,
             ),
           ),
@@ -705,45 +675,39 @@ class _CheckpointExerciseViewState
               width: double.infinity,
               padding: const EdgeInsets.all(13),
               decoration: BoxDecoration(
-                color: const Color(0xFFEAF1FF),
-                borderRadius:
-                    BorderRadius.circular(14),
-                border: Border.all(
-                  color: const Color(0xFFBFDBFE),
-                ),
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFBFDBFE)),
               ),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Row(
                     children: <Widget>[
                       const Icon(
-                        Icons.info_rounded,
+                        Icons.info_outline_rounded,
                         color: _checkpointPrimary,
-                        size: 19,
+                        size: 18,
                       ),
                       const SizedBox(width: 7),
                       Expanded(
                         child: Text(
-                          _selectedHotspot!['label']
-                                  ?.toString() ??
-                              'Penjelasan',
-                          style: const TextStyle(
+                          _selectedHotspot!['label']?.toString() ?? 'Penjelasan',
+                          style: GoogleFonts.poppins(
                             color: _checkpointDark,
-                            fontWeight:
-                                FontWeight.w800,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 7),
+                  const SizedBox(height: 6),
                   Text(
-                    _selectedHotspot!['explanation']
-                        .toString(),
-                    style: const TextStyle(
+                    _selectedHotspot!['explanation'].toString(),
+                    style: GoogleFonts.plusJakartaSans(
                       color: _checkpointMuted,
+                      fontSize: 12,
                       height: 1.45,
                     ),
                   ),
@@ -758,8 +722,7 @@ class _CheckpointExerciseViewState
 
   Widget _buildDataInterpretation() {
     final options = _optionsFrom(
-      _content['options'] ??
-          _content['choices'],
+      _content['options'] ?? _content['choices'],
     );
 
     return Column(
@@ -768,23 +731,18 @@ class _CheckpointExerciseViewState
         const SizedBox(height: 14),
         if (options.isNotEmpty)
           _AnswerCard(
-            title: 'Pilih kesimpulan yang tepat',
+            title: 'Pilih Kesimpulan yang Tepat',
+            icon: Icons.insights_rounded,
             child: Column(
               children: options.map((option) {
-                final String id =
-                    option['id'].toString();
+                final String id = option['id'].toString();
 
                 return Padding(
-                  padding:
-                      const EdgeInsets.only(
-                    bottom: 10,
-                  ),
+                  padding: const EdgeInsets.only(bottom: 10),
                   child: _SelectableAnswer(
-                    label:
-                        option['text'].toString(),
+                    label: option['text'].toString(),
                     leadingText: id,
-                    selected:
-                        _selectedOptionId == id,
+                    selected: _selectedOptionId == id,
                     onTap: () {
                       setState(() {
                         _selectedOptionId = id;
@@ -798,9 +756,8 @@ class _CheckpointExerciseViewState
           )
         else
           _buildTextAnswer(
-            title: 'Tulis hasil analisismu',
-            hint:
-                'Masukkan jawaban berdasarkan data di atas.',
+            title: 'Tulis Hasil Analisismu',
+            hint: 'Masukkan jawaban berdasarkan data di atas.',
           ),
       ],
     );
@@ -812,10 +769,16 @@ class _CheckpointExerciseViewState
   }) {
     return _AnswerCard(
       title: title,
+      icon: Icons.edit_note_rounded,
       child: TextField(
         controller: _textController,
         minLines: 3,
         maxLines: 7,
+        style: GoogleFonts.plusJakartaSans(
+          color: _checkpointDark,
+          fontSize: 13.5,
+          height: 1.5,
+        ),
         onChanged: (_) {
           if (_submitResult != null) {
             setState(() {
@@ -825,17 +788,25 @@ class _CheckpointExerciseViewState
         },
         decoration: InputDecoration(
           hintText: hint,
+          hintStyle: GoogleFonts.plusJakartaSans(
+            color: _checkpointMuted,
+            fontSize: 13,
+          ),
           filled: true,
           fillColor: const Color(0xFFF8FAFC),
           border: OutlineInputBorder(
-            borderRadius:
-                BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: _checkpointBorder),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius:
-                BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: _checkpointBorder),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
             borderSide: const BorderSide(
-              color: Color(0xFFE2E8F0),
+              color: _checkpointPrimary,
+              width: 1.5,
             ),
           ),
         ),
@@ -847,14 +818,11 @@ class _CheckpointExerciseViewState
     final dynamic answer = _buildAnswer();
 
     if (answer == null) {
-      _controller.showError(
-        'Lengkapi jawaban terlebih dahulu.',
-      );
+      _controller.showError('Lengkapi jawaban terlebih dahulu.');
       return;
     }
 
-    final result =
-        await _controller.submitCheckpointAnswer(
+    final result = await _controller.submitCheckpointAnswer(
       checkpointId: _checkpointId,
       answer: answer,
     );
@@ -885,22 +853,18 @@ class _CheckpointExerciseViewState
         if (leftItems.isEmpty ||
             leftItems.any(
               (item) =>
-                  !_matchingAnswers.containsKey(
-                item['id'].toString(),
-              ),
+                  !_matchingAnswers.containsKey(item['id'].toString()),
             )) {
           return null;
         }
 
         return <String, dynamic>{
           'pairs': leftItems.map((left) {
-            final String leftId =
-                left['id'].toString();
+            final String leftId = left['id'].toString();
 
             return <String, dynamic>{
               'left_id': leftId,
-              'right_id':
-                  _matchingAnswers[leftId],
+              'right_id': _matchingAnswers[leftId],
             };
           }).toList(),
         };
@@ -911,9 +875,7 @@ class _CheckpointExerciseViewState
 
         return <String, dynamic>{
           'order': _orderingItems
-              .map(
-                (item) => item['id'].toString(),
-              )
+              .map((item) => item['id'].toString())
               .toList(),
         };
       case 'image_hotspot':
@@ -926,8 +888,7 @@ class _CheckpointExerciseViewState
         };
       case 'data_interpretation':
         final options = _optionsFrom(
-          _content['options'] ??
-              _content['choices'],
+          _content['options'] ?? _content['choices'],
         );
 
         if (options.isNotEmpty) {
@@ -942,9 +903,7 @@ class _CheckpointExerciseViewState
     }
   }
 
-  List<Map<String, dynamic>> _optionsFrom(
-    dynamic raw,
-  ) {
+  List<Map<String, dynamic>> _optionsFrom(dynamic raw) {
     if (raw is Map) {
       return raw.entries.map((entry) {
         return <String, dynamic>{
@@ -963,8 +922,7 @@ class _CheckpointExerciseViewState
       final dynamic item = entry.value;
 
       if (item is Map) {
-        final map =
-            Map<String, dynamic>.from(item);
+        final map = Map<String, dynamic>.from(item);
 
         return <String, dynamic>{
           'id': (map['id'] ??
@@ -997,8 +955,7 @@ class _CheckpointExerciseViewState
         return <String, dynamic>{
           'id': entry.key.toString(),
           'text': entry.value.toString(),
-          '_key':
-              '$prefix-${entry.key}',
+          '_key': '$prefix-${entry.key}',
         };
       }).toList();
     }
@@ -1012,8 +969,7 @@ class _CheckpointExerciseViewState
       final dynamic item = entry.value;
 
       if (item is Map) {
-        final map =
-            Map<String, dynamic>.from(item);
+        final map = Map<String, dynamic>.from(item);
         final String id = (map['id'] ??
                 map['value'] ??
                 map['key'] ??
@@ -1040,18 +996,14 @@ class _CheckpointExerciseViewState
     }).toList();
   }
 
-  List<Map<String, dynamic>> _hotspotsFrom(
-    dynamic raw,
-  ) {
+  List<Map<String, dynamic>> _hotspotsFrom(dynamic raw) {
     if (raw is! List) {
       return <Map<String, dynamic>>[];
     }
 
     return raw.asMap().entries.map((entry) {
       final map = entry.value is Map
-          ? Map<String, dynamic>.from(
-              entry.value as Map,
-            )
+          ? Map<String, dynamic>.from(entry.value as Map)
           : <String, dynamic>{};
 
       return <String, dynamic>{
@@ -1071,25 +1023,18 @@ class _CheckpointExerciseViewState
             map['top'] ??
             map['y_percent'] ??
             0.5,
-        'explanation':
-            (map['explanation'] ??
-                    map['description'] ??
-                    map['info'] ??
-                    '')
-                .toString(),
+        'explanation': (map['explanation'] ??
+                map['description'] ??
+                map['info'] ??
+                '')
+            .toString(),
       };
     }).toList();
   }
 
   double _coordinate(dynamic value) {
-    final double parsed = double.tryParse(
-          value?.toString() ?? '',
-        ) ??
-        0.5;
-
-    final double normalized =
-        parsed > 1 ? parsed / 100 : parsed;
-
+    final double parsed = double.tryParse(value?.toString() ?? '') ?? 0.5;
+    final double normalized = parsed > 1 ? parsed / 100 : parsed;
     return normalized.clamp(0.0, 1.0);
   }
 
@@ -1098,8 +1043,7 @@ class _CheckpointExerciseViewState
     String id,
   ) {
     final item = hotspots.firstWhereOrNull(
-      (hotspot) =>
-          hotspot['id'].toString() == id,
+      (hotspot) => hotspot['id'].toString() == id,
     );
 
     return item?['label']?.toString() ?? id;
@@ -1126,11 +1070,8 @@ class _CheckpointHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String type =
-        checkpoint['checkpoint_type']
-            ?.toString() ??
-        '';
-    final int attempts =
-        LearningController.intValue(
+        checkpoint['checkpoint_type']?.toString() ?? '';
+    final int attempts = LearningController.intValue(
       checkpoint['attempts'],
     );
 
@@ -1138,59 +1079,66 @@ class _CheckpointHeader extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: completed
               ? const <Color>[
-                  Color(0xFF15803D),
+                  Color(0xFF15803D), // Green
                   Color(0xFF22C55E),
                 ]
               : const <Color>[
-                  Color(0xFF1E3A8A),
+                  Color(0xFF1E3A8A), // Navy / Blue
                   Color(0xFF2563EB),
                 ],
         ),
         borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: (completed ? _checkpointSuccess : _checkpointPrimary)
+                .withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: <Widget>[
-          CircleAvatar(
-            radius: 25,
-            backgroundColor:
-                Colors.white.withValues(
-              alpha: 0.18,
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(14),
             ),
-            foregroundColor: Colors.white,
             child: Icon(
-              completed
-                  ? Icons.check_rounded
-                  : _checkpointIcon(type),
-              size: 27,
+              completed ? Icons.verified_rounded : _checkpointIcon(type),
+              size: 26,
+              color: Colors.white,
             ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  completed
-                      ? 'Checkpoint selesai'
-                      : _checkpointLabel(type),
-                  style: const TextStyle(
+                  completed ? 'Checkpoint Selesai' : _checkpointLabel(type),
+                  style: GoogleFonts.poppins(
                     color: Colors.white,
-                    fontSize: 17,
-                    fontWeight:
-                        FontWeight.w900,
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
                   attempts == 0
                       ? 'Belum pernah dicoba'
-                      : '$attempts kali percobaan',
-                  style: const TextStyle(
-                    color: Color(0xFFDCE9FF),
-                    fontSize: 12,
+                      : '$attempts kali percobaan terselesaikan',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: completed
+                        ? const Color(0xFFD1FAE5)
+                        : const Color(0xFFDCE9FF),
+                    fontSize: 11.5,
                   ),
                 ),
               ],
@@ -1211,57 +1159,89 @@ class _QuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String? title = checkpoint['title']?.toString().trim();
     final String? instruction =
-        checkpoint['instruction']
-            ?.toString()
-            .trim();
+        checkpoint['instruction']?.toString().trim();
+    final String question = checkpoint['question_text']?.toString() ??
+        'Pertanyaan checkpoint';
 
     return Container(
-      padding: const EdgeInsets.all(19),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-        ),
+        border: Border.all(color: _checkpointBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.025),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          if (checkpoint['title']
-                      ?.toString()
-                      .trim()
-                      .isNotEmpty ==
-                  true) ...<Widget>[
-            Text(
-              checkpoint['title'].toString(),
-              style: const TextStyle(
-                color: _checkpointPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
+          if (title != null && title.isNotEmpty) ...<Widget>[
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                title,
+                style: GoogleFonts.plusJakartaSans(
+                  color: _checkpointPrimary,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
           ],
           Text(
-            checkpoint['question_text']
-                    ?.toString() ??
-                'Pertanyaan checkpoint',
-            style: const TextStyle(
+            question,
+            style: GoogleFonts.poppins(
               color: _checkpointDark,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              height: 1.4,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              height: 1.45,
             ),
           ),
-          if (instruction?.isNotEmpty == true) ...<Widget>[
+          if (instruction != null && instruction.isNotEmpty) ...<Widget>[
             const SizedBox(height: 10),
-            Text(
-              instruction!,
-              style: const TextStyle(
-                color: _checkpointMuted,
-                height: 1.4,
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _checkpointBorder),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 15,
+                    color: _checkpointPrimary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      instruction,
+                      style: GoogleFonts.plusJakartaSans(
+                        color: _checkpointMuted,
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -1274,36 +1254,52 @@ class _QuestionCard extends StatelessWidget {
 class _AnswerCard extends StatelessWidget {
   const _AnswerCard({
     required this.title,
+    this.icon,
     required this.child,
   });
 
   final String title;
+  final IconData? icon;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-        ),
+        border: Border.all(color: _checkpointBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.025),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            title,
-            style: const TextStyle(
-              color: _checkpointDark,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-            ),
+          Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 18, color: _checkpointPrimary),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    color: _checkpointDark,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 13),
+          const SizedBox(height: 14),
           child,
         ],
       ),
@@ -1327,40 +1323,40 @@ class _SelectableAnswer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected
-          ? const Color(0xFFEAF1FF)
-          : const Color(0xFFF8FAFC),
-      borderRadius: BorderRadius.circular(15),
+      color: selected ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: selected
-                  ? _checkpointPrimary
-                  : const Color(0xFFE2E8F0),
-              width: selected ? 2 : 1,
+              color: selected ? _checkpointPrimary : _checkpointBorder,
+              width: selected ? 1.5 : 1,
             ),
           ),
           child: Row(
             children: <Widget>[
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: selected
-                    ? _checkpointPrimary
-                    : Colors.white,
-                foregroundColor: selected
-                    ? Colors.white
-                    : _checkpointMuted,
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: selected ? _checkpointPrimary : Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: selected ? _checkpointPrimary : _checkpointBorder,
+                  ),
+                ),
+                alignment: Alignment.center,
                 child: Text(
                   leadingText,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: selected ? Colors.white : _checkpointDark,
                   ),
                 ),
               ),
@@ -1368,21 +1364,21 @@ class _SelectableAnswer extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: TextStyle(
+                  style: GoogleFonts.plusJakartaSans(
                     color: _checkpointDark,
-                    fontWeight: selected
-                        ? FontWeight.w800
-                        : FontWeight.w600,
+                    fontSize: 13.5,
+                    fontWeight:
+                        selected ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
               Icon(
                 selected
-                    ? Icons.radio_button_checked
-                    : Icons.radio_button_off,
-                color: selected
-                    ? _checkpointPrimary
-                    : _checkpointMuted,
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_off_rounded,
+                color: selected ? _checkpointPrimary : _checkpointMuted,
+                size: 20,
               ),
             ],
           ),
@@ -1419,35 +1415,30 @@ class _BooleanAnswer extends StatelessWidget {
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(
-            vertical: 22,
+            vertical: 20,
             horizontal: 12,
           ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: selected
-                  ? selectedColor
-                  : const Color(0xFFE2E8F0),
-              width: selected ? 2 : 1,
+              color: selected ? selectedColor : _checkpointBorder,
+              width: selected ? 1.8 : 1,
             ),
           ),
           child: Column(
             children: <Widget>[
               Icon(
                 icon,
-                color: selected
-                    ? selectedColor
-                    : _checkpointMuted,
-                size: 34,
+                color: selected ? selectedColor : _checkpointMuted,
+                size: 32,
               ),
               const SizedBox(height: 8),
               Text(
                 label,
-                style: TextStyle(
-                  color: selected
-                      ? selectedColor
-                      : _checkpointDark,
-                  fontWeight: FontWeight.w900,
+                style: GoogleFonts.poppins(
+                  color: selected ? selectedColor : _checkpointDark,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
                 ),
               ),
             ],
@@ -1468,126 +1459,110 @@ class _ResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool correct =
-        LearningController.boolValue(
-      result['is_correct'],
-    );
+        LearningController.boolValue(result['is_correct']);
     final int xpAdded =
-        LearningController.intValue(
-      result['total_xp_added'],
-    );
+        LearningController.intValue(result['total_xp_added']);
     final bool xpAlreadyReceived =
-        LearningController.boolValue(
-      result['xp_already_received'],
-    );
+        LearningController.boolValue(result['xp_already_received']);
 
     return Container(
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: correct
-            ? const Color(0xFFE7F8EE)
-            : const Color(0xFFFFF3E0),
+        color: correct ? const Color(0xFFF0FDF4) : const Color(0xFFFFF7ED),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: correct
-              ? const Color(0xFF86EFAC)
-              : const Color(0xFFFDBA74),
+          color: correct ? const Color(0xFFA7F3D0) : const Color(0xFFFED7AA),
         ),
       ),
-      child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: <Widget>[
-          Icon(
-            correct
-                ? Icons.check_circle_rounded
-                : Icons.info_rounded,
-            color: correct
-                ? _checkpointSuccess
-                : const Color(0xFFEA580C),
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  correct
-                      ? 'Jawaban benar'
-                      : 'Jawaban belum tepat',
-                  style: TextStyle(
-                    color: correct
-                        ? const Color(0xFF166534)
-                        : const Color(0xFF9A3412),
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  (result['feedback'] ??
-                          'Tidak ada umpan balik.')
-                      .toString(),
-                  style: TextStyle(
-                    color: correct
-                        ? const Color(0xFF166534)
-                        : const Color(0xFF9A3412),
-                    height: 1.4,
-                  ),
-                ),
-                if (correct &&
-                    (xpAdded > 0 ||
-                        xpAlreadyReceived)) ...<Widget>[
-                  const SizedBox(height: 10),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 11,
-                      vertical: 8,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(17),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Icon(
+              correct
+                  ? Icons.check_circle_rounded
+                  : Icons.info_outline_rounded,
+              color: correct ? _checkpointSuccess : const Color(0xFFEA580C),
+              size: 22,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    correct ? 'Jawaban Benar!' : 'Jawaban Belum Tepat',
+                    style: GoogleFonts.poppins(
+                      color: correct
+                          ? const Color(0xFF166534)
+                          : const Color(0xFF9A3412),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
                     ),
-                    decoration: BoxDecoration(
-                      color: xpAdded > 0
-                          ? const Color(0xFFD1FAE5)
-                          : const Color(0xFFDBEAFE),
-                      borderRadius:
-                          BorderRadius.circular(12),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    (result['feedback'] ?? 'Tidak ada umpan balik.')
+                        .toString(),
+                    style: GoogleFonts.plusJakartaSans(
+                      color: correct
+                          ? const Color(0xFF166534)
+                          : const Color(0xFF9A3412),
+                      fontSize: 12.5,
+                      height: 1.45,
                     ),
-                    child: Row(
-                      mainAxisSize:
-                          MainAxisSize.min,
-                      children: <Widget>[
-                        Icon(
-                          xpAdded > 0
-                              ? Icons.bolt_rounded
-                              : Icons.info_rounded,
-                          size: 18,
-                          color: xpAdded > 0
-                              ? const Color(0xFF047857)
-                              : const Color(0xFF1D4ED8),
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
+                  ),
+                  if (correct &&
+                      (xpAdded > 0 || xpAlreadyReceived)) ...<Widget>[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: xpAdded > 0
+                            ? const Color(0xFFDCFCE7)
+                            : const Color(0xFFDBEAFE),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Icon(
                             xpAdded > 0
-                                ? '+$xpAdded XP berhasil diperoleh'
-                                : 'XP checkpoint ini sudah pernah diterima',
-                            style: TextStyle(
-                              color: xpAdded > 0
-                                  ? const Color(0xFF047857)
-                                  : const Color(0xFF1D4ED8),
-                              fontSize: 12,
-                              fontWeight:
-                                  FontWeight.w800,
+                                ? Icons.bolt_rounded
+                                : Icons.info_rounded,
+                            size: 16,
+                            color: xpAdded > 0
+                                ? const Color(0xFF047857)
+                                : const Color(0xFF1D4ED8),
+                          ),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              xpAdded > 0
+                                  ? '+$xpAdded XP berhasil diperoleh'
+                                  : 'XP checkpoint sudah pernah diterima',
+                              style: GoogleFonts.plusJakartaSans(
+                                color: xpAdded > 0
+                                    ? const Color(0xFF047857)
+                                    : const Color(0xFF1D4ED8),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1603,12 +1578,12 @@ class _ConfigurationWarning extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E0),
+        color: const Color(0xFFFFF7ED),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: const Color(0xFFFDBA74),
+          color: const Color(0xFFFED7AA),
         ),
       ),
       child: Row(
@@ -1616,13 +1591,15 @@ class _ConfigurationWarning extends StatelessWidget {
           const Icon(
             Icons.warning_amber_rounded,
             color: Color(0xFFEA580C),
+            size: 20,
           ),
-          const SizedBox(width: 11),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                color: Color(0xFF9A3412),
+              style: GoogleFonts.plusJakartaSans(
+                color: const Color(0xFF9A3412),
+                fontSize: 12.5,
                 height: 1.4,
               ),
             ),
@@ -1643,59 +1620,51 @@ class _DataDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String? description =
-        content['description']
-            ?.toString()
-            .trim();
+        content['description']?.toString().trim();
 
-    final List<String> headers =
-        _stringList(content['headers']);
+    final List<String> headers = _stringList(content['headers']);
 
-    final dynamic rawRows =
-        content['rows'] ?? content['data'];
+    final dynamic rawRows = content['rows'] ?? content['data'];
 
-    final List<dynamic> rows = rawRows is List
-        ? List<dynamic>.from(rawRows)
-        : <dynamic>[];
+    final List<dynamic> rows =
+        rawRows is List ? List<dynamic>.from(rawRows) : <dynamic>[];
 
     return _AnswerCard(
-      title: content['title']?.toString() ??
-          'Data yang harus dianalisis',
+      title: content['title']?.toString() ?? 'Data Analisis',
+      icon: Icons.table_chart_rounded,
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           if (description?.isNotEmpty == true) ...<Widget>[
             Text(
               description!,
-              style: const TextStyle(
+              style: GoogleFonts.plusJakartaSans(
                 color: _checkpointMuted,
+                fontSize: 12.5,
                 height: 1.45,
               ),
             ),
             const SizedBox(height: 12),
           ],
           if (rows.isEmpty)
-            const Text(
+            Text(
               'Data belum tersedia.',
-              style: TextStyle(
+              style: GoogleFonts.plusJakartaSans(
                 color: _checkpointMuted,
+                fontSize: 12,
               ),
             )
           else
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              child: DataTable(
-                headingRowColor:
-                    WidgetStateProperty.all(
-                  const Color(0xFFEAF1FF),
-                ),
-                columns: _columnsFor(
-                  headers,
-                  rows,
-                ),
-                rows: _rowsFor(
-                  headers,
-                  rows,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: DataTable(
+                  headingRowColor: WidgetStateProperty.all(
+                    const Color(0xFFEFF6FF),
+                  ),
+                  columns: _columnsFor(headers, rows),
+                  rows: _rowsFor(headers, rows),
                 ),
               ),
             ),
@@ -1708,16 +1677,16 @@ class _DataDisplay extends StatelessWidget {
     List<String> headers,
     List<dynamic> rows,
   ) {
-    final effectiveHeaders =
-        _effectiveHeaders(headers, rows);
+    final effectiveHeaders = _effectiveHeaders(headers, rows);
 
     return effectiveHeaders
         .map(
           (header) => DataColumn(
             label: Text(
               header,
-              style: const TextStyle(
-                fontWeight: FontWeight.w900,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                fontSize: 12.5,
               ),
             ),
           ),
@@ -1729,8 +1698,7 @@ class _DataDisplay extends StatelessWidget {
     List<String> headers,
     List<dynamic> rows,
   ) {
-    final effectiveHeaders =
-        _effectiveHeaders(headers, rows);
+    final effectiveHeaders = _effectiveHeaders(headers, rows);
 
     return rows.map((row) {
       if (row is Map) {
@@ -1739,9 +1707,9 @@ class _DataDisplay extends StatelessWidget {
             return DataCell(
               Text(
                 row[header]?.toString() ??
-                    row[header.toLowerCase()]
-                        ?.toString() ??
+                    row[header.toLowerCase()]?.toString() ??
                     '-',
+                style: GoogleFonts.plusJakartaSans(fontSize: 12),
               ),
             );
           }).toList(),
@@ -1754,9 +1722,8 @@ class _DataDisplay extends StatelessWidget {
             effectiveHeaders.length,
             (index) => DataCell(
               Text(
-                index < row.length
-                    ? row[index].toString()
-                    : '-',
+                index < row.length ? row[index].toString() : '-',
+                style: GoogleFonts.plusJakartaSans(fontSize: 12),
               ),
             ),
           ),
@@ -1767,7 +1734,10 @@ class _DataDisplay extends StatelessWidget {
         cells: effectiveHeaders
             .map(
               (_) => DataCell(
-                Text(row.toString()),
+                Text(
+                  row.toString(),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12),
+                ),
               ),
             )
             .toList(),
@@ -1784,10 +1754,7 @@ class _DataDisplay extends StatelessWidget {
     }
 
     if (rows.isNotEmpty && rows.first is Map) {
-      return (rows.first as Map)
-          .keys
-          .map((key) => key.toString())
-          .toList();
+      return (rows.first as Map).keys.map((key) => key.toString()).toList();
     }
 
     if (rows.isNotEmpty && rows.first is List) {
@@ -1805,28 +1772,26 @@ class _DataDisplay extends StatelessWidget {
       return <String>[];
     }
 
-    return raw
-        .map((item) => item.toString())
-        .toList();
+    return raw.map((item) => item.toString()).toList();
   }
 }
 
 String _checkpointLabel(String type) {
   switch (type) {
     case 'multiple_choice':
-      return 'Pilihan';
+      return 'Pilihan Ganda';
     case 'true_false':
-      return 'Benar/Salah';
+      return 'Benar / Salah';
     case 'matching':
       return 'Pasangkan';
     case 'ordering':
       return 'Urutkan';
     case 'image_hotspot':
-      return 'Tunjuk Bagian';
+      return 'Tunjuk Bagian Gambar';
     case 'data_interpretation':
       return 'Analisis Data';
     default:
-      return 'Checkpoint';
+      return 'Latihan Soal Checkpoint';
   }
 }
 

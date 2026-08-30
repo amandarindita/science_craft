@@ -186,28 +186,48 @@ class ProfileLearningController
     if (weeklyItems.isEmpty) {
       _buildFallbackWeek();
     } else {
-      weeklyActivity.assignAll(
-        weeklyItems.map(
-          (Map<String, dynamic> item) =>
-              LearningStreakDay(
-            label:
-                (item['label'] ?? '').toString(),
-            dayName:
-                (item['day_name'] ?? '').toString(),
-            date:
-                (item['date'] ?? '').toString(),
-            status:
-                (item['status'] ?? 'none')
-                    .toString(),
-            isToday: _boolValue(
-              item['is_today'],
-            ),
-            isFuture: _boolValue(
-              item['is_future'],
-            ),
-          ),
-        ),
-      );
+      final DateTime now = DateTime.now();
+      final DateTime todayDate = DateTime(now.year, now.month, now.day);
+      final int streak = dailyStreak.value;
+
+      final List<LearningStreakDay> parsedList = weeklyItems.map(
+        (Map<String, dynamic> item) {
+          final String dateStr = (item['date'] ?? '').toString();
+          final DateTime? parsedDate = DateTime.tryParse(dateStr);
+          String status = (item['status'] ?? 'none').toString();
+
+          final bool isToday = _boolValue(item['is_today']);
+          final bool isFuture = _boolValue(item['is_future']);
+
+          if (isToday) {
+            if (status == 'none' && streak > 0) {
+              status = todayActivityStatus.value != 'none' &&
+                      todayActivityStatus.value.isNotEmpty
+                  ? todayActivityStatus.value
+                  : 'active';
+            }
+          } else if (parsedDate != null && parsedDate.isBefore(todayDate)) {
+            final int diffDays = todayDate
+                .difference(DateTime(
+                    parsedDate.year, parsedDate.month, parsedDate.day))
+                .inDays;
+            if (diffDays < streak && status == 'none') {
+              status = 'active';
+            }
+          }
+
+          return LearningStreakDay(
+            label: (item['label'] ?? '').toString(),
+            dayName: (item['day_name'] ?? '').toString(),
+            date: dateStr,
+            status: status,
+            isToday: isToday,
+            isFuture: isFuture,
+          );
+        },
+      ).toList();
+
+      weeklyActivity.assignAll(parsedList);
     }
 
     final List<dynamic> badges =
@@ -241,7 +261,8 @@ class ProfileLearningController
 
   void _buildFallbackWeek() {
     final DateTime now = DateTime.now();
-    final DateTime monday = now.subtract(
+    final DateTime todayDate = DateTime(now.year, now.month, now.day);
+    final DateTime monday = todayDate.subtract(
       Duration(days: now.weekday - 1),
     );
     const List<String> labels =
@@ -257,31 +278,42 @@ class ProfileLearningController
       'Minggu',
     ];
 
+    final int streak = dailyStreak.value;
+
     weeklyActivity.assignAll(
       List<LearningStreakDay>.generate(
         7,
         (int index) {
-          final DateTime date =
-              monday.add(
-            Duration(days: index),
-          );
-          final bool isToday =
-              date.year == now.year &&
-              date.month == now.month &&
-              date.day == now.day;
+          final DateTime checkDate = monday.add(Duration(days: index));
+          final bool isToday = checkDate.year == todayDate.year &&
+              checkDate.month == todayDate.month &&
+              checkDate.day == todayDate.day;
+          final bool isFuture = checkDate.isAfter(todayDate);
+
+          String status = 'none';
+
+          if (isToday) {
+            status = todayActivityStatus.value != 'none' &&
+                    todayActivityStatus.value.isNotEmpty
+                ? todayActivityStatus.value
+                : (streak > 0 ? 'active' : 'none');
+          } else if (checkDate.isBefore(todayDate)) {
+            final int diffDays = todayDate.difference(checkDate).inDays;
+            if (diffDays < streak) {
+              status = 'active';
+            }
+          }
 
           return LearningStreakDay(
             label: labels[index],
             dayName: names[index],
             date:
-                '${date.year.toString().padLeft(4, '0')}-'
-                '${date.month.toString().padLeft(2, '0')}-'
-                '${date.day.toString().padLeft(2, '0')}',
-            status: isToday
-                ? todayActivityStatus.value
-                : 'none',
+                '${checkDate.year.toString().padLeft(4, '0')}-'
+                '${checkDate.month.toString().padLeft(2, '0')}-'
+                '${checkDate.day.toString().padLeft(2, '0')}',
+            status: status,
             isToday: isToday,
-            isFuture: date.isAfter(now),
+            isFuture: isFuture,
           );
         },
       ),

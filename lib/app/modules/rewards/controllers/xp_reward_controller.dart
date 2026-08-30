@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../../widgets/app_snackbar.dart';
 
 enum XpRewardType {
   avatarFrame,
@@ -318,26 +321,14 @@ class XpRewardController
     XpRewardItem reward,
   ) async {
     if (!isUnlocked(reward)) {
-      Get.snackbar(
-        'Hadiah masih terkunci',
+      AppSnackbar.warning(
+        'Hadiah Masih Terkunci',
         'Kumpulkan ${remainingXpFor(reward)} XP lagi untuk membuka ${reward.name}.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor:
-            const Color(0xFFFFF3E0),
-        colorText:
-            const Color(0xFF9A3412),
-        icon: const Icon(
-          Icons.lock_rounded,
-          color: Color(0xFF9A3412),
-        ),
-        margin: const EdgeInsets.all(14),
-        borderRadius: 16,
       );
       return;
     }
 
-    equippedRewardIds[reward.type] =
-        reward.id;
+    equippedRewardIds[reward.type] = reward.id;
 
     await _storage.write(
       _equippedStorageKey(
@@ -348,20 +339,9 @@ class XpRewardController
 
     equippedRewardIds.refresh();
 
-    Get.snackbar(
-      'Hadiah digunakan',
+    AppSnackbar.success(
+      'Hadiah Digunakan',
       '${reward.name} sekarang aktif di Profil Pembelajaran.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor:
-          const Color(0xFFE7F8EE),
-      colorText:
-          const Color(0xFF166534),
-      icon: const Icon(
-        Icons.check_circle_rounded,
-        color: Color(0xFF166534),
-      ),
-      margin: const EdgeInsets.all(14),
-      borderRadius: 16,
     );
   }
 
@@ -487,8 +467,7 @@ class XpRewardController
   }
 }
 
-class _RewardUnlockedDialog
-    extends StatelessWidget {
+class _RewardUnlockedDialog extends StatelessWidget {
   const _RewardUnlockedDialog({
     required this.rewards,
   });
@@ -497,77 +476,148 @@ class _RewardUnlockedDialog
 
   @override
   Widget build(BuildContext context) {
-    final XpRewardItem first =
-        rewards.first;
+    final XpRewardItem first = rewards.first;
 
-    return AlertDialog(
-      icon: Container(
-        width: 72,
-        height: 72,
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      elevation: 0,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
         decoration: BoxDecoration(
-          color: first.accentColor
-              .withOpacity(0.12),
-          shape: BoxShape.circle,
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 28,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
-        child: Icon(
-          first.icon,
-          color: first.accentColor,
-          size: 40,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Circular Avatar Badge Icon
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: first.accentColor.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: first.accentColor.withValues(alpha: 0.25),
+                  width: 1.5,
+                ),
+              ),
+              child: Icon(
+                first.icon,
+                color: first.accentColor,
+                size: 38,
+              ),
+            ),
+            const SizedBox(height: 18),
+            // Header Pill
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'HADIAH BARU TERBUKA',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF2563EB),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Title
+            Text(
+              rewards.length == 1
+                  ? first.name
+                  : '${rewards.length} Hadiah Berhasil Terbuka',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 17.5,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF0F172A),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Description
+            Text(
+              rewards.length == 1
+                  ? first.description
+                  : rewards.map((r) => '• ${r.name}').join('\n'),
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                color: const Color(0xFF64748B),
+                fontSize: 13,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Info Box
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 16,
+                    color: Color(0xFF2563EB),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Buka menu Hadiah & Koleksi untuk memasang.',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1E40AF),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Button
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: FilledButton(
+                onPressed: () => Get.back<void>(),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Lanjutkan',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13.5,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      title: const Text(
-        'Hadiah Baru Terbuka! 🎉',
-        textAlign: TextAlign.center,
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Text(
-            rewards.length == 1
-                ? first.name
-                : '${rewards.length} hadiah berhasil dibuka',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            rewards.length == 1
-                ? first.description
-                : rewards
-                    .map(
-                      (XpRewardItem reward) =>
-                          '• ${reward.name}',
-                    )
-                    .join('\n'),
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFF64748B),
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Buka Koleksi Hadiah untuk menggunakannya.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Color(0xFF2563EB),
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-      actionsAlignment:
-          MainAxisAlignment.center,
-      actions: <Widget>[
-        FilledButton(
-          onPressed: () => Get.back<void>(),
-          child: const Text('Keren!'),
-        ),
-      ],
     );
   }
 }

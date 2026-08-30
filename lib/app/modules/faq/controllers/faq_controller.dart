@@ -1,64 +1,138 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-// Model sederhana untuk data FAQ
+
 class FaqItem {
+  final String id;
   final String question;
   final String answer;
+  final String category; // 'all', 'general', 'xp', 'lab', 'account'
+  final IconData icon;
 
-  FaqItem({required this.question, required this.answer});
+  FaqItem({
+    required this.id,
+    required this.question,
+    required this.answer,
+    required this.category,
+    this.icon = Icons.help_outline_rounded,
+  });
 }
 
 class FaqController extends GetxController {
-  final searchController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
+  final RxString selectedCategory = 'all'.obs;
+  final RxString searchQuery = ''.obs;
 
-  // Daftar semua FAQ (data dummy)
-  // Nanti bisa kamu ganti dari database juga kalau mau
-  final _allFaqs = <FaqItem>[
+  final RxList<FaqItem> _allFaqs = <FaqItem>[
     FaqItem(
-      question: 'Apa itu Science Craft?',
+      id: '1',
+      question: 'Apa itu platform Science Craft?',
       answer:
-          'Science Craft adalah aplikasi eksperimen sains virtual berbasis gamifikasi yang membantu belajar Fisika, Kimia, dan Biologi dengan cara interaktif.',
+          'Science Craft adalah platform edukasi sains virtual interaktif untuk jenjang SMA yang menggabungkan simulasi laboratorium, materi ringkas terstruktur, kuis adaptif, dan asisten chatbot AI.',
+      category: 'general',
+      icon: Icons.science_outlined,
     ),
     FaqItem(
-      question: 'Apa Tujuan Utama Science Craft',
+      id: '2',
+      question: 'Apa tujuan utama dari Science Craft?',
       answer:
-          'Tujuannya untuk memberikan pengalaman belajar praktikum yang mudah, aman, dan menarik, terutama bagi sekolah yang memiliki keterbatasan fasilitas laboratorium.',
+          'Memberikan pengalaman praktikum sains yang aman, mudah diakses, dan menarik kapan saja, mengatasi kendala keterbatasan alat atau bahan kimia di laboratorium fisik sekolah.',
+      category: 'general',
+      icon: Icons.lightbulb_outline_rounded,
     ),
     FaqItem(
-      question: 'Bagaimana cara kerja sistem XP (Experience Points)?',
+      id: '3',
+      question: 'Bagaimana cara kerja sistem XP dan Level Pembelajaran?',
       answer:
-          'Kamu akan mendapatkan XP setiap kali berhasil menyelesaikan materi, kuis, atau eksperimen. Semakin tinggi XP, semakin tinggi level akun kamu!',
+          'XP diperoleh setiap kali kamu menyelesaikan materi bacaan, kuis penilaian, atau simulasi lab. Kenaikan level pembelajaran didasarkan pada jumlah modul yang berhasil diselesaikan, bukan hanya dari XP semata.',
+      category: 'xp',
+      icon: Icons.bolt_rounded,
     ),
     FaqItem(
-      question: 'Apakah aplikasi ini gratis?',
+      id: '4',
+      question: 'Bagaimana cara membuka bingkai avatar dan badge prestasi?',
       answer:
-          'Ya, aplikasi ini gratis untuk diunduh dan digunakan untuk semua materi dasar. Mungkin akan ada beberapa modul eksperimen premium di masa depan.',
+          'Kamu dapat mengumpulkan koin milestone dan menyelesaikan tantangan capaian untuk membuka bingkai avatar eksklusif di menu Koleksi Milestone pada halaman profil.',
+      category: 'xp',
+      icon: Icons.workspace_premium_rounded,
+    ),
+    FaqItem(
+      id: '5',
+      question: 'Bagaimana cara menjalankan simulasi di Lab Virtual?',
+      answer:
+          'Masuk ke menu Lab Sains, pilih topik praktikum (Fisika, Kimia, atau Biologi) yang sudah terbuka, lalu ikuti panduan interaktif pada kanvas eksperimen digital.',
+      category: 'lab',
+      icon: Icons.biotech_rounded,
+    ),
+    FaqItem(
+      id: '6',
+      question: 'Apakah asisten Chatbot AI bisa membantu mengerjakan soal?',
+      answer:
+          'Asisten AI Science Craft dirancang sebagai tutor belajar pintar untuk menjelaskan konsep teori sains, rumus fisika, reaksi kimia, dan biologi secara bertahap.',
+      category: 'general',
+      icon: Icons.smart_toy_outlined,
+    ),
+    FaqItem(
+      id: '7',
+      question: 'Apakah data belajar dan nilai tersimpan secara otomatis?',
+      answer:
+          'Ya, seluruh progres modul, riwayat kuis, perolehan XP, dan status streak harian tersinkronisasi otomatis ke akun cloud kamu.',
+      category: 'account',
+      icon: Icons.cloud_done_outlined,
+    ),
+    FaqItem(
+      id: '8',
+      question: 'Bagaimana jika saya lupa kata sandi akun?',
+      answer:
+          'Kamu dapat menggunakan fitur Lupa Password pada halaman Login untuk menerima kode OTP verifikasi dan membuat kata sandi baru. Bagi akun Google Sign-In, keamanan dikelola langsung oleh akun Google.',
+      category: 'account',
+      icon: Icons.lock_outline_rounded,
     ),
   ].obs;
 
-  // Daftar FAQ yang sudah difilter untuk ditampilkan
-  final filteredFaqs = <FaqItem>[].obs;
+  final RxList<FaqItem> filteredFaqs = <FaqItem>[].obs;
 
   @override
   void onInit() {
     super.onInit();
-    // Tampilkan semua FAQ saat pertama kali dibuka
-    filteredFaqs.assignAll(_allFaqs);
-    // Tambahkan listener untuk memfilter saat user mengetik
-    searchController.addListener(_filterFaqs);
+    _applyFilters();
+    searchController.addListener(_onSearchChanged);
   }
 
-  void _filterFaqs() {
-    String query = searchController.text.toLowerCase();
-    if (query.isEmpty) {
-      filteredFaqs.assignAll(_allFaqs);
-    } else {
-      filteredFaqs.value = _allFaqs
-          .where((faq) =>
-              faq.question.toLowerCase().contains(query) ||
-              faq.answer.toLowerCase().contains(query))
+  void _onSearchChanged() {
+    searchQuery.value = searchController.text.trim().toLowerCase();
+    _applyFilters();
+  }
+
+  void changeCategory(String category) {
+    selectedCategory.value = category;
+    _applyFilters();
+  }
+
+  void clearSearch() {
+    searchController.clear();
+    searchQuery.value = '';
+    _applyFilters();
+  }
+
+  void _applyFilters() {
+    final query = searchQuery.value;
+    final cat = selectedCategory.value;
+
+    List<FaqItem> result = _allFaqs;
+
+    if (cat != 'all') {
+      result = result.where((item) => item.category == cat).toList();
+    }
+
+    if (query.isNotEmpty) {
+      result = result
+          .where((item) =>
+              item.question.toLowerCase().contains(query) ||
+              item.answer.toLowerCase().contains(query))
           .toList();
     }
+
+    filteredFaqs.assignAll(result);
   }
 
   @override

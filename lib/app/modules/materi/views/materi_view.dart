@@ -477,19 +477,19 @@ class _TheoryCardWidgetState extends State<TheoryCardWidget> {
           const SizedBox(height: 16),
           _buildImageInsideCard(),
           // 🌟 PERUBAHAN UI: QUILL EDITOR DIBIKIN LEBIH RENGGANG 🌟
-          QuillEditor(
+          QuillEditor.basic(
+            controller: _quillController,
             focusNode: _focusNode,
             scrollController: ScrollController(),
-            configurations: QuillEditorConfigurations(
-              controller: _quillController, // Dipindahin ke dalam configurations kalau versi baru
+            config: const QuillEditorConfig(
               scrollable: false, 
               autoFocus: false,
               expands: false,
-              padding: const EdgeInsets.symmetric(vertical: 8), // Kasih napas dikit di atas/bawah teks
+              padding: EdgeInsets.symmetric(vertical: 8), // Kasih napas dikit di atas/bawah teks
               showCursor: false, 
               enableInteractiveSelection: false, 
               // 🌟 RAHASIA BIAR TEKS GAK NUMPUK (VERSI QUILL 10+) 🌟
-              customStyles: const DefaultStyles(
+              customStyles: DefaultStyles(
                 paragraph: DefaultTextBlockStyle(
                   TextStyle(
                     color: Color(0xFF374151), // Warna abu-abu gelap biar gak sakit di mata

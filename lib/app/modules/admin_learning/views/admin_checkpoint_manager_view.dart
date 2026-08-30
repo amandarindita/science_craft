@@ -4,52 +4,104 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import '../../../widgets/science_shimmer.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../data/api_service.dart';
+import '../../../widgets/app_snackbar.dart';
+import '../../../widgets/science_shimmer.dart';
 import '../controllers/admin_learning_controller.dart';
 
-const Color _primary = Color(0xFF7C3AED);
-const Color _text = Color(0xFF172033);
-const Color _muted = Color(0xFF64748B);
-const Color _background = Color(0xFFF5F8FF);
-const Color _danger = Color(0xFFDC2626);
-const Color _success = Color(0xFF16A34A);
+// =============================================================================
+// COLOR PALETTE (MAINTAINING PURPLE ACCENT)
+// =============================================================================
+const Color _primary = Color(0xFF7C3AED); // Main Purple
+const Color _primaryDark = Color(0xFF4C1D95); // Deep Indigo/Purple
+const Color _primaryLight = Color(0xFFF3E8FF); // Soft Tint Purple
+const Color _text = Color(0xFF1E293B); // Slate 800
+const Color _muted = Color(0xFF64748B); // Slate 500
+const Color _background = Color(0xFFF8FAFC); // Slate 50
+const Color _border = Color(0xFFE2E8F0); // Slate 200
+const Color _danger = Color(0xFFEF4444); // Red 500
+const Color _success = Color(0xFF10B981); // Emerald 500
+const Color _amber = Color(0xFFF59E0B); // Amber 500
 
-class AdminCheckpointManagerView
-    extends StatefulWidget {
-  const AdminCheckpointManagerView({
-    super.key,
-    required this.submaterial,
-  });
+// =============================================================================
+// INPUT DECORATION HELPER
+// =============================================================================
+InputDecoration _buildInputDecoration({
+  String? labelText,
+  String? hintText,
+  IconData? prefixIcon,
+  Widget? suffixIcon,
+  String? errorText,
+  bool alignLabelWithHint = false,
+}) {
+  return InputDecoration(
+    labelText: labelText,
+    labelStyle: GoogleFonts.plusJakartaSans(
+      fontSize: 12.5,
+      fontWeight: FontWeight.w500,
+      color: _muted,
+    ),
+    hintText: hintText,
+    hintStyle: GoogleFonts.plusJakartaSans(
+      fontSize: 12.5,
+      color: _muted.withValues(alpha: 0.6),
+    ),
+    errorText: errorText,
+    prefixIcon:
+        prefixIcon != null
+            ? Icon(prefixIcon, color: _primary, size: 19)
+            : null,
+    suffixIcon: suffixIcon,
+    alignLabelWithHint: alignLabelWithHint,
+    filled: true,
+    fillColor: Colors.white,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(13),
+      borderSide: const BorderSide(color: _border),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(13),
+      borderSide: const BorderSide(color: _border),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(13),
+      borderSide: const BorderSide(color: _primary, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(13),
+      borderSide: const BorderSide(color: _danger),
+    ),
+  );
+}
+
+// =============================================================================
+// 1. CHECKPOINT MANAGER VIEW (LIST SCREEN WITH VIRTUALIZATION)
+// =============================================================================
+class AdminCheckpointManagerView extends StatefulWidget {
+  const AdminCheckpointManagerView({super.key, required this.submaterial});
 
   final Map<String, dynamic> submaterial;
 
   @override
-  State<AdminCheckpointManagerView>
-      createState() =>
-          _AdminCheckpointManagerViewState();
+  State<AdminCheckpointManagerView> createState() =>
+      _AdminCheckpointManagerViewState();
 }
 
 class _AdminCheckpointManagerViewState
     extends State<AdminCheckpointManagerView> {
-  AdminLearningController get controller =>
-      Get.find<AdminLearningController>();
+  AdminLearningController get controller => Get.find<AdminLearningController>();
 
   int get submaterialId =>
-      AdminLearningController.intValue(
-        widget.submaterial['id'],
-      );
+      AdminLearningController.intValue(widget.submaterial['id']);
 
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance
-        .addPostFrameCallback(
-      (_) => controller.openCheckpointManager(
-        widget.submaterial,
-      ),
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => controller.openCheckpointManager(widget.submaterial),
     );
   }
 
@@ -58,87 +110,94 @@ class _AdminCheckpointManagerViewState
     return Scaffold(
       backgroundColor: _background,
       appBar: AppBar(
-        title:
-            const Text('Kelola Checkpoint'),
+        title: Text(
+          'Kelola Checkpoint',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w700,
+            fontSize: 17,
+            color: _text,
+          ),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: _text,
         elevation: 0,
+        centerTitle: false,
+        shape: const Border(bottom: BorderSide(color: _border)),
       ),
-      floatingActionButton:
-          FloatingActionButton.extended(
-        onPressed: () => Get.to<bool>(
-          () => AdminCheckpointFormView(
-            submaterialId: submaterialId,
-          ),
-        ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed:
+            () => Get.to<bool>(
+              () => AdminCheckpointFormView(submaterialId: submaterialId),
+            ),
         backgroundColor: _primary,
         foregroundColor: Colors.white,
-        icon: const Icon(
-          Icons.add_task_rounded,
-        ),
-        label: const Text(
+        elevation: 3,
+        icon: const Icon(Icons.add_task_rounded),
+        label: Text(
           'Tambah Checkpoint',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-          ),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13),
         ),
       ),
       body: RefreshIndicator(
-        onRefresh: () =>
-            controller.loadCheckpoints(
-          submaterialId,
-        ),
+        color: _primary,
+        onRefresh: () => controller.loadCheckpoints(submaterialId),
         child: Obx(() {
-          if (controller
-                  .isLoadingCheckpoints.value &&
+          if (controller.isLoadingCheckpoints.value &&
               controller.checkpoints.isEmpty) {
-            return const AdminModuleListShimmer(
-              itemCount: 3,
-            );
+            return const AdminModuleListShimmer(itemCount: 3);
           }
 
-          return ListView(
-            padding:
-                const EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              110,
+          return CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
             ),
-            children: <Widget>[
-              _Header(
-                title:
-                    widget.submaterial['title']
-                            ?.toString() ??
-                        'Submateri',
+            slivers: <Widget>[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  child: _Header(
+                    title:
+                        widget.submaterial['title']?.toString() ?? 'Submateri',
+                    checkpointCount: controller.checkpoints.length,
+                  ),
+                ),
               ),
-              const SizedBox(height: 14),
               if (controller.checkpoints.isEmpty)
-                const _EmptyState()
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _EmptyState(
+                      onAdd:
+                          () => Get.to<bool>(
+                            () => AdminCheckpointFormView(
+                              submaterialId: submaterialId,
+                            ),
+                          ),
+                    ),
+                  ),
+                )
               else
-                ...controller.checkpoints.map(
-                  (checkpoint) => Padding(
-                    padding:
-                        const EdgeInsets.only(
-                      bottom: 12,
-                    ),
-                    child: _CheckpointCard(
-                      checkpoint: checkpoint,
-                      onEdit: () => Get.to<bool>(
-                        () =>
-                            AdminCheckpointFormView(
-                          submaterialId:
-                              submaterialId,
-                          checkpoint:
-                              checkpoint,
-                        ),
-                      ),
-                      onDelete: () =>
-                          controller
-                              .deleteCheckpoint(
-                        checkpoint,
-                      ),
-                    ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
+                  sliver: SliverList.separated(
+                    itemCount: controller.checkpoints.length,
+                    itemBuilder: (context, index) {
+                      final checkpoint = controller.checkpoints[index];
+                      return _CheckpointCard(
+                        index: index,
+                        checkpoint: checkpoint,
+                        onEdit:
+                            () => Get.to<bool>(
+                              () => AdminCheckpointFormView(
+                                submaterialId: submaterialId,
+                                checkpoint: checkpoint,
+                              ),
+                            ),
+                        onDelete: () => controller.deleteCheckpoint(checkpoint),
+                      );
+                    },
+                    separatorBuilder:
+                        (context, index) => const SizedBox(height: 12),
                   ),
                 ),
             ],
@@ -149,8 +208,10 @@ class _AdminCheckpointManagerViewState
   }
 }
 
-class AdminCheckpointFormView
-    extends StatefulWidget {
+// =============================================================================
+// 2. CHECKPOINT FORM VIEW (ADD / EDIT SCREEN)
+// =============================================================================
+class AdminCheckpointFormView extends StatefulWidget {
   const AdminCheckpointFormView({
     super.key,
     required this.submaterialId,
@@ -163,91 +224,53 @@ class AdminCheckpointFormView
   bool get isEditing => checkpoint != null;
 
   @override
-  State<AdminCheckpointFormView>
-      createState() =>
-          _AdminCheckpointFormViewState();
+  State<AdminCheckpointFormView> createState() =>
+      _AdminCheckpointFormViewState();
 }
 
-class _AdminCheckpointFormViewState
-    extends State<AdminCheckpointFormView> {
-  final GlobalKey<FormState> _formKey =
-      GlobalKey<FormState>();
+class _AdminCheckpointFormViewState extends State<AdminCheckpointFormView> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  final TextEditingController
-      _titleController =
-      TextEditingController(
+  final TextEditingController _titleController = TextEditingController(
     text: 'Cek Pemahaman',
   );
-  final TextEditingController
-      _instructionController =
-      TextEditingController();
-  final TextEditingController
-      _questionController =
-      TextEditingController();
-  final TextEditingController
-      _orderController =
-      TextEditingController(text: '1');
-  final TextEditingController
-      _correctFeedbackController =
-      TextEditingController(
-    text: 'Mantap, jawabanmu benar!',
+  final TextEditingController _instructionController = TextEditingController();
+  final TextEditingController _questionController = TextEditingController();
+  final TextEditingController _orderController = TextEditingController(
+    text: '1',
   );
-  final TextEditingController
-      _wrongFeedbackController =
-      TextEditingController(
-    text:
-        'Belum tepat. Pelajari kembali bagian ini lalu coba lagi.',
+  final TextEditingController _correctFeedbackController =
+      TextEditingController(text: 'Mantap, jawabanmu benar!');
+  final TextEditingController _wrongFeedbackController = TextEditingController(
+    text: 'Belum tepat. Pelajari kembali bagian ini lalu coba lagi.',
   );
 
-  final List<TextEditingController>
-      _choiceControllers =
-      List<TextEditingController>.generate(
-    4,
-    (_) => TextEditingController(),
-  );
+  final List<TextEditingController> _choiceControllers =
+      List<TextEditingController>.generate(4, (_) => TextEditingController());
 
   String _correctChoice = 'A';
   bool _trueFalseAnswer = true;
 
-  final List<_MatchingDraft>
-      _matchingItems =
-      <_MatchingDraft>[];
+  final List<_MatchingDraft> _matchingItems = <_MatchingDraft>[];
+  final List<TextEditingController> _orderingItems = <TextEditingController>[];
 
-  final List<TextEditingController>
-      _orderingItems =
-      <TextEditingController>[];
-
-  final TextEditingController
-      _dataTitleController =
-      TextEditingController(
+  final TextEditingController _dataTitleController = TextEditingController(
     text: 'Data Pengamatan',
   );
-  final TextEditingController
-      _dataDescriptionController =
+  final TextEditingController _dataDescriptionController =
       TextEditingController();
-  final TextEditingController
-      _headerOneController =
-      TextEditingController(
-    text: 'Objek',
+  final TextEditingController _headerOneController = TextEditingController(
+    text: 'Objek / Sampel',
   );
-  final TextEditingController
-      _headerTwoController =
-      TextEditingController(
-    text: 'Nilai',
+  final TextEditingController _headerTwoController = TextEditingController(
+    text: 'Hasil Pengamatan',
   );
-  final List<_TableRowDraft>
-      _tableRows =
-      <_TableRowDraft>[];
-  final List<TextEditingController>
-      _analysisOptionControllers =
-      List<TextEditingController>.generate(
-    4,
-    (_) => TextEditingController(),
-  );
+  final List<_TableRowDraft> _tableRows = <_TableRowDraft>[];
+  final List<TextEditingController> _analysisOptionControllers =
+      List<TextEditingController>.generate(4, (_) => TextEditingController());
   String _analysisCorrectChoice = 'A';
 
-  final List<_HotspotDraft> _hotspots =
-      <_HotspotDraft>[];
+  final List<_HotspotDraft> _hotspots = <_HotspotDraft>[];
 
   String _type = 'multiple_choice';
   bool _isRequired = true;
@@ -255,8 +278,7 @@ class _AdminCheckpointFormViewState
   String _existingImageUrl = '';
   bool _removeImage = false;
 
-  AdminLearningController get controller =>
-      Get.find<AdminLearningController>();
+  AdminLearningController get controller => Get.find<AdminLearningController>();
 
   @override
   void initState() {
@@ -264,52 +286,32 @@ class _AdminCheckpointFormViewState
 
     _setDefaultTypeValues();
 
-    final Map<String, dynamic>? data =
-        widget.checkpoint;
-
+    final Map<String, dynamic>? data = widget.checkpoint;
     if (data == null) {
       return;
     }
 
-    _type =
-        data['checkpoint_type']?.toString() ??
-            'multiple_choice';
-    _titleController.text =
-        data['title']?.toString() ??
-            'Cek Pemahaman';
-    _instructionController.text =
-        data['instruction']?.toString() ?? '';
-    _questionController.text =
-        data['question_text']?.toString() ??
-            '';
+    _type = data['checkpoint_type']?.toString() ?? 'multiple_choice';
+    _titleController.text = data['title']?.toString() ?? 'Cek Pemahaman';
+    _instructionController.text = data['instruction']?.toString() ?? '';
+    _questionController.text = data['question_text']?.toString() ?? '';
     _orderController.text =
         AdminLearningController.intValue(
-      data['order_index'],
-      fallback: 1,
-    ).toString();
+          data['order_index'],
+          fallback: 1,
+        ).toString();
     _correctFeedbackController.text =
-        data['correct_feedback']
-                ?.toString() ??
-            '';
-    _wrongFeedbackController.text =
-        data['wrong_feedback']?.toString() ??
-            '';
-    _isRequired =
-        AdminLearningController.boolValue(
+        data['correct_feedback']?.toString() ?? '';
+    _wrongFeedbackController.text = data['wrong_feedback']?.toString() ?? '';
+    _isRequired = AdminLearningController.boolValue(
       data['is_required'],
       fallback: true,
     );
-    _existingImageUrl =
-        data['image_url']?.toString().trim() ??
-            '';
+    _existingImageUrl = data['image_url']?.toString().trim() ?? '';
 
     _loadTypeValues(
-      AdminLearningController.mapValue(
-        data['content'],
-      ),
-      AdminLearningController.mapValue(
-        data['answer'],
-      ),
+      AdminLearningController.mapValue(data['content']),
+      AdminLearningController.mapValue(data['answer']),
     );
   }
 
@@ -322,18 +324,13 @@ class _AdminCheckpointFormViewState
     _correctFeedbackController.dispose();
     _wrongFeedbackController.dispose();
 
-    for (final TextEditingController item
-        in _choiceControllers) {
+    for (final TextEditingController item in _choiceControllers) {
       item.dispose();
     }
-
-    for (final _MatchingDraft item
-        in _matchingItems) {
+    for (final _MatchingDraft item in _matchingItems) {
       item.dispose();
     }
-
-    for (final TextEditingController item
-        in _orderingItems) {
+    for (final TextEditingController item in _orderingItems) {
       item.dispose();
     }
 
@@ -342,13 +339,10 @@ class _AdminCheckpointFormViewState
     _headerOneController.dispose();
     _headerTwoController.dispose();
 
-    for (final _TableRowDraft row
-        in _tableRows) {
+    for (final _TableRowDraft row in _tableRows) {
       row.dispose();
     }
-
-    for (final TextEditingController item
-        in _analysisOptionControllers) {
+    for (final TextEditingController item in _analysisOptionControllers) {
       item.dispose();
     }
 
@@ -358,120 +352,94 @@ class _AdminCheckpointFormViewState
   @override
   Widget build(BuildContext context) {
     final String? resolvedImage =
-        _existingImageUrl.isEmpty ||
-                _removeImage
+        _existingImageUrl.isEmpty || _removeImage
             ? null
-            : ApiService.resolveMediaUrl(
-                _existingImageUrl,
-              );
+            : ApiService.resolveMediaUrl(_existingImageUrl);
 
     return Scaffold(
       backgroundColor: _background,
       appBar: AppBar(
         title: Text(
-          widget.isEditing
-              ? 'Edit Checkpoint'
-              : 'Tambah Checkpoint',
+          widget.isEditing ? 'Edit Checkpoint' : 'Tambah Checkpoint',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w700,
+            fontSize: 17,
+            color: _text,
+          ),
         ),
         backgroundColor: Colors.white,
         foregroundColor: _text,
         elevation: 0,
+        shape: const Border(bottom: BorderSide(color: _border)),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding:
-              const EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            120,
-          ),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
           children: <Widget>[
-            _InfoBanner(type: _type),
-            const SizedBox(height: 14),
+            // 1. Selector Tipe Checkpoint Interaktif
             _Section(
-              title: 'Informasi Dasar',
-              children: <Widget>[
-                Obx(() {
-                  final List<
-                      Map<String, dynamic>>
-                      types = controller
-                              .checkpointTypes
-                              .isEmpty
-                          ? _fallbackTypes
-                          : controller
-                              .checkpointTypes;
-
-                  return DropdownButtonFormField<
-                      String>(
-                    value: _type,
-                    decoration:
-                        const InputDecoration(
-                      labelText:
-                          'Jenis checkpoint',
-                    ),
-                    items: types
-                        .map(
-                          (item) =>
-                              DropdownMenuItem<
-                                  String>(
-                            value: item['value']
-                                .toString(),
-                            child: Text(
-                              item['label']
-                                      ?.toString() ??
-                                  item['value']
-                                      .toString(),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (String? value) {
-                      if (value == null ||
-                          value == _type) {
-                        return;
-                      }
-
-                      setState(() {
-                        _type = value;
-                        _setDefaultTypeValues();
-                      });
-                    },
-                  );
-                }),
+              title: 'Model Checkpoint',
+              subtitle: 'Pilih model interaktif untuk menguji pemahaman siswa.',
+              icon: Icons.category_rounded,
+              children: [
+                _buildTypeSelectorChips(),
                 const SizedBox(height: 12),
+                _InfoBanner(type: _type),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // 2. Informasi Dasar & Pertanyaan
+            _Section(
+              title: 'Informasi Pertanyaan',
+              subtitle: 'Judul, instruksi, dan narasi soal checkpoint.',
+              icon: Icons.quiz_rounded,
+              children: <Widget>[
                 TextFormField(
                   controller: _titleController,
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Judul checkpoint',
+                  textCapitalization: TextCapitalization.sentences,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _text,
+                  ),
+                  decoration: _buildInputDecoration(
+                    labelText: 'Judul Checkpoint',
+                    hintText: 'Contoh: Cek Konsep Fotosintesis',
+                    prefixIcon: Icons.title_rounded,
                   ),
                   validator: _required,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
-                  controller:
-                      _instructionController,
-                  maxLines: 3,
-                  decoration:
-                      const InputDecoration(
-                    labelText: 'Instruksi',
-                    hintText:
-                        'Contoh: Pilih jawaban yang paling tepat.',
+                  controller: _instructionController,
+                  maxLines: 2,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: _text,
+                  ),
+                  decoration: _buildInputDecoration(
+                    labelText: 'Instruksi Pengerjaan (Opsional)',
+                    hintText: 'Contoh: Pilih satu jawaban yang paling tepat.',
+                    prefixIcon: Icons.help_outline_rounded,
                     alignLabelWithHint: true,
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
-                  controller:
-                      _questionController,
+                  controller: _questionController,
                   maxLines: 4,
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Pertanyaan utama',
+                  textCapitalization: TextCapitalization.sentences,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w500,
+                    color: _text,
+                  ),
+                  decoration: _buildInputDecoration(
+                    labelText: 'Teks Pertanyaan Utama *',
+                    hintText: 'Tuliskan pertanyaan checkpoint di sini...',
                     alignLabelWithHint: true,
                   ),
                   validator: _required,
@@ -479,85 +447,115 @@ class _AdminCheckpointFormViewState
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _orderController,
-                  keyboardType:
-                      TextInputType.number,
-                  inputFormatters:
-                      <TextInputFormatter>[
-                    FilteringTextInputFormatter
-                        .digitsOnly,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: <TextInputFormatter>[
+                    FilteringTextInputFormatter.digitsOnly,
                   ],
-                  decoration:
-                      const InputDecoration(
-                    labelText: 'Urutan',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _text,
+                  ),
+                  decoration: _buildInputDecoration(
+                    labelText: 'Urutan Posisi Checkpoint *',
+                    hintText: '1, 2, 3...',
+                    prefixIcon: Icons.format_list_numbered_rounded,
                   ),
                   validator: (String? value) {
-                    final int? number =
-                        int.tryParse(
-                      value?.trim() ?? '',
-                    );
-
-                    if (number == null ||
-                        number < 1) {
+                    final int? number = int.tryParse(value?.trim() ?? '');
+                    if (number == null || number < 1) {
                       return 'Urutan minimal 1.';
                     }
-
                     return null;
                   },
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            _buildAnswerEditor(
-              resolvedImage,
-            ),
-            const SizedBox(height: 14),
-            if (_type != 'image_hotspot')
-              _buildOptionalImage(
-                resolvedImage,
-              ),
-            if (_type != 'image_hotspot')
-              const SizedBox(height: 14),
+            const SizedBox(height: 16),
+
+            // 3. Editor Khusus Tipe Jawaban
+            _buildAnswerEditor(resolvedImage),
+            const SizedBox(height: 16),
+
+            // 4. Gambar Pendukung Opsional (Bila bukan tipe hotspot)
+            if (_type != 'image_hotspot') ...[
+              _buildOptionalImage(resolvedImage),
+              const SizedBox(height: 16),
+            ],
+
+            // 5. Feedback dan Status Checkpoint
             _Section(
-              title: 'Feedback dan Status',
+              title: 'Umpan Balik & Ketuntasan',
+              subtitle: 'Respon otomatis ketika siswa menjawab soal.',
+              icon: Icons.feedback_outlined,
               children: <Widget>[
                 TextFormField(
-                  controller:
-                      _correctFeedbackController,
-                  maxLines: 3,
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Feedback jawaban benar',
+                  controller: _correctFeedbackController,
+                  maxLines: 2,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: _text,
+                  ),
+                  decoration: _buildInputDecoration(
+                    labelText: 'Umpan Balik Jawaban Benar',
+                    hintText: 'Contoh: Hebat, pemahamanmu tepat!',
+                    prefixIcon: Icons.check_circle_outline_rounded,
                     alignLabelWithHint: true,
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
-                  controller:
-                      _wrongFeedbackController,
-                  maxLines: 3,
-                  decoration:
-                      const InputDecoration(
-                    labelText:
-                        'Feedback jawaban salah',
+                  controller: _wrongFeedbackController,
+                  maxLines: 2,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: _text,
+                  ),
+                  decoration: _buildInputDecoration(
+                    labelText: 'Umpan Balik Jawaban Salah',
+                    hintText: 'Contoh: Masih kurang tepat, coba pelajari lagi.',
+                    prefixIcon: Icons.highlight_off_rounded,
                     alignLabelWithHint: true,
                   ),
                 ),
-                SwitchListTile.adaptive(
-                  contentPadding:
-                      EdgeInsets.zero,
-                  title: const Text(
-                    'Checkpoint wajib',
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
                   ),
-                  subtitle: const Text(
-                    'Siswa harus menyelesaikannya untuk menuntaskan submateri.',
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: _border),
                   ),
-                  value: _isRequired,
-                  onChanged: (bool value) {
-                    setState(() {
-                      _isRequired = value;
-                    });
-                  },
+                  child: SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    activeTrackColor: _primary,
+                    title: Text(
+                      'Checkpoint Wajib Diselesaikan',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        color: _text,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Siswa harus menjawab benar sebelum menandai materi selesai.',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 11.5,
+                        color: _muted,
+                      ),
+                    ),
+                    value: _isRequired,
+                    onChanged: (bool value) {
+                      setState(() {
+                        _isRequired = value;
+                      });
+                    },
+                  ),
                 ),
               ],
             ),
@@ -566,39 +564,45 @@ class _AdminCheckpointFormViewState
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: _border)),
+          ),
           child: Obx(
-            () => FilledButton.icon(
-              onPressed: controller
-                      .isSavingCheckpoint.value
-                  ? null
-                  : _save,
-              icon: controller
-                      .isSavingCheckpoint.value
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child:
-                          CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(
-                      Icons.save_rounded,
-                    ),
-              label: Text(
-                widget.isEditing
-                    ? 'Simpan Perubahan'
-                    : 'Buat Checkpoint',
-              ),
-              style:
-                  FilledButton.styleFrom(
-                backgroundColor: _primary,
-                padding:
-                    const EdgeInsets.symmetric(
-                  vertical: 15,
+            () => SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: controller.isSavingCheckpoint.value ? null : _save,
+                icon:
+                    controller.isSavingCheckpoint.value
+                        ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Icon(Icons.save_rounded, size: 19),
+                label: Text(
+                  widget.isEditing
+                      ? 'Simpan Perubahan Checkpoint'
+                      : 'Buat Checkpoint Baru',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13.5,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _primary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
             ),
@@ -608,9 +612,96 @@ class _AdminCheckpointFormViewState
     );
   }
 
-  Widget _buildAnswerEditor(
-    String? resolvedImage,
-  ) {
+  // ===========================================================================
+  // TYPE SELECTOR CHIPS
+  // ===========================================================================
+  Widget _buildTypeSelectorChips() {
+    final List<Map<String, dynamic>> types =
+        controller.checkpointTypes.isEmpty
+            ? _fallbackTypes
+            : controller.checkpointTypes;
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children:
+            types.map((item) {
+              final val = item['value'].toString();
+              final isSelected = _type == val;
+              final meta = _typeMeta[val] ?? _defaultMeta;
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Material(
+                  color: isSelected ? _primary : Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () {
+                      if (_type == val) return;
+                      setState(() {
+                        _type = val;
+                        _setDefaultTypeValues();
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 13,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isSelected ? _primary : _border,
+                          width: isSelected ? 1.5 : 1,
+                        ),
+                        boxShadow:
+                            isSelected
+                                ? [
+                                  BoxShadow(
+                                    color: _primary.withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ]
+                                : null,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            meta.icon,
+                            size: 16,
+                            color: isSelected ? Colors.white : _primary,
+                          ),
+                          const SizedBox(width: 7),
+                          Text(
+                            item['label']?.toString() ?? meta.label,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight:
+                                  isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                              color: isSelected ? Colors.white : _text,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // ANSWER EDITORS
+  // ===========================================================================
+  Widget _buildAnswerEditor(String? resolvedImage) {
     switch (_type) {
       case 'true_false':
         return _buildTrueFalseEditor();
@@ -619,9 +710,7 @@ class _AdminCheckpointFormViewState
       case 'ordering':
         return _buildOrderingEditor();
       case 'image_hotspot':
-        return _buildHotspotEditor(
-          resolvedImage,
-        );
+        return _buildHotspotEditor(resolvedImage);
       case 'data_interpretation':
         return _buildDataEditor();
       case 'multiple_choice':
@@ -632,117 +721,193 @@ class _AdminCheckpointFormViewState
 
   Widget _buildChoiceEditor() {
     return _Section(
-      title: 'Pilihan Jawaban',
+      title: 'Pilihan Jawaban & Kunci',
+      subtitle:
+          'Isi 4 pilihan jawaban dan pilih radio button untuk kunci jawaban.',
+      icon: Icons.checklist_rounded,
       children: <Widget>[
-        const Text(
-          'Isi empat pilihan, lalu pilih jawaban yang benar.',
-          style: TextStyle(
-            color: _muted,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...List<Widget>.generate(
-          4,
-          (int index) {
-            final String letter =
-                String.fromCharCode(65 + index);
+        ...List<Widget>.generate(4, (int index) {
+          final String letter = String.fromCharCode(65 + index);
+          final bool isSelected = _correctChoice == letter;
 
-            return Padding(
-              padding:
-                  const EdgeInsets.only(
-                bottom: 10,
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color:
+                  isSelected
+                      ? _primaryLight.withValues(alpha: 0.5)
+                      : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isSelected ? _primary : _border,
+                width: isSelected ? 1.5 : 1,
               ),
-              child: Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: <Widget>[
-                  Radio<String>(
-                    value: letter,
-                    groupValue:
-                        _correctChoice,
-                    onChanged:
-                        (String? value) {
-                      if (value == null) {
-                        return;
-                      }
-
-                      setState(() {
-                        _correctChoice = value;
-                      });
-                    },
-                  ),
-                  Expanded(
-                    child: TextFormField(
-                      controller:
-                          _choiceControllers[
-                              index],
-                      decoration:
-                          InputDecoration(
-                        labelText:
-                            'Pilihan $letter',
-                        hintText:
-                            'Isi jawaban $letter',
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _correctChoice = letter;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isSelected ? _primary : Colors.white,
+                      border: Border.all(
+                        color: isSelected ? _primary : _muted,
+                        width: 1.5,
                       ),
-                      validator: _required,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      letter,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: isSelected ? Colors.white : _text,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextFormField(
+                    controller: _choiceControllers[index],
+                    textCapitalization: TextCapitalization.sentences,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: _text,
+                    ),
+                    decoration: _buildInputDecoration(
+                      hintText: 'Tulis pilihan jawaban $letter',
+                    ),
+                    validator: _required,
+                  ),
+                ),
+                if (isSelected) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _success.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Kunci',
+                      style: GoogleFonts.poppins(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: _success,
+                      ),
                     ),
                   ),
                 ],
-              ),
-            );
-          },
-        ),
-        const Text(
-          'Lingkaran yang dipilih merupakan kunci jawaban.',
-          style: TextStyle(
-            color: _muted,
-            fontSize: 11,
-          ),
-        ),
+              ],
+            ),
+          );
+        }),
       ],
     );
   }
 
   Widget _buildTrueFalseEditor() {
     return _Section(
-      title: 'Kunci Jawaban',
+      title: 'Kunci Jawaban Benar / Salah',
+      subtitle: 'Tentukan apakah premis soal bernilai Benar atau Salah.',
+      icon: Icons.rule_rounded,
       children: <Widget>[
-        const Text(
-          'Tentukan apakah pernyataan pada pertanyaan benar atau salah.',
-          style: TextStyle(
-            color: _muted,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 12),
-        SegmentedButton<bool>(
-          segments:
-              const <ButtonSegment<bool>>[
-            ButtonSegment<bool>(
-              value: true,
-              icon: Icon(
-                Icons.check_circle_rounded,
+        Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                onTap: () => setState(() => _trueFalseAnswer = true),
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color:
+                        _trueFalseAnswer
+                            ? _success.withValues(alpha: 0.12)
+                            : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: _trueFalseAnswer ? _success : _border,
+                      width: _trueFalseAnswer ? 2 : 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        color: _trueFalseAnswer ? _success : _muted,
+                        size: 28,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'BENAR',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: _trueFalseAnswer ? _success : _text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              label: Text('Benar'),
             ),
-            ButtonSegment<bool>(
-              value: false,
-              icon: Icon(
-                Icons.cancel_rounded,
+            const SizedBox(width: 12),
+            Expanded(
+              child: InkWell(
+                onTap: () => setState(() => _trueFalseAnswer = false),
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color:
+                        !_trueFalseAnswer
+                            ? _danger.withValues(alpha: 0.12)
+                            : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: !_trueFalseAnswer ? _danger : _border,
+                      width: !_trueFalseAnswer ? 2 : 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.cancel_rounded,
+                        color: !_trueFalseAnswer ? _danger : _muted,
+                        size: 28,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'SALAH',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: !_trueFalseAnswer ? _danger : _text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              label: Text('Salah'),
             ),
           ],
-          selected: <bool>{
-            _trueFalseAnswer,
-          },
-          onSelectionChanged:
-              (Set<bool> selected) {
-            setState(() {
-              _trueFalseAnswer =
-                  selected.first;
-            });
-          },
         ),
       ],
     );
@@ -750,122 +915,138 @@ class _AdminCheckpointFormViewState
 
   Widget _buildMatchingEditor() {
     return _Section(
-      title: 'Pasangan Jawaban',
+      title: 'Pasangan Jawaban (Matching)',
+      subtitle:
+          'Setiap baris adalah satu pasangan yang valid. Sistem akan mengacak urutan sisi kanan bagi siswa.',
+      icon: Icons.join_inner_rounded,
       children: <Widget>[
-        const Text(
-          'Setiap baris adalah satu pasangan yang benar. Siswa nanti memasangkan kolom kiri dan kanan.',
-          style: TextStyle(
-            color: _muted,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ..._matchingItems
-            .asMap()
-            .entries
-            .map(
-          (MapEntry<int, _MatchingDraft>
-              entry) {
-            final int index = entry.key;
-            final _MatchingDraft item =
-                entry.value;
+        ..._matchingItems.asMap().entries.map((entry) {
+          final int index = entry.key;
+          final _MatchingDraft item = entry.value;
 
-            return Container(
-              margin:
-                  const EdgeInsets.only(
-                bottom: 11,
-              ),
-              padding:
-                  const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color:
-                    const Color(0xFFF8FAFC),
-                borderRadius:
-                    BorderRadius.circular(
-                  14,
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _border),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
-                border: Border.all(
-                  color:
-                      const Color(0xFFE2E8F0),
-                ),
-              ),
-              child: Column(
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          'Pasangan ${index + 1}',
-                          style:
-                              const TextStyle(
-                            color: _text,
-                            fontWeight:
-                                FontWeight.w800,
-                          ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [_primaryDark, _primary],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${index + 1}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
                         ),
                       ),
-                      if (_matchingItems.length >
-                          2)
-                        IconButton(
-                          tooltip:
-                              'Hapus pasangan',
-                          onPressed: () {
-                            setState(() {
-                              final removed =
-                                  _matchingItems
-                                      .removeAt(
-                                index,
-                              );
-                              removed.dispose();
-                            });
-                          },
-                          icon: const Icon(
-                            Icons
-                                .delete_outline_rounded,
-                            color: _danger,
-                          ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Pasangan ${index + 1}',
+                      style: GoogleFonts.poppins(
+                        color: _text,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (_matchingItems.length > 2)
+                      IconButton(
+                        tooltip: 'Hapus pasangan',
+                        onPressed: () {
+                          setState(() {
+                            final removed = _matchingItems.removeAt(index);
+                            removed.dispose();
+                          });
+                        },
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: _danger,
+                          size: 19,
                         ),
-                    ],
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: item.leftController,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: _text,
                   ),
-                  TextFormField(
-                    controller:
-                        item.leftController,
-                    decoration:
-                        const InputDecoration(
-                      labelText:
-                          'Isi kolom kiri',
-                    ),
-                    validator: _required,
+                  decoration: _buildInputDecoration(
+                    labelText: 'Kolom Kiri (Pertanyaan/Konsep)',
+                    hintText: 'Contoh: Kloroplas',
                   ),
-                  const SizedBox(height: 9),
-                  TextFormField(
-                    controller:
-                        item.rightController,
-                    decoration:
-                        const InputDecoration(
-                      labelText:
-                          'Pasangan yang benar',
-                    ),
-                    validator: _required,
+                  validator: _required,
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: item.rightController,
+                  textCapitalization: TextCapitalization.sentences,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    color: _text,
                   ),
-                ],
+                  decoration: _buildInputDecoration(
+                    labelText: 'Kolom Kanan (Pasangan Jawaban Benar)',
+                    hintText: 'Contoh: Tempat fotosintesis',
+                  ),
+                  validator: _required,
+                ),
+              ],
+            ),
+          );
+        }),
+        SizedBox(
+          width: double.infinity,
+          height: 42,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              setState(() {
+                _matchingItems.add(_MatchingDraft());
+              });
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _primary,
+              side: const BorderSide(color: _primary, width: 1.2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-            );
-          },
-        ),
-        OutlinedButton.icon(
-          onPressed: () {
-            setState(() {
-              _matchingItems.add(
-                _MatchingDraft(),
-              );
-            });
-          },
-          icon: const Icon(
-            Icons.add_rounded,
+            ),
+            icon: const Icon(Icons.add_rounded, size: 19),
+            label: Text(
+              'Tambah Pasangan Jawaban',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 12.5,
+              ),
+            ),
           ),
-          label:
-              const Text('Tambah Pasangan'),
         ),
       ],
     );
@@ -873,116 +1054,91 @@ class _AdminCheckpointFormViewState
 
   Widget _buildOrderingEditor() {
     return _Section(
-      title: 'Urutan yang Benar',
+      title: 'Urutan Langkah yang Benar',
+      subtitle:
+          'Isi urutan kronologis yang benar. Tekan dan geser handle untuk mengubah posisi urutan.',
+      icon: Icons.format_list_numbered_rounded,
       children: <Widget>[
-        const Text(
-          'Isi langkah sesuai urutan yang benar. Tekan dan geser ikon di kanan untuk mengubah posisi.',
-          style: TextStyle(
-            color: _muted,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 12),
         ReorderableListView.builder(
           shrinkWrap: true,
-          physics:
-              const NeverScrollableScrollPhysics(),
-          itemCount:
-              _orderingItems.length,
-          onReorder: (
-            int oldIndex,
-            int newIndex,
-          ) {
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _orderingItems.length,
+          onReorder: (int oldIndex, int newIndex) {
             setState(() {
               if (newIndex > oldIndex) {
                 newIndex -= 1;
               }
-
-              final TextEditingController
-                  item = _orderingItems
-                      .removeAt(oldIndex);
-              _orderingItems.insert(
-                newIndex,
-                item,
+              final TextEditingController item = _orderingItems.removeAt(
+                oldIndex,
               );
+              _orderingItems.insert(newIndex, item);
             });
           },
-          itemBuilder: (
-            BuildContext context,
-            int index,
-          ) {
+          itemBuilder: (BuildContext context, int index) {
             return Container(
-              key: ObjectKey(
-                _orderingItems[index],
-              ),
-              margin:
-                  const EdgeInsets.only(
-                bottom: 9,
+              key: ObjectKey(_orderingItems[index]),
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _border),
               ),
               child: Row(
                 children: <Widget>[
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor:
-                        const Color(
-                      0xFFEDE9FE,
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: _primaryLight,
+                      borderRadius: BorderRadius.circular(9),
                     ),
-                    foregroundColor:
-                        _primary,
+                    alignment: Alignment.center,
                     child: Text(
                       '${index + 1}',
-                      style:
-                          const TextStyle(
-                        fontWeight:
-                            FontWeight.w900,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: _primary,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 9),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: TextFormField(
-                      controller:
-                          _orderingItems[
-                              index],
-                      decoration:
-                          InputDecoration(
-                        labelText:
-                            'Langkah ${index + 1}',
+                      controller: _orderingItems[index],
+                      textCapitalization: TextCapitalization.sentences,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        color: _text,
+                      ),
+                      decoration: _buildInputDecoration(
+                        hintText: 'Langkah ${index + 1}',
                       ),
                       validator: _required,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 6),
                   ReorderableDragStartListener(
                     index: index,
                     child: const Padding(
-                      padding:
-                          EdgeInsets.all(10),
-                      child: Icon(
-                        Icons.drag_handle_rounded,
-                        color: _muted,
-                      ),
+                      padding: EdgeInsets.all(8),
+                      child: Icon(Icons.drag_handle_rounded, color: _muted),
                     ),
                   ),
-                  if (_orderingItems.length >
-                      2)
+                  if (_orderingItems.length > 2)
                     IconButton(
-                      tooltip:
-                          'Hapus langkah',
+                      tooltip: 'Hapus langkah',
                       onPressed: () {
                         setState(() {
-                          final removed =
-                              _orderingItems
-                                  .removeAt(
-                            index,
-                          );
+                          final removed = _orderingItems.removeAt(index);
                           removed.dispose();
                         });
                       },
                       icon: const Icon(
-                        Icons
-                            .delete_outline_rounded,
+                        Icons.delete_outline_rounded,
                         color: _danger,
+                        size: 19,
                       ),
                     ),
                 ],
@@ -990,74 +1146,67 @@ class _AdminCheckpointFormViewState
             );
           },
         ),
-        OutlinedButton.icon(
-          onPressed: () {
-            setState(() {
-              _orderingItems.add(
-                TextEditingController(),
-              );
-            });
-          },
-          icon: const Icon(
-            Icons.add_rounded,
+        const SizedBox(height: 4),
+        SizedBox(
+          width: double.infinity,
+          height: 42,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              setState(() {
+                _orderingItems.add(TextEditingController());
+              });
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _primary,
+              side: const BorderSide(color: _primary, width: 1.2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.add_rounded, size: 19),
+            label: Text(
+              'Tambah Langkah Urutan',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 12.5,
+              ),
+            ),
           ),
-          label:
-              const Text('Tambah Langkah'),
         ),
       ],
     );
   }
 
-  Widget _buildHotspotEditor(
-    String? resolvedImage,
-  ) {
-    final bool hasImage =
-        _imagePath != null ||
-            resolvedImage != null;
+  Widget _buildHotspotEditor(String? resolvedImage) {
+    final bool hasImage = _imagePath != null || resolvedImage != null;
 
     return Column(
       children: <Widget>[
         _Section(
-          title: 'Gambar Interaktif',
+          title: 'Ilustrasi & Penanda Titik Hotspot',
+          subtitle:
+              'Unggah gambar, lalu ketuk area gambar untuk menempatkan pin interaktif.',
+          icon: Icons.touch_app_rounded,
           children: <Widget>[
-            const Text(
-              '1. Pilih gambar. 2. Ketuk bagian gambar untuk menambahkan titik. 3. Isi nama dan penjelasan titik.',
-              style: TextStyle(
-                color: _muted,
-                height: 1.45,
-              ),
-            ),
-            const SizedBox(height: 12),
             if (!hasImage)
               _ImagePickerPlaceholder(
-                label:
-                    'Pilih gambar terlebih dahulu',
+                label: 'Pilih gambar untuk membuat titik hotspot',
                 onTap: _pickImage,
               )
             else ...<Widget>[
               AspectRatio(
                 aspectRatio: 16 / 9,
                 child: LayoutBuilder(
-                  builder: (
-                    BuildContext context,
-                    BoxConstraints constraints,
-                  ) {
+                  builder: (BuildContext context, BoxConstraints constraints) {
                     return GestureDetector(
-                      onTapDown:
-                          (TapDownDetails details) {
+                      onTapDown: (TapDownDetails details) {
                         _createHotspot(
                           details.localPosition,
-                          Size(
-                            constraints.maxWidth,
-                            constraints.maxHeight,
-                          ),
+                          Size(constraints.maxWidth, constraints.maxHeight),
                         );
                       },
                       child: ClipRRect(
-                        borderRadius:
-                            BorderRadius.circular(
-                          16,
-                        ),
+                        borderRadius: BorderRadius.circular(16),
                         child: Stack(
                           fit: StackFit.expand,
                           children: <Widget>[
@@ -1065,81 +1214,70 @@ class _AdminCheckpointFormViewState
                               Image.file(
                                 File(_imagePath!),
                                 fit: BoxFit.cover,
+                                cacheWidth: 800,
                               )
                             else
                               Image.network(
                                 resolvedImage!,
                                 fit: BoxFit.cover,
-                                errorBuilder: (
-                                  _,
-                                  __,
-                                  ___,
-                                ) =>
-                                    const _ImageError(),
+                                cacheWidth: 800,
+                                errorBuilder:
+                                    (_, __, ___) => const _ImageError(),
                               ),
-                            ..._hotspots.map(
-                              (_HotspotDraft hotspot) {
-                                return Positioned(
-                                  left: hotspot.x *
-                                          (constraints
-                                                  .maxWidth -
-                                              40),
-                                  top: hotspot.y *
-                                          (constraints
-                                                  .maxHeight -
-                                              40),
-                                  child: GestureDetector(
-                                    onTap: () =>
-                                        _editHotspot(
-                                      hotspot,
-                                    ),
-                                    child: Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration:
-                                          BoxDecoration(
-                                        shape:
-                                            BoxShape.circle,
-                                        color: hotspot
-                                                .isCorrect
-                                            ? _success
-                                            : _primary,
-                                        border:
-                                            Border.all(
-                                          color:
-                                              Colors.white,
-                                          width: 3,
-                                        ),
-                                        boxShadow:
-                                            const <
-                                                BoxShadow>[
-                                          BoxShadow(
-                                            color: Color(
-                                              0x33000000,
-                                            ),
-                                            blurRadius:
-                                                8,
-                                          ),
-                                        ],
+                            ..._hotspots.map((_HotspotDraft hotspot) {
+                              final double left =
+                                  (hotspot.x * constraints.maxWidth - 20)
+                                      .clamp(0.0, constraints.maxWidth - 40)
+                                      .toDouble();
+                              final double top =
+                                  (hotspot.y * constraints.maxHeight - 20)
+                                      .clamp(0.0, constraints.maxHeight - 40)
+                                      .toDouble();
+
+                              return Positioned(
+                                left: left,
+                                top: top,
+                                child: GestureDetector(
+                                  onTap: () => _editHotspot(hotspot),
+                                  child: Container(
+                                    width: 38,
+                                    height: 38,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: LinearGradient(
+                                        colors:
+                                            hotspot.isCorrect
+                                                ? [
+                                                  const Color(0xFF059669),
+                                                  _success,
+                                                ]
+                                                : [_primaryDark, _primary],
                                       ),
-                                      alignment:
-                                          Alignment.center,
-                                      child: Text(
-                                        '${_hotspots.indexOf(hotspot) + 1}',
-                                        style:
-                                            const TextStyle(
-                                          color:
-                                              Colors.white,
-                                          fontWeight:
-                                              FontWeight
-                                                  .w900,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2.5,
+                                      ),
+                                      boxShadow: const <BoxShadow>[
+                                        BoxShadow(
+                                          color: Color(0x44000000),
+                                          blurRadius: 8,
+                                          offset: Offset(0, 3),
                                         ),
+                                      ],
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '${_hotspots.indexOf(hotspot) + 1}',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
                                       ),
                                     ),
                                   ),
-                                );
-                              },
-                            ),
+                                ),
+                              );
+                            }),
                           ],
                         ),
                       ),
@@ -1151,22 +1289,28 @@ class _AdminCheckpointFormViewState
               Row(
                 children: <Widget>[
                   Expanded(
-                    child:
-                        OutlinedButton.icon(
+                    child: OutlinedButton.icon(
                       onPressed: _pickImage,
-                      icon: const Icon(
-                        Icons
-                            .image_search_rounded,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _primary,
+                        side: const BorderSide(color: _border),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      label: const Text(
+                      icon: const Icon(Icons.image_search_rounded, size: 18),
+                      label: Text(
                         'Ganti Gambar',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 9),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child:
-                        OutlinedButton.icon(
+                    child: OutlinedButton.icon(
                       onPressed: () {
                         setState(() {
                           _imagePath = null;
@@ -1174,17 +1318,21 @@ class _AdminCheckpointFormViewState
                           _hotspots.clear();
                         });
                       },
-                      style:
-                          OutlinedButton.styleFrom(
-                        foregroundColor:
-                            _danger,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _danger,
+                        side: const BorderSide(color: Color(0xFFFEE2E2)),
+                        backgroundColor: const Color(0xFFFEF2F2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      icon: const Icon(
-                        Icons
-                            .delete_outline_rounded,
-                      ),
-                      label: const Text(
+                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                      label: Text(
                         'Hapus Gambar',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -1193,163 +1341,137 @@ class _AdminCheckpointFormViewState
             ],
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
         _Section(
-          title: 'Titik Penjelasan',
+          title: 'Daftar Titik Penjelasan',
+          subtitle:
+              'Kelola nama bagian dan tentukan satu titik sebagai kunci jawaban benar.',
+          icon: Icons.pin_drop_rounded,
           children: <Widget>[
             if (_hotspots.isEmpty)
               const _InlineEmpty(
                 text:
-                    'Belum ada titik. Ketuk bagian gambar yang ingin dijadikan hotspot.',
+                    'Belum ada titik. Ketuk bagian gambar di atas untuk menambahkan hotspot.',
               )
             else
-              ..._hotspots
-                  .asMap()
-                  .entries
-                  .map(
-                (MapEntry<int, _HotspotDraft>
-                    entry) {
-                  final int index =
-                      entry.key;
-                  final _HotspotDraft item =
-                      entry.value;
+              ..._hotspots.asMap().entries.map((entry) {
+                final int index = entry.key;
+                final _HotspotDraft item = entry.value;
 
-                  return Container(
-                    margin:
-                        const EdgeInsets.only(
-                      bottom: 9,
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color:
+                        item.isCorrect
+                            ? const Color(0xFFF0FDF4)
+                            : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color:
+                          item.isCorrect
+                              ? const Color(0xFF86EFAC)
+                              : const Color(0xFFE2E8F0),
                     ),
-                    padding:
-                        const EdgeInsets.all(
-                      12,
-                    ),
-                    decoration:
-                        BoxDecoration(
-                      color: item.isCorrect
-                          ? const Color(
-                              0xFFE7F8EE,
-                            )
-                          : const Color(
-                              0xFFF8FAFC,
-                            ),
-                      borderRadius:
-                          BorderRadius.circular(
-                        14,
-                      ),
-                      border: Border.all(
-                        color: item.isCorrect
-                            ? const Color(
-                                0xFF86EFAC,
-                              )
-                            : const Color(
-                                0xFFE2E8F0,
-                              ),
-                      ),
-                    ),
-                    child: Row(
-                      children: <Widget>[
-                        CircleAvatar(
-                          backgroundColor:
-                              item.isCorrect
-                                  ? _success
-                                  : _primary,
-                          foregroundColor:
-                              Colors.white,
-                          child: Text(
-                            '${index + 1}',
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: item.isCorrect ? _success : _primary,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${index + 1}',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
                           ),
                         ),
-                        const SizedBox(
-                          width: 10,
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment
-                                    .start,
-                            children: <Widget>[
-                              Text(
-                                item.label,
-                                style:
-                                    const TextStyle(
-                                  color: _text,
-                                  fontWeight:
-                                      FontWeight
-                                          .w900,
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 3,
-                              ),
-                              Text(
-                                item.explanation
-                                        .isEmpty
-                                    ? 'Belum ada penjelasan'
-                                    : item
-                                        .explanation,
-                                maxLines: 2,
-                                overflow:
-                                    TextOverflow
-                                        .ellipsis,
-                                style:
-                                    const TextStyle(
-                                  color: _muted,
-                                  fontSize: 11,
-                                ),
-                              ),
-                              if (item
-                                  .isCorrect) ...<
-                                  Widget>[
-                                const SizedBox(
-                                  height: 4,
-                                ),
-                                const Text(
-                                  'Jawaban benar',
-                                  style:
-                                      TextStyle(
-                                    color:
-                                        _success,
-                                    fontSize: 11,
-                                    fontWeight:
-                                        FontWeight
-                                            .w800,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Row(
+                              children: [
+                                Text(
+                                  item.label,
+                                  style: GoogleFonts.poppins(
+                                    color: _text,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
                                   ),
                                 ),
+                                if (item.isCorrect) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _success.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      'Kunci Jawaban',
+                                      style: GoogleFonts.poppins(
+                                        color: _success,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              item.explanation.isEmpty
+                                  ? 'Belum ada penjelasan'
+                                  : item.explanation,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.plusJakartaSans(
+                                color: _muted,
+                                fontSize: 11.5,
+                              ),
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          tooltip: 'Edit titik',
-                          onPressed: () =>
-                              _editHotspot(
-                            item,
-                          ),
-                          icon: const Icon(
-                            Icons.edit_rounded,
-                            color: _primary,
-                          ),
+                      ),
+                      IconButton(
+                        tooltip: 'Edit titik',
+                        onPressed: () => _editHotspot(item),
+                        icon: const Icon(
+                          Icons.edit_rounded,
+                          color: _primary,
+                          size: 19,
                         ),
-                        IconButton(
-                          tooltip:
-                              'Hapus titik',
-                          onPressed: () {
-                            setState(() {
-                              _hotspots
-                                  .removeAt(index);
-                            });
-                          },
-                          icon: const Icon(
-                            Icons
-                                .delete_outline_rounded,
-                            color: _danger,
-                          ),
+                      ),
+                      IconButton(
+                        tooltip: 'Hapus titik',
+                        onPressed: () {
+                          setState(() {
+                            _hotspots.removeAt(index);
+                          });
+                        },
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: _danger,
+                          size: 19,
                         ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
           ],
         ),
       ],
@@ -1358,91 +1480,72 @@ class _AdminCheckpointFormViewState
 
   Widget _buildDataEditor() {
     return _Section(
-      title: 'Data dan Pilihan Jawaban',
+      title: 'Tabel Data & Pilihan Kesimpulan',
+      subtitle:
+          'Isi data tabel pengamatan sains dan buat pilihan kesimpulan analisa.',
+      icon: Icons.analytics_rounded,
       children: <Widget>[
-        const Text(
-          'Guru cukup mengisi tabel sederhana dan pilihan kesimpulan. JSON dibuat otomatis oleh aplikasi.',
-          style: TextStyle(
-            color: _muted,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: 12),
         TextFormField(
           controller: _dataTitleController,
-          decoration:
-              const InputDecoration(
-            labelText: 'Judul data',
+          textCapitalization: TextCapitalization.sentences,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: _text,
+          ),
+          decoration: _buildInputDecoration(
+            labelText: 'Judul Data Pengamatan',
+            hintText: 'Contoh: Hasil Uji Laju Reaksi',
           ),
           validator: _required,
         ),
         const SizedBox(height: 10),
         TextFormField(
-          controller:
-              _dataDescriptionController,
-          maxLines: 3,
-          decoration:
-              const InputDecoration(
-            labelText:
-                'Keterangan data',
+          controller: _dataDescriptionController,
+          maxLines: 2,
+          textCapitalization: TextCapitalization.sentences,
+          style: GoogleFonts.plusJakartaSans(fontSize: 12.5, color: _text),
+          decoration: _buildInputDecoration(
+            labelText: 'Keterangan Data (Opsional)',
+            hintText: 'Pengantar atau parameter percobaan...',
+            alignLabelWithHint: true,
           ),
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: TextFormField(
-                controller:
-                    _headerOneController,
-                decoration:
-                    const InputDecoration(
-                  labelText:
-                      'Judul kolom 1',
-                ),
-                validator: _required,
-              ),
-            ),
-            const SizedBox(width: 9),
-            Expanded(
-              child: TextFormField(
-                controller:
-                    _headerTwoController,
-                decoration:
-                    const InputDecoration(
-                  labelText:
-                      'Judul kolom 2',
-                ),
-                validator: _required,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        ..._tableRows
-            .asMap()
-            .entries
-            .map(
-          (MapEntry<int, _TableRowDraft>
-              entry) {
-            final int index = entry.key;
-            final _TableRowDraft row =
-                entry.value;
+        const SizedBox(height: 14),
 
-            return Padding(
-              padding:
-                  const EdgeInsets.only(
-                bottom: 9,
+        // Headers Card
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Judul Kolom Tabel',
+                style: GoogleFonts.poppins(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: _muted,
+                ),
               ),
-              child: Row(
+              const SizedBox(height: 8),
+              Row(
                 children: <Widget>[
                   Expanded(
                     child: TextFormField(
-                      controller:
-                          row.firstController,
-                      decoration:
-                          InputDecoration(
-                        labelText:
-                            'Baris ${index + 1} kolom 1',
+                      controller: _headerOneController,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: _text,
+                      ),
+                      decoration: _buildInputDecoration(
+                        labelText: 'Judul Kolom 1 (Kiri)',
+                        hintText: 'Contoh: Suhu (°C)',
                       ),
                       validator: _required,
                     ),
@@ -1450,245 +1553,340 @@ class _AdminCheckpointFormViewState
                   const SizedBox(width: 8),
                   Expanded(
                     child: TextFormField(
-                      controller:
-                          row.secondController,
-                      decoration:
-                          InputDecoration(
-                        labelText:
-                            'Baris ${index + 1} kolom 2',
+                      controller: _headerTwoController,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: _text,
+                      ),
+                      decoration: _buildInputDecoration(
+                        labelText: 'Judul Kolom 2 (Kanan)',
+                        hintText: 'Contoh: Waktu (detik)',
                       ),
                       validator: _required,
                     ),
                   ),
-                  if (_tableRows.length > 2)
-                    IconButton(
-                      tooltip: 'Hapus baris',
-                      onPressed: () {
-                        setState(() {
-                          final removed =
-                              _tableRows
-                                  .removeAt(
-                            index,
-                          );
-                          removed.dispose();
-                        });
-                      },
-                      icon: const Icon(
-                        Icons
-                            .delete_outline_rounded,
-                        color: _danger,
-                      ),
-                    ),
                 ],
               ),
-            );
-          },
-        ),
-        OutlinedButton.icon(
-          onPressed: () {
-            setState(() {
-              _tableRows.add(
-                _TableRowDraft(),
-              );
-            });
-          },
-          icon: const Icon(
-            Icons.add_rounded,
-          ),
-          label: const Text(
-            'Tambah Baris Data',
+            ],
           ),
         ),
-        const Divider(height: 28),
-        const Text(
-          'Pilihan kesimpulan',
-          style: TextStyle(
+        const SizedBox(height: 12),
+
+        // Rows
+        ..._tableRows.asMap().entries.map((entry) {
+          final int index = entry.key;
+          final _TableRowDraft row = entry.value;
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 9),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: _border),
+            ),
+            child: Row(
+              children: <Widget>[
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: _primaryLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${index + 1}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: row.firstController,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12.5,
+                      color: _text,
+                    ),
+                    decoration: _buildInputDecoration(
+                      hintText: 'Nilai kolom 1',
+                    ),
+                    validator: _required,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: row.secondController,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12.5,
+                      color: _text,
+                    ),
+                    decoration: _buildInputDecoration(
+                      hintText: 'Nilai kolom 2',
+                    ),
+                    validator: _required,
+                  ),
+                ),
+                if (_tableRows.length > 2)
+                  IconButton(
+                    tooltip: 'Hapus baris',
+                    onPressed: () {
+                      setState(() {
+                        final removed = _tableRows.removeAt(index);
+                        removed.dispose();
+                      });
+                    },
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: _danger,
+                      size: 20,
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }),
+        const SizedBox(height: 4),
+        SizedBox(
+          width: double.infinity,
+          height: 42,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              setState(() {
+                _tableRows.add(_TableRowDraft());
+              });
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _primary,
+              side: const BorderSide(color: _primary, width: 1.2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.add_rounded, size: 19),
+            label: Text(
+              'Tambah Baris Data',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 12.5,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        const Divider(height: 1, color: _border),
+        const SizedBox(height: 16),
+
+        Text(
+          'Pilihan Kesimpulan Analisa',
+          style: GoogleFonts.poppins(
             color: _text,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w700,
+            fontSize: 13.5,
           ),
         ),
         const SizedBox(height: 10),
-        ...List<Widget>.generate(
-          4,
-          (int index) {
-            final String letter =
-                String.fromCharCode(65 + index);
+        ...List<Widget>.generate(4, (int index) {
+          final String letter = String.fromCharCode(65 + index);
+          final bool isSelected = _analysisCorrectChoice == letter;
 
-            return Padding(
-              padding:
-                  const EdgeInsets.only(
-                bottom: 10,
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color:
+                  isSelected
+                      ? _primaryLight.withValues(alpha: 0.5)
+                      : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isSelected ? _primary : _border,
+                width: isSelected ? 1.5 : 1,
               ),
-              child: Row(
-                children: <Widget>[
-                  Radio<String>(
-                    value: letter,
-                    groupValue:
-                        _analysisCorrectChoice,
-                    onChanged:
-                        (String? value) {
-                      if (value == null) {
-                        return;
-                      }
-
-                      setState(() {
-                        _analysisCorrectChoice =
-                            value;
-                      });
-                    },
-                  ),
-                  Expanded(
-                    child: TextFormField(
-                      controller:
-                          _analysisOptionControllers[
-                              index],
-                      decoration:
-                          InputDecoration(
-                        labelText:
-                            'Pilihan $letter',
+            ),
+            child: Row(
+              children: <Widget>[
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _analysisCorrectChoice = letter;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isSelected ? _primary : Colors.white,
+                      border: Border.all(
+                        color: isSelected ? _primary : _muted,
+                        width: 1.5,
                       ),
-                      validator: _required,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      letter,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: isSelected ? Colors.white : _text,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextFormField(
+                    controller: _analysisOptionControllers[index],
+                    textCapitalization: TextCapitalization.sentences,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 13,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: _text,
+                    ),
+                    decoration: _buildInputDecoration(
+                      hintText: 'Kesimpulan analisa $letter',
+                    ),
+                    validator: _required,
+                  ),
+                ),
+                if (isSelected) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _success.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Kunci',
+                      style: GoogleFonts.poppins(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: _success,
+                      ),
                     ),
                   ),
                 ],
-              ),
-            );
-          },
-        ),
+              ],
+            ),
+          );
+        }),
       ],
     );
   }
 
-  Widget _buildOptionalImage(
-    String? resolvedImage,
-  ) {
+  Widget _buildOptionalImage(String? resolvedImage) {
+    final bool hasImage = _imagePath != null || resolvedImage != null;
+
     return _Section(
-      title: 'Gambar Opsional',
+      title: 'Gambar Ilustrasi Soal (Opsional)',
+      subtitle: 'Tambahkan gambar bantuan untuk memperjelas narasi soal.',
+      icon: Icons.image_rounded,
       children: <Widget>[
-        SizedBox(
-          height: 180,
-          width: double.infinity,
-          child: _imagePath != null ||
-                  resolvedImage != null
-              ? Stack(
-                  fit: StackFit.expand,
-                  children: <Widget>[
-                    ClipRRect(
-                      borderRadius:
-                          BorderRadius.circular(
-                        15,
-                      ),
-                      child: _imagePath != null
+        if (hasImage)
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child:
+                      _imagePath != null
                           ? Image.file(
-                              File(
-                                _imagePath!,
-                              ),
-                              fit: BoxFit.cover,
-                            )
+                            File(_imagePath!),
+                            fit: BoxFit.cover,
+                            cacheWidth: 800,
+                          )
                           : Image.network(
-                              resolvedImage!,
-                              fit: BoxFit.cover,
-                              errorBuilder:
-                                  (_, __, ___) =>
-                                      const _ImageError(),
-                            ),
+                            resolvedImage!,
+                            fit: BoxFit.cover,
+                            cacheWidth: 800,
+                            errorBuilder: (_, __, ___) => const _ImageError(),
+                          ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Row(
+                  children: [
+                    _CircleAction(
+                      icon: Icons.edit_rounded,
+                      onTap: _pickImage,
                     ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Row(
-                        children: <Widget>[
-                          _CircleAction(
-                            icon: Icons
-                                .edit_rounded,
-                            onTap: _pickImage,
-                          ),
-                          const SizedBox(
-                            width: 6,
-                          ),
-                          _CircleAction(
-                            icon: Icons
-                                .delete_rounded,
-                            onTap: () {
-                              setState(() {
-                                _imagePath =
-                                    null;
-                                _removeImage =
-                                    true;
-                              });
-                            },
-                            danger: true,
-                          ),
-                        ],
-                      ),
+                    const SizedBox(width: 6),
+                    _CircleAction(
+                      icon: Icons.delete_rounded,
+                      onTap: () {
+                        setState(() {
+                          _imagePath = null;
+                          _removeImage = true;
+                        });
+                      },
+                      danger: true,
                     ),
                   ],
-                )
-              : _ImagePickerPlaceholder(
-                  label:
-                      'Pilih gambar checkpoint',
-                  onTap: _pickImage,
                 ),
-        ),
+              ),
+            ],
+          )
+        else
+          _ImagePickerPlaceholder(
+            label: 'Pilih Gambar Ilustrasi Soal',
+            onTap: _pickImage,
+          ),
       ],
     );
   }
 
   void _setDefaultTypeValues() {
     if (_choiceControllers.every(
-      (TextEditingController item) =>
-          item.text.trim().isEmpty,
+      (TextEditingController item) => item.text.trim().isEmpty,
     )) {
-      _choiceControllers[0].text =
-          'Pilihan A';
-      _choiceControllers[1].text =
-          'Pilihan B';
-      _choiceControllers[2].text =
-          'Pilihan C';
-      _choiceControllers[3].text =
-          'Pilihan D';
+      _choiceControllers[0].text = 'Pilihan A';
+      _choiceControllers[1].text = 'Pilihan B';
+      _choiceControllers[2].text = 'Pilihan C';
+      _choiceControllers[3].text = 'Pilihan D';
     }
 
     if (_matchingItems.isEmpty) {
-      _matchingItems.addAll(
-        <_MatchingDraft>[
-          _MatchingDraft(),
-          _MatchingDraft(),
-        ],
-      );
+      _matchingItems.addAll(<_MatchingDraft>[
+        _MatchingDraft(),
+        _MatchingDraft(),
+      ]);
     }
 
     if (_orderingItems.isEmpty) {
-      _orderingItems.addAll(
-        <TextEditingController>[
-          TextEditingController(),
-          TextEditingController(),
-          TextEditingController(),
-        ],
-      );
+      _orderingItems.addAll(<TextEditingController>[
+        TextEditingController(),
+        TextEditingController(),
+        TextEditingController(),
+      ]);
     }
 
     if (_tableRows.isEmpty) {
-      _tableRows.addAll(
-        <_TableRowDraft>[
-          _TableRowDraft(),
-          _TableRowDraft(),
-        ],
-      );
+      _tableRows.addAll(<_TableRowDraft>[_TableRowDraft(), _TableRowDraft()]);
     }
 
     if (_analysisOptionControllers.every(
-      (TextEditingController item) =>
-          item.text.trim().isEmpty,
+      (TextEditingController item) => item.text.trim().isEmpty,
     )) {
-      _analysisOptionControllers[0].text =
-          'Kesimpulan A';
-      _analysisOptionControllers[1].text =
-          'Kesimpulan B';
-      _analysisOptionControllers[2].text =
-          'Kesimpulan C';
-      _analysisOptionControllers[3].text =
-          'Kesimpulan D';
+      _analysisOptionControllers[0].text = 'Kesimpulan A';
+      _analysisOptionControllers[1].text = 'Kesimpulan B';
+      _analysisOptionControllers[2].text = 'Kesimpulan C';
+      _analysisOptionControllers[3].text = 'Kesimpulan D';
     }
   }
 
@@ -1698,67 +1896,40 @@ class _AdminCheckpointFormViewState
   ) {
     switch (_type) {
       case 'true_false':
-        _trueFalseAnswer =
-            AdminLearningController.boolValue(
+        _trueFalseAnswer = AdminLearningController.boolValue(
           answer['correct'],
           fallback: true,
         );
         break;
 
       case 'matching':
-        for (final _MatchingDraft item
-            in _matchingItems) {
+        for (final _MatchingDraft item in _matchingItems) {
           item.dispose();
         }
         _matchingItems.clear();
 
-        final List<Map<String, dynamic>>
-            left = _mapList(
-          content['left'],
-        );
-        final List<Map<String, dynamic>>
-            right = _mapList(
-          content['right'],
-        );
-        final List<Map<String, dynamic>>
-            pairs = _mapList(
-          answer['pairs'],
-        );
+        final List<Map<String, dynamic>> left = _mapList(content['left']);
+        final List<Map<String, dynamic>> right = _mapList(content['right']);
+        final List<Map<String, dynamic>> pairs = _mapList(answer['pairs']);
 
-        final Map<String, String>
-            rightTextById =
-            <String, String>{
-          for (final Map<String, dynamic>
-              item in right)
-            item['id'].toString():
-                item['text']?.toString() ??
-                    '',
+        final Map<String, String> rightTextById = <String, String>{
+          for (final Map<String, dynamic> item in right)
+            item['id'].toString(): item['text']?.toString() ?? '',
         };
 
-        final Map<String, String>
-            rightIdByLeft =
-            <String, String>{
-          for (final Map<String, dynamic>
-              pair in pairs)
-            pair['left_id'].toString():
-                pair['right_id'].toString(),
+        final Map<String, String> rightIdByLeft = <String, String>{
+          for (final Map<String, dynamic> pair in pairs)
+            pair['left_id'].toString(): pair['right_id'].toString(),
         };
 
-        for (final Map<String, dynamic>
-            item in left) {
-          final String leftId =
-              item['id'].toString();
-          final String rightId =
-              rightIdByLeft[leftId] ?? '';
+        for (final Map<String, dynamic> item in left) {
+          final String leftId = item['id'].toString();
+          final String rightId = rightIdByLeft[leftId] ?? '';
 
           _matchingItems.add(
             _MatchingDraft(
-              left:
-                  item['text']?.toString() ??
-                      '',
-              right:
-                  rightTextById[rightId] ??
-                      '',
+              left: item['text']?.toString() ?? '',
+              right: rightTextById[rightId] ?? '',
             ),
           );
         }
@@ -1774,86 +1945,52 @@ class _AdminCheckpointFormViewState
         break;
 
       case 'ordering':
-        for (final TextEditingController
-            item in _orderingItems) {
+        for (final TextEditingController item in _orderingItems) {
           item.dispose();
         }
         _orderingItems.clear();
 
-        final List<Map<String, dynamic>>
-            items = _mapList(
-          content['items'],
-        );
+        final List<Map<String, dynamic>> items = _mapList(content['items']);
         final List<dynamic> order =
-            answer['order'] is List
-                ? answer['order'] as List
-                : <dynamic>[];
+            answer['order'] is List ? answer['order'] as List : <dynamic>[];
 
-        final Map<String, String>
-            textById =
-            <String, String>{
-          for (final Map<String, dynamic>
-              item in items)
-            item['id'].toString():
-                item['text']?.toString() ??
-                    '',
+        final Map<String, String> textById = <String, String>{
+          for (final Map<String, dynamic> item in items)
+            item['id'].toString(): item['text']?.toString() ?? '',
         };
 
         final Iterable<String> ids =
             order.isNotEmpty
-                ? order.map(
-                    (dynamic item) =>
-                        item.toString(),
-                  )
+                ? order.map((dynamic item) => item.toString())
                 : items.map(
-                    (Map<String, dynamic>
-                            item) =>
-                        item['id'].toString(),
-                  );
+                  (Map<String, dynamic> item) => item['id'].toString(),
+                );
 
         for (final String id in ids) {
-          _orderingItems.add(
-            TextEditingController(
-              text: textById[id] ?? '',
-            ),
-          );
+          _orderingItems.add(TextEditingController(text: textById[id] ?? ''));
         }
 
         while (_orderingItems.length < 2) {
-          _orderingItems.add(
-            TextEditingController(),
-          );
+          _orderingItems.add(TextEditingController());
         }
         break;
 
       case 'image_hotspot':
         _hotspots.clear();
+        final String correctId = answer['hotspot_id']?.toString() ?? '';
 
-        final String correctId =
-            answer['hotspot_id']
-                    ?.toString() ??
-                '';
-
-        for (final Map<String, dynamic>
-            item in _mapList(
-          content['hotspots'],
-        )) {
+        for (final Map<String, dynamic> item in _mapList(content['hotspots'])) {
           final String id =
-              item['id']?.toString() ??
-                  'hotspot_${_hotspots.length + 1}';
+              item['id']?.toString() ?? 'hotspot_${_hotspots.length + 1}';
 
           _hotspots.add(
             _HotspotDraft(
               id: id,
-              label:
-                  item['label']?.toString() ??
-                      'Titik',
+              label: item['label']?.toString() ?? 'Titik',
               explanation:
-                  item['explanation']
-                          ?.toString() ??
-                      item['description']
-                          ?.toString() ??
-                      '',
+                  item['explanation']?.toString() ??
+                  item['description']?.toString() ??
+                  '',
               x: _coordinate(item['x']),
               y: _coordinate(item['y']),
               isCorrect: id == correctId,
@@ -1864,12 +2001,9 @@ class _AdminCheckpointFormViewState
 
       case 'data_interpretation':
         _dataTitleController.text =
-            content['title']?.toString() ??
-                'Data Pengamatan';
+            content['title']?.toString() ?? 'Data Pengamatan';
         _dataDescriptionController.text =
-            content['description']
-                    ?.toString() ??
-                '';
+            content['description']?.toString() ?? '';
 
         final List<dynamic> headers =
             content['headers'] is List
@@ -1877,105 +2011,73 @@ class _AdminCheckpointFormViewState
                 : <dynamic>[];
 
         if (headers.isNotEmpty) {
-          _headerOneController.text =
-              headers.first.toString();
+          _headerOneController.text = headers.first.toString();
         }
-
         if (headers.length > 1) {
-          _headerTwoController.text =
-              headers[1].toString();
+          _headerTwoController.text = headers[1].toString();
         }
 
-        for (final _TableRowDraft row
-            in _tableRows) {
+        for (final _TableRowDraft row in _tableRows) {
           row.dispose();
         }
         _tableRows.clear();
 
         final List<dynamic> rows =
-            content['rows'] is List
-                ? content['rows'] as List
-                : <dynamic>[];
+            content['rows'] is List ? content['rows'] as List : <dynamic>[];
 
         for (final dynamic rawRow in rows) {
           if (rawRow is List) {
             _tableRows.add(
               _TableRowDraft(
-                first: rawRow.isNotEmpty
-                    ? rawRow[0].toString()
-                    : '',
-                second: rawRow.length > 1
-                    ? rawRow[1].toString()
-                    : '',
+                first: rawRow.isNotEmpty ? rawRow[0].toString() : '',
+                second: rawRow.length > 1 ? rawRow[1].toString() : '',
               ),
             );
           }
         }
 
         while (_tableRows.length < 2) {
-          _tableRows.add(
-            _TableRowDraft(),
-          );
+          _tableRows.add(_TableRowDraft());
         }
 
-        final List<Map<String, dynamic>>
-            analysisOptions = _mapList(
+        final List<Map<String, dynamic>> analysisOptions = _mapList(
           content['options'],
         );
 
-        for (int index = 0;
-            index < 4;
-            index++) {
-          _analysisOptionControllers[index]
-                  .text =
+        for (int index = 0; index < 4; index++) {
+          _analysisOptionControllers[index].text =
               index < analysisOptions.length
-                  ? analysisOptions[index]['text']
-                          ?.toString() ??
-                      ''
+                  ? analysisOptions[index]['text']?.toString() ?? ''
                   : '';
         }
 
-        _analysisCorrectChoice =
-            answer['correct']?.toString() ??
-                'A';
+        _analysisCorrectChoice = answer['correct']?.toString() ?? 'A';
         break;
 
       case 'multiple_choice':
       default:
-        final List<Map<String, dynamic>>
-            options = _mapList(
-          content['options'],
-        );
+        final List<Map<String, dynamic>> options = _mapList(content['options']);
 
-        for (int index = 0;
-            index < 4;
-            index++) {
+        for (int index = 0; index < 4; index++) {
           _choiceControllers[index].text =
               index < options.length
-                  ? options[index]['text']
-                          ?.toString() ??
-                      ''
+                  ? options[index]['text']?.toString() ?? ''
                   : '';
         }
 
-        _correctChoice =
-            answer['correct']?.toString() ??
-                'A';
+        _correctChoice = answer['correct']?.toString() ?? 'A';
     }
 
     _setDefaultTypeValues();
   }
 
   Future<void> _pickImage() async {
-    final FilePickerResult? result =
-        await FilePicker.platform.pickFiles(
+    final FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.image,
       allowMultiple: false,
     );
 
-    final String? path =
-        result?.files.single.path;
-
+    final String? path = result?.files.single.path;
     if (path == null) {
       return;
     }
@@ -1990,55 +2092,38 @@ class _AdminCheckpointFormViewState
     });
   }
 
-  Future<void> _createHotspot(
-    Offset position,
-    Size size,
-  ) async {
-    if (size.width <= 0 ||
-        size.height <= 0) {
+  Future<void> _createHotspot(Offset position, Size size) async {
+    if (size.width <= 0 || size.height <= 0) {
       return;
     }
 
-    final _HotspotDraft draft =
-        _HotspotDraft(
+    final _HotspotDraft draft = _HotspotDraft(
       id: 'hotspot_${DateTime.now().microsecondsSinceEpoch}',
-      label:
-          'Titik ${_hotspots.length + 1}',
+      label: 'Titik ${_hotspots.length + 1}',
       explanation: '',
-      x: (position.dx / size.width)
-          .clamp(0.0, 1.0),
-      y: (position.dy / size.height)
-          .clamp(0.0, 1.0),
+      x: (position.dx / size.width).clamp(0.0, 1.0),
+      y: (position.dy / size.height).clamp(0.0, 1.0),
       isCorrect: _hotspots.isEmpty,
     );
 
-    final bool saved =
-        await _showHotspotDialog(draft);
-
+    final bool saved = await _showHotspotDialog(draft);
     if (!saved || !mounted) {
       return;
     }
 
     setState(() {
       if (draft.isCorrect) {
-        for (final _HotspotDraft item
-            in _hotspots) {
+        for (final _HotspotDraft item in _hotspots) {
           item.isCorrect = false;
         }
       }
-
       _hotspots.add(draft);
     });
   }
 
-  Future<void> _editHotspot(
-    _HotspotDraft hotspot,
-  ) async {
-    final _HotspotDraft edited =
-        hotspot.copy();
-
-    final bool saved =
-        await _showHotspotDialog(edited);
+  Future<void> _editHotspot(_HotspotDraft hotspot) async {
+    final _HotspotDraft edited = hotspot.copy();
+    final bool saved = await _showHotspotDialog(edited);
 
     if (!saved || !mounted) {
       return;
@@ -2046,32 +2131,23 @@ class _AdminCheckpointFormViewState
 
     setState(() {
       if (edited.isCorrect) {
-        for (final _HotspotDraft item
-            in _hotspots) {
+        for (final _HotspotDraft item in _hotspots) {
           item.isCorrect = false;
         }
       }
 
-      final int index =
-          _hotspots.indexOf(hotspot);
-
+      final int index = _hotspots.indexOf(hotspot);
       if (index >= 0) {
         _hotspots[index] = edited;
       }
     });
   }
 
-  Future<bool> _showHotspotDialog(
-    _HotspotDraft hotspot,
-  ) async {
-    final TextEditingController
-        labelController =
-        TextEditingController(
+  Future<bool> _showHotspotDialog(_HotspotDraft hotspot) async {
+    final TextEditingController labelController = TextEditingController(
       text: hotspot.label,
     );
-    final TextEditingController
-        explanationController =
-        TextEditingController(
+    final TextEditingController explanationController = TextEditingController(
       text: hotspot.explanation,
     );
 
@@ -2079,293 +2155,349 @@ class _AdminCheckpointFormViewState
     String? validation;
 
     final bool result =
-        await showDialog<bool>(
-              context: context,
+        await showModalBottomSheet<bool>(
+          context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          backgroundColor: Colors.transparent,
+          builder: (BuildContext sheetContext) {
+            return StatefulBuilder(
               builder: (
-                BuildContext dialogContext,
+                BuildContext context,
+                void Function(void Function()) setSheetState,
               ) {
-                return StatefulBuilder(
-                  builder: (
-                    BuildContext context,
-                    void Function(
-                      void Function(),
-                    ) setDialogState,
-                  ) {
-                    return AlertDialog(
-                      title: const Text(
-                        'Atur Titik Gambar',
-                      ),
-                      content: SizedBox(
-                        width: 480,
-                        child: Column(
-                          mainAxisSize:
-                              MainAxisSize.min,
-                          children: <Widget>[
-                            TextField(
-                              controller:
-                                  labelController,
-                              autofocus: true,
-                              decoration:
-                                  InputDecoration(
-                                labelText:
-                                    'Nama bagian',
-                                hintText:
-                                    'Contoh: Buret',
-                                errorText:
-                                    validation,
+                return AnimatedPadding(
+                  duration: const Duration(milliseconds: 180),
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.viewInsetsOf(context).bottom,
+                  ),
+                  child: Material(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(26),
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Center(
+                            child: Container(
+                              width: 40,
+                              height: 4.5,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFCBD5E1),
+                                borderRadius: BorderRadius.circular(20),
                               ),
                             ),
-                            const SizedBox(
-                              height: 12,
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(7),
+                                decoration: BoxDecoration(
+                                  color: _primaryLight,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.touch_app_rounded,
+                                  color: _primary,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Atur Titik Hotspot',
+                                style: GoogleFonts.poppins(
+                                  color: _text,
+                                  fontSize: 16.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Tentukan nama bagian dan apakah titik ini merupakan kunci jawaban.',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: _muted,
+                              fontSize: 12,
                             ),
-                            TextField(
-                              controller:
-                                  explanationController,
-                              minLines: 3,
-                              maxLines: 6,
-                              decoration:
-                                  const InputDecoration(
-                                labelText:
-                                    'Penjelasan saat titik diklik',
-                                hintText:
-                                    'Contoh: Buret digunakan untuk mengalirkan larutan secara terukur.',
-                                alignLabelWithHint:
-                                    true,
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: labelController,
+                            autofocus: true,
+                            textCapitalization: TextCapitalization.sentences,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: _text,
+                            ),
+                            decoration: _buildInputDecoration(
+                              labelText: 'Nama Bagian / Komponen',
+                              hintText: 'Contoh: Mitokondria',
+                              prefixIcon: Icons.label_important_outline_rounded,
+                              errorText: validation,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: explanationController,
+                            minLines: 2,
+                            maxLines: 4,
+                            textCapitalization: TextCapitalization.sentences,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 13,
+                              color: _text,
+                            ),
+                            decoration: _buildInputDecoration(
+                              labelText: 'Penjelasan saat Titik Dipilih',
+                              hintText:
+                                  'Jelaskan fungsi atau fakta bagian ini...',
+                              alignLabelWithHint: true,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  correct
+                                      ? _success.withValues(alpha: 0.08)
+                                      : const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: correct ? _success : _border,
                               ),
                             ),
-                            const SizedBox(
-                              height: 8,
-                            ),
-                            SwitchListTile.adaptive(
-                              contentPadding:
-                                  EdgeInsets.zero,
-                              title:
-                                  const Text(
-                                'Jadikan jawaban benar',
+                            child: SwitchListTile.adaptive(
+                              contentPadding: EdgeInsets.zero,
+                              activeTrackColor: _success,
+                              title: Text(
+                                'Jadikan Kunci Jawaban Benar',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: correct ? _success : _text,
+                                ),
                               ),
-                              subtitle:
-                                  const Text(
-                                'Hanya satu titik yang menjadi kunci jawaban.',
+                              subtitle: Text(
+                                'Siswa harus menunjuk titik ini untuk mendapatkan skor.',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 11,
+                                  color: _muted,
+                                ),
                               ),
                               value: correct,
-                              onChanged:
-                                  (bool value) {
-                                setDialogState(
-                                  () {
-                                    correct =
-                                        value;
-                                  },
-                                );
+                              onChanged: (bool value) {
+                                setSheetState(() {
+                                  correct = value;
+                                });
                               },
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed:
+                                      () => Navigator.of(context).pop(false),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: _text,
+                                    side: const BorderSide(color: _border),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Batal',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    final String label =
+                                        labelController.text.trim();
+                                    if (label.isEmpty) {
+                                      setSheetState(() {
+                                        validation =
+                                            'Nama bagian wajib diisi.';
+                                      });
+                                      return;
+                                    }
+
+                                    hotspot.label = label;
+                                    hotspot.explanation =
+                                        explanationController.text.trim();
+                                    hotspot.isCorrect = correct;
+
+                                    Navigator.of(context).pop(true);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _primary,
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.check_rounded,
+                                    size: 18,
+                                  ),
+                                  label: Text(
+                                    'Simpan Titik',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      actions: <Widget>[
-                        TextButton(
-                          onPressed: () =>
-                              Navigator.of(
-                            dialogContext,
-                          ).pop(false),
-                          child: const Text(
-                            'Batal',
-                          ),
-                        ),
-                        FilledButton(
-                          onPressed: () {
-                            final String label =
-                                labelController
-                                    .text
-                                    .trim();
-
-                            if (label.isEmpty) {
-                              setDialogState(
-                                () {
-                                  validation =
-                                      'Nama bagian wajib diisi.';
-                                },
-                              );
-                              return;
-                            }
-
-                            hotspot.label =
-                                label;
-                            hotspot.explanation =
-                                explanationController
-                                    .text
-                                    .trim();
-                            hotspot.isCorrect =
-                                correct;
-
-                            Navigator.of(
-                              dialogContext,
-                            ).pop(true);
-                          },
-                          child: const Text(
-                            'Simpan Titik',
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                    ),
+                  ),
                 );
               },
-            ) ??
-            false;
+            );
+          },
+        ) ??
+        false;
 
     labelController.dispose();
     explanationController.dispose();
-
     return result;
   }
 
   String? _required(String? value) {
-    if (value == null ||
-        value.trim().isEmpty) {
+    if (value == null || value.trim().isEmpty) {
       return 'Field ini wajib diisi.';
     }
-
     return null;
   }
 
   String? _validateTypeSpecific() {
     if (_type == 'image_hotspot') {
       final bool hasImage =
-          _imagePath != null ||
-              (_existingImageUrl.isNotEmpty &&
-                  !_removeImage);
+          _imagePath != null || (_existingImageUrl.isNotEmpty && !_removeImage);
 
       if (!hasImage) {
         return 'Pilih gambar untuk checkpoint hotspot.';
       }
-
       if (_hotspots.length < 2) {
         return 'Tambahkan minimal dua titik pada gambar.';
       }
-
-      if (!_hotspots.any(
-        (_HotspotDraft item) =>
-            item.isCorrect,
-      )) {
+      if (!_hotspots.any((_HotspotDraft item) => item.isCorrect)) {
         return 'Tentukan satu titik sebagai jawaban benar.';
       }
     }
-
     return null;
   }
 
-  Map<String, dynamic>
-      _buildContent() {
+  Map<String, dynamic> _buildContent() {
     switch (_type) {
       case 'true_false':
         return <String, dynamic>{};
 
       case 'matching':
         return <String, dynamic>{
-          'left': _matchingItems
-              .asMap()
-              .entries
-              .map(
-                (entry) =>
-                    <String, dynamic>{
-                  'id':
-                      'left_${entry.key + 1}',
-                  'text': entry.value
-                      .leftController.text
-                      .trim(),
-                },
-              )
-              .toList(),
-          'right': _matchingItems
-              .asMap()
-              .entries
-              .map(
-                (entry) =>
-                    <String, dynamic>{
-                  'id':
-                      'right_${entry.key + 1}',
-                  'text': entry.value
-                      .rightController.text
-                      .trim(),
-                },
-              )
-              .toList(),
+          'left':
+              _matchingItems
+                  .asMap()
+                  .entries
+                  .map(
+                    (entry) => <String, dynamic>{
+                      'id': 'left_${entry.key + 1}',
+                      'text': entry.value.leftController.text.trim(),
+                    },
+                  )
+                  .toList(),
+          'right':
+              _matchingItems
+                  .asMap()
+                  .entries
+                  .map(
+                    (entry) => <String, dynamic>{
+                      'id': 'right_${entry.key + 1}',
+                      'text': entry.value.rightController.text.trim(),
+                    },
+                  )
+                  .toList(),
         };
 
       case 'ordering':
         return <String, dynamic>{
-          'items': _orderingItems
-              .asMap()
-              .entries
-              .map(
-                (entry) =>
-                    <String, dynamic>{
-                  'id':
-                      'item_${entry.key + 1}',
-                  'text': entry.value.text
-                      .trim(),
-                },
-              )
-              .toList(),
+          'items':
+              _orderingItems
+                  .asMap()
+                  .entries
+                  .map(
+                    (entry) => <String, dynamic>{
+                      'id': 'item_${entry.key + 1}',
+                      'text': entry.value.text.trim(),
+                    },
+                  )
+                  .toList(),
         };
 
       case 'image_hotspot':
         return <String, dynamic>{
-          'hotspots': _hotspots
-              .map(
-                (_HotspotDraft item) =>
-                    <String, dynamic>{
-                  'id': item.id,
-                  'label': item.label,
-                  'explanation':
-                      item.explanation,
-                  'x': item.x,
-                  'y': item.y,
-                },
-              )
-              .toList(),
+          'hotspots':
+              _hotspots
+                  .map(
+                    (_HotspotDraft item) => <String, dynamic>{
+                      'id': item.id,
+                      'label': item.label,
+                      'explanation': item.explanation,
+                      'x': item.x,
+                      'y': item.y,
+                    },
+                  )
+                  .toList(),
         };
 
       case 'data_interpretation':
         return <String, dynamic>{
-          'title':
-              _dataTitleController.text
-                  .trim(),
-          'description':
-              _dataDescriptionController
-                  .text
-                  .trim(),
+          'title': _dataTitleController.text.trim(),
+          'description': _dataDescriptionController.text.trim(),
           'headers': <String>[
-            _headerOneController.text
-                .trim(),
-            _headerTwoController.text
-                .trim(),
+            _headerOneController.text.trim(),
+            _headerTwoController.text.trim(),
           ],
-          'rows': _tableRows
-              .map(
-                (_TableRowDraft row) =>
-                    <String>[
-                  row.firstController.text
-                      .trim(),
-                  row.secondController.text
-                      .trim(),
-                ],
-              )
-              .toList(),
-          'options':
-              List<Map<String, dynamic>>
-                  .generate(
+          'rows':
+              _tableRows
+                  .map(
+                    (_TableRowDraft row) => <String>[
+                      row.firstController.text.trim(),
+                      row.secondController.text.trim(),
+                    ],
+                  )
+                  .toList(),
+          'options': List<Map<String, dynamic>>.generate(
             4,
-            (int index) =>
-                <String, dynamic>{
-              'id': String.fromCharCode(
-                65 + index,
-              ),
-              'text':
-                  _analysisOptionControllers[
-                          index]
-                      .text
-                      .trim(),
+            (int index) => <String, dynamic>{
+              'id': String.fromCharCode(65 + index),
+              'text': _analysisOptionControllers[index].text.trim(),
             },
           ),
         };
@@ -2373,19 +2505,11 @@ class _AdminCheckpointFormViewState
       case 'multiple_choice':
       default:
         return <String, dynamic>{
-          'options':
-              List<Map<String, dynamic>>
-                  .generate(
+          'options': List<Map<String, dynamic>>.generate(
             4,
-            (int index) =>
-                <String, dynamic>{
-              'id': String.fromCharCode(
-                65 + index,
-              ),
-              'text':
-                  _choiceControllers[index]
-                      .text
-                      .trim(),
+            (int index) => <String, dynamic>{
+              'id': String.fromCharCode(65 + index),
+              'text': _choiceControllers[index].text.trim(),
             },
           ),
         };
@@ -2395,170 +2519,118 @@ class _AdminCheckpointFormViewState
   Map<String, dynamic> _buildAnswer() {
     switch (_type) {
       case 'true_false':
-        return <String, dynamic>{
-          'correct': _trueFalseAnswer,
-        };
+        return <String, dynamic>{'correct': _trueFalseAnswer};
 
       case 'matching':
         return <String, dynamic>{
-          'pairs': List<
-              Map<String, dynamic>>.generate(
+          'pairs': List<Map<String, dynamic>>.generate(
             _matchingItems.length,
-            (int index) =>
-                <String, dynamic>{
-              'left_id':
-                  'left_${index + 1}',
-              'right_id':
-                  'right_${index + 1}',
+            (int index) => <String, dynamic>{
+              'left_id': 'left_${index + 1}',
+              'right_id': 'right_${index + 1}',
             },
           ),
         };
 
       case 'ordering':
         return <String, dynamic>{
-          'order':
-              List<String>.generate(
+          'order': List<String>.generate(
             _orderingItems.length,
-            (int index) =>
-                'item_${index + 1}',
+            (int index) => 'item_${index + 1}',
           ),
         };
 
       case 'image_hotspot':
-        final _HotspotDraft correct =
-            _hotspots.firstWhere(
-          (_HotspotDraft item) =>
-              item.isCorrect,
+        final _HotspotDraft correct = _hotspots.firstWhere(
+          (_HotspotDraft item) => item.isCorrect,
         );
-
-        return <String, dynamic>{
-          'hotspot_id': correct.id,
-        };
+        return <String, dynamic>{'hotspot_id': correct.id};
 
       case 'data_interpretation':
-        return <String, dynamic>{
-          'correct':
-              _analysisCorrectChoice,
-        };
+        return <String, dynamic>{'correct': _analysisCorrectChoice};
 
       case 'multiple_choice':
       default:
-        return <String, dynamic>{
-          'correct': _correctChoice,
-        };
+        return <String, dynamic>{'correct': _correctChoice};
     }
   }
 
   Future<void> _save() async {
-    if (!(_formKey.currentState
-            ?.validate() ??
-        false)) {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      AppSnackbar.warning(
+        'Form Belum Lengkap',
+        'Mohon periksa dan lengkapi data wajib checkpoint.',
+      );
       return;
     }
 
-    final String? typeError =
-        _validateTypeSpecific();
-
+    final String? typeError = _validateTypeSpecific();
     if (typeError != null) {
-      controller.showError(typeError);
+      AppSnackbar.warning('Format Tipe Belum Valid', typeError);
       return;
     }
 
-    final bool success =
-        await controller.saveCheckpoint(
+    final bool success = await controller.saveCheckpoint(
       checkpointId:
           widget.checkpoint == null
               ? null
-              : AdminLearningController
-                  .intValue(
-                  widget
-                      .checkpoint!['id'],
-                ),
-      submaterialId:
-          widget.submaterialId,
+              : AdminLearningController.intValue(widget.checkpoint!['id']),
+      submaterialId: widget.submaterialId,
       imagePath: _imagePath,
       data: <String, dynamic>{
         'checkpoint_type': _type,
-        'title':
-            _titleController.text.trim(),
-        'instruction':
-            _instructionController.text
-                .trim(),
-        'question_text':
-            _questionController.text
-                .trim(),
+        'title': _titleController.text.trim(),
+        'instruction': _instructionController.text.trim(),
+        'question_text': _questionController.text.trim(),
         'content': _buildContent(),
         'answer': _buildAnswer(),
-        'correct_feedback':
-            _correctFeedbackController
-                .text
-                .trim(),
-        'wrong_feedback':
-            _wrongFeedbackController.text
-                .trim(),
-        'order_index': int.parse(
-          _orderController.text,
-        ),
+        'correct_feedback': _correctFeedbackController.text.trim(),
+        'wrong_feedback': _wrongFeedbackController.text.trim(),
+        'order_index': int.parse(_orderController.text),
         'is_required': _isRequired,
-        if (_removeImage &&
-            _imagePath == null)
-          'image_url': '',
+        if (_removeImage && _imagePath == null) 'image_url': '',
       },
     );
 
     if (success) {
       Get.back<bool>(result: true);
+      AppSnackbar.success(
+        widget.checkpoint != null
+            ? 'Checkpoint Diperbarui'
+            : 'Checkpoint Ditambahkan',
+        widget.checkpoint != null
+            ? 'Perubahan data checkpoint berhasil disimpan.'
+            : 'Checkpoint interaktif baru berhasil ditambahkan.',
+      );
     }
   }
 
-  static List<Map<String, dynamic>>
-      _mapList(dynamic raw) {
+  static List<Map<String, dynamic>> _mapList(dynamic raw) {
     if (raw is! List) {
       return <Map<String, dynamic>>[];
     }
-
     return raw
         .whereType<Map>()
-        .map(
-          (Map<dynamic, dynamic> item) =>
-              Map<String, dynamic>.from(
-            item,
-          ),
-        )
+        .map((Map<dynamic, dynamic> item) => Map<String, dynamic>.from(item))
         .toList();
   }
 
-  static double _coordinate(
-    dynamic raw,
-  ) {
-    final double value =
-        double.tryParse(
-              raw?.toString() ?? '',
-            ) ??
-            0.5;
-
-    return (value > 1 ? value / 100 : value)
-        .clamp(0.0, 1.0);
+  static double _coordinate(dynamic raw) {
+    final double value = double.tryParse(raw?.toString() ?? '') ?? 0.5;
+    return (value > 1 ? value / 100 : value).clamp(0.0, 1.0);
   }
 }
 
+// =============================================================================
+// DRAFT MODELS
+// =============================================================================
 class _MatchingDraft {
-  _MatchingDraft({
-    String left = '',
-    String right = '',
-  })  : leftController =
-            TextEditingController(
-          text: left,
-        ),
-        rightController =
-            TextEditingController(
-          text: right,
-        );
+  _MatchingDraft({String left = '', String right = ''})
+    : leftController = TextEditingController(text: left),
+      rightController = TextEditingController(text: right);
 
-  final TextEditingController
-      leftController;
-  final TextEditingController
-      rightController;
+  final TextEditingController leftController;
+  final TextEditingController rightController;
 
   void dispose() {
     leftController.dispose();
@@ -2567,22 +2639,12 @@ class _MatchingDraft {
 }
 
 class _TableRowDraft {
-  _TableRowDraft({
-    String first = '',
-    String second = '',
-  })  : firstController =
-            TextEditingController(
-          text: first,
-        ),
-        secondController =
-            TextEditingController(
-          text: second,
-        );
+  _TableRowDraft({String first = '', String second = ''})
+    : firstController = TextEditingController(text: first),
+      secondController = TextEditingController(text: second);
 
-  final TextEditingController
-      firstController;
-  final TextEditingController
-      secondController;
+  final TextEditingController firstController;
+  final TextEditingController secondController;
 
   void dispose() {
     firstController.dispose();
@@ -2619,37 +2681,67 @@ class _HotspotDraft {
   }
 }
 
+// =============================================================================
+// HELPER METADATA & BANNERS
+// =============================================================================
+class _TypeMeta {
+  const _TypeMeta({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+}
+
+const _TypeMeta _defaultMeta = _TypeMeta(
+  icon: Icons.checklist_rounded,
+  label: 'Pilihan Ganda',
+);
+
+const Map<String, _TypeMeta> _typeMeta = {
+  'multiple_choice': _TypeMeta(
+    icon: Icons.checklist_rounded,
+    label: 'Pilihan Ganda',
+  ),
+  'true_false': _TypeMeta(icon: Icons.rule_rounded, label: 'Benar / Salah'),
+  'matching': _TypeMeta(icon: Icons.join_inner_rounded, label: 'Pasangkan'),
+  'ordering': _TypeMeta(
+    icon: Icons.format_list_numbered_rounded,
+    label: 'Urutkan',
+  ),
+  'image_hotspot': _TypeMeta(
+    icon: Icons.touch_app_rounded,
+    label: 'Tunjuk Bagian',
+  ),
+  'data_interpretation': _TypeMeta(
+    icon: Icons.analytics_rounded,
+    label: 'Analisis Data',
+  ),
+};
+
 class _InfoBanner extends StatelessWidget {
-  const _InfoBanner({
-    required this.type,
-  });
+  const _InfoBanner({required this.type});
 
   final String type;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3E8FF),
-        borderRadius:
-            BorderRadius.circular(16),
+        color: _primaryLight.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _primary.withValues(alpha: 0.2)),
       ),
       child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const Icon(
-            Icons.auto_awesome_rounded,
-            color: _primary,
-          ),
+          const Icon(Icons.auto_awesome_rounded, color: _primary, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               _typeHelp(type),
-              style: const TextStyle(
+              style: GoogleFonts.plusJakartaSans(
                 color: _text,
-                height: 1.45,
+                fontSize: 12,
+                height: 1.4,
               ),
             ),
           ),
@@ -2662,69 +2754,442 @@ class _InfoBanner extends StatelessWidget {
 String _typeHelp(String type) {
   switch (type) {
     case 'true_false':
-      return 'Guru cukup menulis pernyataan dan memilih Benar atau Salah.';
+      return 'Guru menulis pernyataan dan memilih kunci Benar atau Salah.';
     case 'matching':
-      return 'Isi pasangan yang benar. Sistem akan mengacak sisi kanan untuk siswa.';
+      return 'Tulis pasangan konsep yang benar. Sistem akan mengacak sisi kanan untuk siswa.';
     case 'ordering':
-      return 'Isi langkah dalam urutan yang benar. Sistem akan mengacaknya untuk siswa.';
+      return 'Tulis langkah dalam urutan yang benar. Sistem akan mengacaknya saat tes.';
     case 'image_hotspot':
-      return 'Unggah gambar, ketuk titik penting, lalu isi nama dan penjelasannya.';
+      return 'Unggah ilustrasi, ketuk titik penting, lalu tandai satu titik sebagai jawaban benar.';
     case 'data_interpretation':
-      return 'Isi tabel data sederhana dan pilihan kesimpulan yang benar.';
+      return 'Isi tabel data pengamatan dan sediakan pilihan kesimpulan analisa yang benar.';
     default:
-      return 'Isi empat pilihan dan tandai satu jawaban benar. Tidak perlu menulis JSON.';
+      return 'Isi empat opsi pilihan dan tandai satu kunci jawaban yang benar.';
   }
 }
 
-class _ImagePickerPlaceholder
-    extends StatelessWidget {
-  const _ImagePickerPlaceholder({
-    required this.label,
-    required this.onTap,
+// =============================================================================
+// HEADER & LIST CARDS
+// =============================================================================
+class _Header extends StatelessWidget {
+  const _Header({required this.title, required this.checkpointCount});
+
+  final String title;
+  final int checkpointCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: <Color>[_primaryDark, _primary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: _primary.withValues(alpha: 0.3),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'CHECKPOINT INTERAKTIF',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$checkpointCount Soal',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: _primaryDark,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Uji pemahaman langsung siswa sebelum melanjutkan ke materi berikutnya.',
+            style: GoogleFonts.plusJakartaSans(
+              color: const Color(0xFFE9D5FF),
+              fontSize: 11.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CheckpointCard extends StatelessWidget {
+  const _CheckpointCard({
+    required this.index,
+    required this.checkpoint,
+    required this.onEdit,
+    required this.onDelete,
   });
+
+  final int index;
+  final Map<String, dynamic> checkpoint;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = checkpoint['checkpoint_type']?.toString() ?? 'multiple_choice';
+    final meta = _typeMeta[type] ?? _defaultMeta;
+    final isReq = AdminLearningController.boolValue(
+      checkpoint['is_required'],
+      fallback: true,
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [_primaryDark, _primary],
+                  ),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '${checkpoint['order_index'] ?? index + 1}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: _primaryLight,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(meta.icon, size: 13, color: _primary),
+                    const SizedBox(width: 4),
+                    Text(
+                      meta.label,
+                      style: GoogleFonts.poppins(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: _primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isReq) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _amber.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Wajib',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: _amber,
+                    ),
+                  ),
+                ),
+              ],
+              const Spacer(),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert_rounded, color: _muted),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                onSelected: (String value) {
+                  if (value == 'edit') {
+                    onEdit();
+                  } else {
+                    onDelete();
+                  }
+                },
+                itemBuilder:
+                    (_) => [
+                      PopupMenuItem<String>(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.edit_rounded,
+                              size: 18,
+                              color: _primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Edit',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                              color: _danger,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Hapus',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w500,
+                                color: _danger,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            checkpoint['title']?.toString() ?? 'Checkpoint',
+            style: GoogleFonts.poppins(
+              color: _text,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            checkpoint['question_text']?.toString() ?? '',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.plusJakartaSans(
+              color: _muted,
+              fontSize: 12,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// SECTION CARD WRAPPER
+// =============================================================================
+class _Section extends StatelessWidget {
+  const _Section({
+    required this.title,
+    this.subtitle,
+    this.icon,
+    required this.children,
+  });
+
+  final String title;
+  final String? subtitle;
+  final IconData? icon;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: [
+              if (icon != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: _primaryLight,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: _primary, size: 18),
+                ),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.poppins(
+                        color: _text,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: GoogleFonts.plusJakartaSans(
+                          color: _muted,
+                          fontSize: 11.5,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...children,
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// HELPER PLACEHOLDERS & ACTIONS
+// =============================================================================
+class _ImagePickerPlaceholder extends StatelessWidget {
+  const _ImagePickerPlaceholder({required this.label, required this.onTap});
 
   final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius:
-          BorderRadius.circular(16),
-      child: Container(
-        height: 180,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color:
-              const Color(0xFFF8FAFC),
-          borderRadius:
-              BorderRadius.circular(16),
-          border: Border.all(
-            color:
-                const Color(0xFFE2E8F0),
+    return Material(
+      color: const Color(0xFFF8FAFC),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          height: 160,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _border),
           ),
-        ),
-        child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
-          children: <Widget>[
-            const Icon(
-              Icons
-                  .add_photo_alternate_outlined,
-              size: 42,
-              color: _primary,
-            ),
-            const SizedBox(height: 7),
-            Text(
-              label,
-              style: const TextStyle(
-                color: _text,
-                fontWeight:
-                    FontWeight.w800,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: _primaryLight,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.add_photo_alternate_rounded,
+                  size: 32,
+                  color: _primary,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  color: _text,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Klik untuk mengunggah gambar dari perangkat',
+                style: GoogleFonts.plusJakartaSans(color: _muted, fontSize: 11),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -2737,237 +3202,17 @@ class _ImageError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFE2E8F0),
+      color: const Color(0xFFF1F5F9),
       alignment: Alignment.center,
-      child: const Text(
-        'Gambar tidak dapat dimuat',
-        style: TextStyle(
-          color: _muted,
-        ),
-      ),
-    );
-  }
-}
-
-class _InlineEmpty extends StatelessWidget {
-  const _InlineEmpty({
-    required this.text,
-  });
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color:
-            const Color(0xFFF8FAFC),
-        borderRadius:
-            BorderRadius.circular(14),
-      ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: _muted,
-          height: 1.4,
-        ),
-      ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({
-    required this.title,
-  });
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: <Color>[
-            Color(0xFF4C1D95),
-            Color(0xFF7C3AED),
-          ],
-        ),
-        borderRadius:
-            BorderRadius.circular(22),
-      ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: <Widget>[
-          const Text(
-            'CHECKPOINT SUBMATERI',
-            style: TextStyle(
-              color: Color(0xFFE9D5FF),
-              fontSize: 11,
-              fontWeight:
-                  FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 7),
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.broken_image_rounded, color: _muted, size: 28),
+          const SizedBox(height: 6),
           Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight:
-                  FontWeight.w900,
-            ),
+            'Gambar tidak dapat dimuat',
+            style: GoogleFonts.plusJakartaSans(color: _muted, fontSize: 11.5),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CheckpointCard extends StatelessWidget {
-  const _CheckpointCard({
-    required this.checkpoint,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final Map<String, dynamic> checkpoint;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(18),
-        border: Border.all(
-          color:
-              const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: <Widget>[
-          const Icon(
-            Icons.task_alt_rounded,
-            color: _primary,
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  checkpoint['title']
-                          ?.toString() ??
-                      'Checkpoint',
-                  style: const TextStyle(
-                    color: _text,
-                    fontWeight:
-                        FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  checkpoint[
-                              'question_text']
-                          ?.toString() ??
-                      '',
-                  maxLines: 3,
-                  overflow:
-                      TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _muted,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 9),
-                Text(
-                  '${checkpoint['checkpoint_label'] ?? checkpoint['checkpoint_type']} • urutan ${checkpoint['order_index'] ?? 1}',
-                  style: const TextStyle(
-                    color: _primary,
-                    fontSize: 11,
-                    fontWeight:
-                        FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          PopupMenuButton<String>(
-            onSelected: (String value) {
-              if (value == 'edit') {
-                onEdit();
-              } else {
-                onDelete();
-              }
-            },
-            itemBuilder: (_) =>
-                const <
-                    PopupMenuEntry<String>>[
-              PopupMenuItem<String>(
-                value: 'edit',
-                child: Text('Edit'),
-              ),
-              PopupMenuItem<String>(
-                value: 'delete',
-                child: Text('Hapus'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Section extends StatelessWidget {
-  const _Section({
-    required this.title,
-    required this.children,
-  });
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(17),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius:
-            BorderRadius.circular(19),
-        border: Border.all(
-          color:
-              const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            title,
-            style: const TextStyle(
-              color: _text,
-              fontSize: 17,
-              fontWeight:
-                  FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 15),
-          ...children,
         ],
       ),
     );
@@ -2988,17 +3233,43 @@ class _CircleAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: danger
-          ? _danger
-          : Colors.white,
+      color: danger ? _danger : Colors.white,
       shape: const CircleBorder(),
-      child: IconButton(
-        onPressed: onTap,
-        icon: Icon(
-          icon,
-          color: danger
-              ? Colors.white
-              : _text,
+      elevation: 2,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, size: 18, color: danger ? Colors.white : _text),
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineEmpty extends StatelessWidget {
+  const _InlineEmpty({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _border),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: GoogleFonts.plusJakartaSans(
+          color: _muted,
+          fontSize: 12,
+          height: 1.45,
         ),
       ),
     );
@@ -3006,27 +3277,71 @@ class _CircleAction extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  const _EmptyState({required this.onAdd});
+
+  final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(35),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _border),
+      ),
       child: Column(
         children: <Widget>[
-          Icon(
-            Icons.task_alt_outlined,
-            size: 60,
-            color: _muted,
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _primaryLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.task_alt_outlined,
+              size: 48,
+              color: _primary,
+            ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
-            'Belum ada checkpoint',
-            style: TextStyle(
+            'Belum Ada Checkpoint',
+            style: GoogleFonts.poppins(
               color: _text,
-              fontSize: 18,
-              fontWeight:
-                  FontWeight.w900,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Tambahkan soal checkpoint pertama untuk menguji pemahaman konsep siswa pada submateri ini.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(
+              color: _muted,
+              fontSize: 12,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: onAdd,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.add_task_rounded, size: 18),
+            label: Text(
+              'Tambah Checkpoint Baru',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 12.5,
+              ),
             ),
           ),
         ],
@@ -3035,31 +3350,11 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-const List<Map<String, dynamic>>
-    _fallbackTypes =
-    <Map<String, dynamic>>[
-  {
-    'value': 'multiple_choice',
-    'label': 'Pilihan',
-  },
-  {
-    'value': 'true_false',
-    'label': 'Benar/Salah',
-  },
-  {
-    'value': 'matching',
-    'label': 'Pasangkan',
-  },
-  {
-    'value': 'ordering',
-    'label': 'Urutkan',
-  },
-  {
-    'value': 'image_hotspot',
-    'label': 'Tunjuk Bagian',
-  },
-  {
-    'value': 'data_interpretation',
-    'label': 'Analisis Data',
-  },
+const List<Map<String, dynamic>> _fallbackTypes = <Map<String, dynamic>>[
+  {'value': 'multiple_choice', 'label': 'Pilihan Ganda'},
+  {'value': 'true_false', 'label': 'Benar / Salah'},
+  {'value': 'matching', 'label': 'Pasangkan'},
+  {'value': 'ordering', 'label': 'Urutkan'},
+  {'value': 'image_hotspot', 'label': 'Tunjuk Bagian'},
+  {'value': 'data_interpretation', 'label': 'Analisis Data'},
 ];

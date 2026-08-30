@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../root/controllers/root_controler.dart'; // Pastikan nama file sesuai (controler vs controller)
+import 'package:google_fonts/google_fonts.dart';
+import '../../root/controllers/root_controler.dart';
+
+const Color _bg = Color(0xFFF8FAFC);
+const Color _primaryBlue = Color(0xFF2563EB);
+const Color _brightBlue = Color(0xFF3B82F6);
+const Color _deepBlue = Color(0xFF1D4ED8);
 
 class RootView extends GetView<RootController> {
   const RootView({super.key});
@@ -11,16 +17,13 @@ class RootView extends GetView<RootController> {
     final List<Map<String, dynamic>> navItems = [
       {'icon': Icons.home_rounded, 'label': 'Home'},
       {'icon': Icons.science_outlined, 'label': 'Lab'},
-      {'icon': Icons.book_outlined, 'label': 'Materi'},
-      {'icon': Icons.person_outline, 'label': 'Profil'},
+      {'icon': Icons.menu_book_rounded, 'label': 'Materi'},
+      {'icon': Icons.person_outline_rounded, 'label': 'Profil'},
     ];
 
     return Scaffold(
-      // --- PERBAIKAN DI SINI ---
-      // Set false agar body tidak terdorong naik saat keyboard muncul
-      resizeToAvoidBottomInset: false, 
-      // -------------------------
-
+      resizeToAvoidBottomInset: false,
+      backgroundColor: _bg,
       body: Stack(
         children: [
           // Background pattern
@@ -32,19 +35,19 @@ class RootView extends GetView<RootController> {
                 image: AssetImage('assets/pattern.png'),
                 scale: 1.0,
                 repeat: ImageRepeat.repeat,
-                opacity: 0.07,
+                opacity: 0.05,
               ),
-              color: Color(0xFFF4F6FA),
+              color: _bg,
             ),
           ),
 
           // Halaman Utama
           Obx(() => controller.currentPage),
 
-          // Tombol Chatbot
+          // Tombol Chatbot AI
           _buildFloatingChatButton(),
 
-          // Bottom Navigation Bar Custom
+          // Bottom Navigation Bar Custom (Terang & Segar)
           Align(
             alignment: Alignment.bottomCenter,
             child: _buildCustomBottomNavBar(context, navItems),
@@ -55,36 +58,58 @@ class RootView extends GetView<RootController> {
   }
 
   Widget _buildFloatingChatButton() {
-    return Obx(() => AnimatedOpacity(
-          opacity: controller.selectedNavIndex.value == 0 ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 200),
-          child: IgnorePointer(
-            ignoring: controller.selectedNavIndex.value != 0,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 90.0, right: 24.0),
-              child: Align(
-                alignment: Alignment.bottomRight,
+    return Obx(
+      () => AnimatedOpacity(
+        opacity: controller.selectedNavIndex.value == 0 ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 200),
+        child: IgnorePointer(
+          ignoring: controller.selectedNavIndex.value != 0,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 90.0, right: 20.0),
+            child: Align(
+              alignment: Alignment.bottomRight,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [_primaryBlue, _brightBlue],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _primaryBlue.withValues(alpha: 0.45),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
                 child: FloatingActionButton(
                   onPressed: () => controller.goToChatbot(),
-                  backgroundColor: const Color(0xFF2196F3),
-                  splashColor: Colors.blue.shade300,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
                   child: const Icon(
-                    Icons.support_agent_rounded,
+                    Icons.smart_toy_rounded,
                     color: Colors.white,
+                    size: 26,
                   ),
                 ),
               ),
             ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 
-  // --- WIDGET CUSTOM NAVIGATION BAR ---
+  // --- WIDGET CUSTOM NAVIGATION BAR (TERANG & MODERN) ---
   Widget _buildCustomBottomNavBar(
-      BuildContext context, List<Map<String, dynamic>> navItems) {
+    BuildContext context,
+    List<Map<String, dynamic>> navItems,
+  ) {
     const double navBarHeight = 65.0;
-    const double circleDiameter = 60.0;
-    const double holeRadius = 35.0;
+    const double circleDiameter = 58.0;
+    const double holeRadius = 34.0;
 
     return Obx(() {
       final screenWidth = MediaQuery.of(context).size.width;
@@ -97,7 +122,7 @@ class RootView extends GetView<RootController> {
 
       return TweenAnimationBuilder<double>(
         tween: Tween<double>(begin: beginPosition, end: endPosition),
-        duration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOutCubic,
         builder: (context, animatedPosition, child) {
           return SizedBox(
@@ -106,7 +131,7 @@ class RootView extends GetView<RootController> {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // LAPISAN 1: Bar Biru
+                // LAPISAN 1: Bar Biru Terang & Segar
                 Positioned(
                   bottom: 0,
                   child: ClipPath(
@@ -117,19 +142,24 @@ class RootView extends GetView<RootController> {
                     child: Container(
                       height: navBarHeight,
                       width: screenWidth,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF4A90E2),
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [_primaryBlue, _brightBlue],
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, -5),
-                          )
+                            color: Color(0x3D2563EB),
+                            blurRadius: 18,
+                            offset: Offset(0, -4),
+                          ),
                         ],
                       ),
                     ),
                   ),
                 ),
+
                 // LAPISAN 2: Ikon & Teks
                 Positioned(
                   bottom: 0,
@@ -151,26 +181,35 @@ class RootView extends GetView<RootController> {
                     ),
                   ),
                 ),
+
                 // LAPISAN 3: Lingkaran Aktif
                 Positioned(
                   left: animatedPosition - (circleDiameter / 2),
-                  top: -15,
+                  top: -14,
                   child: Container(
                     width: circleDiameter,
                     height: circleDiameter,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFF2196F3),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [_deepBlue, _primaryBlue],
+                      ),
+                      border: Border.all(color: Colors.white, width: 2.8),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.15),
-                          blurRadius: 8,
+                          color: _primaryBlue.withValues(alpha: 0.5),
+                          blurRadius: 14,
                           offset: const Offset(0, 4),
-                        )
+                        ),
                       ],
                     ),
-                    child: Icon(navItems[controller.selectedNavIndex.value]['icon'],
-                        color: Colors.white, size: 28),
+                    child: Icon(
+                      navItems[controller.selectedNavIndex.value]['icon'],
+                      color: Colors.white,
+                      size: 26,
+                    ),
                   ),
                 ),
               ],
@@ -181,14 +220,16 @@ class RootView extends GetView<RootController> {
     });
   }
 
-  Widget _buildNavItem(
-      {required IconData icon,
-      required String label,
-      required int index,
-      required bool isSelected}) {
+  Widget _buildNavItem({
+    required IconData icon,
+    required String label,
+    required int index,
+    required bool isSelected,
+  }) {
     final screenWidth = Get.width;
     final double itemWidth = screenWidth / 4;
-    final color = isSelected ? Colors.transparent : Colors.white.withOpacity(0.7);
+    final color =
+        isSelected ? Colors.transparent : Colors.white.withValues(alpha: 0.88);
 
     return GestureDetector(
       onTap: () => controller.changeNavIndex(index),
@@ -199,14 +240,14 @@ class RootView extends GetView<RootController> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color),
-            const SizedBox(height: 4),
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 3),
             Text(
               label,
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 color: color,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -232,14 +273,22 @@ class NavBarClipper extends CustomClipper<Path> {
     path.quadraticBezierTo(0, 0, rounding, 0);
     path.lineTo(position - holeRadius - rounding, 0);
     path.quadraticBezierTo(
-        position - holeRadius, 0, position - holeRadius, rounding);
+      position - holeRadius,
+      0,
+      position - holeRadius,
+      rounding,
+    );
     path.arcToPoint(
       Offset(position + holeRadius, rounding),
       radius: Radius.circular(holeRadius),
       clockwise: false,
     );
     path.quadraticBezierTo(
-        position + holeRadius, 0, position + holeRadius + rounding, 0);
+      position + holeRadius,
+      0,
+      position + holeRadius + rounding,
+      0,
+    );
     path.lineTo(size.width - rounding, 0);
     path.quadraticBezierTo(size.width, 0, size.width, rounding);
     path.lineTo(size.width, size.height);

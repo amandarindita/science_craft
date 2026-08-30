@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../routes/app_pages.dart'; 
 import '../../../models/material_model.dart'; 
+import '../../../data/api_client.dart';
 import '../../../data/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -33,9 +34,8 @@ Future<void> loadMaterialsFromServer() async {
     isLoading.value = true;
     try {
       // 1. Ambil list materi dari Flask
-      final response = await http.get(
+      final response = await ApiClient.get(
         Uri.parse('${ApiService.baseUrl}/admin/materials'),
-        headers: {'Authorization': 'Bearer ${Get.find<AuthService>().token}'},
       );
 
       if (response.statusCode == 200) {

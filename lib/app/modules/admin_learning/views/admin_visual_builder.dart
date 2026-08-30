@@ -1,44 +1,101 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../data/api_service.dart';
 
-const Color _visualPrimary = Color(0xFF2563EB);
-const Color _visualText = Color(0xFF172033);
-const Color _visualMuted = Color(0xFF64748B);
-const Color _visualDanger = Color(0xFFDC2626);
-const Color _visualSuccess = Color(0xFF16A34A);
+// =============================================================================
+// DESIGN TOKENS (UNIFIED & CONSISTENT WITH SCIENCECRAFT)
+// =============================================================================
+const Color _visualPrimary = Color(0xFF2563EB); // Science Blue
+const Color _visualNavy = Color(0xFF1E3A8A); // Dark Navy
+const Color _visualText = Color(0xFF1E293B); // Slate 800
+const Color _visualMuted = Color(0xFF64748B); // Slate 500
+const Color _visualBorder = Color(0xFFE2E8F0); // Slate 200
+const Color _visualDanger = Color(0xFFEF4444); // Red 500
+const Color _visualAmber = Color(0xFFF59E0B); // Amber 500
+const Color _visualPurple = Color(0xFF7C3AED); // Purple 600
+const Color _visualCardBg = Color(0xFFF8FAFC); // Slate 50
 
-class AdminVisualBuilderController
-    extends ChangeNotifier {
+// =============================================================================
+// INPUT DECORATION HELPER
+// =============================================================================
+InputDecoration _buildInputDecoration({
+  String? labelText,
+  String? hintText,
+  IconData? prefixIcon,
+  Widget? suffixIcon,
+  String? errorText,
+  bool alignLabelWithHint = false,
+}) {
+  return InputDecoration(
+    labelText: labelText,
+    labelStyle: GoogleFonts.plusJakartaSans(
+      fontSize: 12.5,
+      fontWeight: FontWeight.w500,
+      color: _visualMuted,
+    ),
+    hintText: hintText,
+    hintStyle: GoogleFonts.plusJakartaSans(
+      fontSize: 12.5,
+      color: _visualMuted.withValues(alpha: 0.6),
+    ),
+    errorText: errorText,
+    prefixIcon:
+        prefixIcon != null
+            ? Icon(prefixIcon, color: _visualPrimary, size: 19)
+            : null,
+    suffixIcon: suffixIcon,
+    alignLabelWithHint: alignLabelWithHint,
+    filled: true,
+    fillColor: Colors.white,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(13),
+      borderSide: const BorderSide(color: _visualBorder),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(13),
+      borderSide: const BorderSide(color: _visualBorder),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(13),
+      borderSide: const BorderSide(color: _visualPrimary, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(13),
+      borderSide: const BorderSide(color: _visualDanger),
+    ),
+  );
+}
+
+// =============================================================================
+// CONTROLLER
+// =============================================================================
+class AdminVisualBuilderController extends ChangeNotifier {
   AdminVisualBuilderController({
     required String initialType,
-    Map<String, dynamic> initialData =
-        const <String, dynamic>{},
+    Map<String, dynamic> initialData = const <String, dynamic>{},
   }) : visualType = initialType {
     loadData(initialData);
   }
 
   String visualType;
 
-  final TextEditingController titleController =
-      TextEditingController();
-  final TextEditingController descriptionController =
-      TextEditingController();
-  final TextEditingController formulaController =
-      TextEditingController();
-  final TextEditingController headerOneController =
-      TextEditingController(text: 'Objek');
-  final TextEditingController headerTwoController =
-      TextEditingController(text: 'Nilai');
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController formulaController = TextEditingController();
+  final TextEditingController headerOneController = TextEditingController(
+    text: 'Objek / Variabel',
+  );
+  final TextEditingController headerTwoController = TextEditingController(
+    text: 'Nilai / Keterangan',
+  );
 
-  final List<VisualItemDraft> items =
-      <VisualItemDraft>[];
-  final List<VisualTableRowDraft> rows =
-      <VisualTableRowDraft>[];
-  final List<VisualHotspotDraft> hotspots =
-      <VisualHotspotDraft>[];
+  final List<VisualItemDraft> items = <VisualItemDraft>[];
+  final List<VisualTableRowDraft> rows = <VisualTableRowDraft>[];
+  final List<VisualHotspotDraft> hotspots = <VisualHotspotDraft>[];
 
   bool get hasContent {
     if (titleController.text.trim().isNotEmpty ||
@@ -48,9 +105,11 @@ class AdminVisualBuilderController
 
     switch (visualType) {
       case 'chart':
-        return rows.any((row) =>
-            row.firstController.text.trim().isNotEmpty ||
-            row.secondController.text.trim().isNotEmpty);
+        return rows.any(
+          (row) =>
+              row.firstController.text.trim().isNotEmpty ||
+              row.secondController.text.trim().isNotEmpty,
+        );
       case 'formula':
         return formulaController.text.trim().isNotEmpty ||
             items.any((item) => item.hasContent);
@@ -62,19 +121,15 @@ class AdminVisualBuilderController
   }
 
   void loadData(Map<String, dynamic> data) {
-    titleController.text =
-        data['title']?.toString() ?? '';
-    descriptionController.text =
-        data['description']?.toString() ?? '';
-    formulaController.text =
-        data['formula']?.toString() ?? '';
+    titleController.text = data['title']?.toString() ?? '';
+    descriptionController.text = data['description']?.toString() ?? '';
+    formulaController.text = data['formula']?.toString() ?? '';
 
     _disposeItems();
     _disposeRows();
     hotspots.clear();
 
-    final dynamic rawItems =
-        data['items'] ?? data['steps'];
+    final dynamic rawItems = data['items'] ?? data['steps'];
     if (rawItems is List) {
       for (final dynamic raw in rawItems) {
         if (raw is Map) {
@@ -82,27 +137,20 @@ class AdminVisualBuilderController
           items.add(
             VisualItemDraft(
               title: map['title']?.toString() ?? '',
-              description:
-                  map['description']?.toString() ?? '',
+              description: map['description']?.toString() ?? '',
             ),
           );
         } else {
-          items.add(
-            VisualItemDraft(
-              title: raw.toString(),
-            ),
-          );
+          items.add(VisualItemDraft(title: raw.toString()));
         }
       }
     }
 
     final dynamic rawHeaders = data['headers'];
     if (rawHeaders is List && rawHeaders.isNotEmpty) {
-      headerOneController.text =
-          rawHeaders.first.toString();
+      headerOneController.text = rawHeaders.first.toString();
       if (rawHeaders.length > 1) {
-        headerTwoController.text =
-            rawHeaders[1].toString();
+        headerTwoController.text = rawHeaders[1].toString();
       }
     }
 
@@ -112,12 +160,8 @@ class AdminVisualBuilderController
         if (raw is List) {
           rows.add(
             VisualTableRowDraft(
-              first: raw.isNotEmpty
-                  ? raw[0].toString()
-                  : '',
-              second: raw.length > 1
-                  ? raw[1].toString()
-                  : '',
+              first: raw.isNotEmpty ? raw[0].toString() : '',
+              second: raw.length > 1 ? raw[1].toString() : '',
             ),
           );
         }
@@ -134,15 +178,10 @@ class AdminVisualBuilderController
         final map = Map<String, dynamic>.from(raw);
         hotspots.add(
           VisualHotspotDraft(
-            id: map['id']?.toString() ??
-                'point_${hotspots.length + 1}',
-            label: map['label']?.toString() ??
-                'Titik ${hotspots.length + 1}',
+            id: map['id']?.toString() ?? 'point_${hotspots.length + 1}',
+            label: map['label']?.toString() ?? 'Titik ${hotspots.length + 1}',
             explanation:
-                (map['explanation'] ??
-                        map['description'] ??
-                        '')
-                    .toString(),
+                (map['explanation'] ?? map['description'] ?? '').toString(),
             x: _coordinate(map['x']),
             y: _coordinate(map['y']),
           ),
@@ -178,8 +217,7 @@ class AdminVisualBuilderController
       }
     }
 
-    if (visualType == 'formula' &&
-        formulaController.text.trim().isEmpty) {
+    if (visualType == 'formula' && formulaController.text.trim().isEmpty) {
       formulaController.text = 'M₁ × V₁ = M₂ × V₂';
     }
   }
@@ -299,8 +337,7 @@ class AdminVisualBuilderController
     final result = <String, dynamic>{
       'title': titleController.text.trim(),
       if (descriptionController.text.trim().isNotEmpty)
-        'description':
-            descriptionController.text.trim(),
+        'description': descriptionController.text.trim(),
     };
 
     switch (visualType) {
@@ -309,28 +346,34 @@ class AdminVisualBuilderController
           headerOneController.text.trim(),
           headerTwoController.text.trim(),
         ];
-        result['rows'] = rows
-            .where((row) => row.hasContent)
-            .map((row) => <String>[
-                  row.firstController.text.trim(),
-                  row.secondController.text.trim(),
-                ])
-            .toList();
+        result['rows'] =
+            rows
+                .where((row) => row.hasContent)
+                .map(
+                  (row) => <String>[
+                    row.firstController.text.trim(),
+                    row.secondController.text.trim(),
+                  ],
+                )
+                .toList();
         break;
       case 'formula':
         result['formula'] = formulaController.text.trim();
         result['items'] = _buildItems();
         break;
       case 'hotspot':
-        result['hotspots'] = hotspots
-            .map((item) => <String, dynamic>{
-                  'id': item.id,
-                  'label': item.label,
-                  'explanation': item.explanation,
-                  'x': item.x,
-                  'y': item.y,
-                })
-            .toList();
+        result['hotspots'] =
+            hotspots
+                .map(
+                  (item) => <String, dynamic>{
+                    'id': item.id,
+                    'label': item.label,
+                    'explanation': item.explanation,
+                    'x': item.x,
+                    'y': item.y,
+                  },
+                )
+                .toList();
         break;
       case 'flow':
       case 'sequence':
@@ -346,11 +389,12 @@ class AdminVisualBuilderController
   List<Map<String, dynamic>> _buildItems() {
     return items
         .where((item) => item.hasContent)
-        .map((item) => <String, dynamic>{
-              'title': item.titleController.text.trim(),
-              'description':
-                  item.descriptionController.text.trim(),
-            })
+        .map(
+          (item) => <String, dynamic>{
+            'title': item.titleController.text.trim(),
+            'description': item.descriptionController.text.trim(),
+          },
+        )
         .toList();
   }
 
@@ -382,9 +426,7 @@ class AdminVisualBuilderController
 
   static double _coordinate(dynamic raw) {
     final value = double.tryParse(raw?.toString() ?? '') ?? 0.5;
-    return (value > 1 ? value / 100 : value)
-        .clamp(0.0, 1.0)
-        .toDouble();
+    return (value > 1 ? value / 100 : value).clamp(0.0, 1.0).toDouble();
   }
 
   static String _defaultTitle(String type) {
@@ -393,19 +435,22 @@ class AdminVisualBuilderController
         return 'Perbandingan Konsep';
       case 'flow':
       case 'sequence':
-        return 'Urutan Proses';
+        return 'Urutan Proses Sains';
       case 'chart':
-        return 'Data Pengamatan';
+        return 'Tabel Data Pengamatan';
       case 'formula':
-        return 'Rumus Penting';
+        return 'Rumus & Persamaan Penting';
       case 'hotspot':
-        return 'Bagian Penting pada Gambar';
+        return 'Bagian Penting pada Ilustrasi';
       default:
-        return 'Ringkasan Visual';
+        return 'Ringkasan & Poin Visual';
     }
   }
 }
 
+// =============================================================================
+// MAIN ADMIN VISUAL BUILDER WIDGET
+// =============================================================================
 class AdminVisualBuilder extends StatefulWidget {
   const AdminVisualBuilder({
     super.key,
@@ -427,87 +472,225 @@ class AdminVisualBuilder extends StatefulWidget {
   final VoidCallback onChanged;
 
   @override
-  State<AdminVisualBuilder> createState() =>
-      _AdminVisualBuilderState();
+  State<AdminVisualBuilder> createState() => _AdminVisualBuilderState();
 }
 
-class _AdminVisualBuilderState
-    extends State<AdminVisualBuilder> {
+class _AdminVisualBuilderState extends State<AdminVisualBuilder> {
+  // Definition of Visual Types with icons and descriptive labels
+  static const Map<String, _VisualTypeMeta> _metaMap = {
+    'infographic': _VisualTypeMeta(
+      icon: Icons.auto_stories_rounded,
+      label: 'Infografik',
+      subtitle: 'Poin ringkasan materi & fakta',
+      accentColor: _visualPrimary,
+    ),
+    'comparison': _VisualTypeMeta(
+      icon: Icons.compare_arrows_rounded,
+      label: 'Perbandingan',
+      subtitle: 'Komparasi 2 atau lebih konsep',
+      accentColor: Color(0xFF0D9488),
+    ),
+    'flow': _VisualTypeMeta(
+      icon: Icons.account_tree_rounded,
+      label: 'Alur Proses',
+      subtitle: 'Tahapan proses bersambung',
+      accentColor: _visualPurple,
+    ),
+    'sequence': _VisualTypeMeta(
+      icon: Icons.format_list_numbered_rounded,
+      label: 'Urutan Langkah',
+      subtitle: 'Langkah kronologis bernomor',
+      accentColor: Color(0xFFEA580C),
+    ),
+    'chart': _VisualTypeMeta(
+      icon: Icons.table_chart_rounded,
+      label: 'Tabel Data',
+      subtitle: 'Tabel 2 kolom data pengamatan',
+      accentColor: Color(0xFF0284C7),
+    ),
+    'formula': _VisualTypeMeta(
+      icon: Icons.functions_rounded,
+      label: 'Rumus Sains',
+      subtitle: 'Persamaan & arti tiap simbol',
+      accentColor: Color(0xFF4F46E5),
+    ),
+    'hotspot': _VisualTypeMeta(
+      icon: Icons.touch_app_rounded,
+      label: 'Titik Gambar',
+      subtitle: 'Pin interaktif di atas ilustrasi',
+      accentColor: _visualAmber,
+    ),
+  };
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
+        final currentType = widget.controller.visualType;
+        final currentMeta =
+            _metaMap[currentType] ??
+            const _VisualTypeMeta(
+              icon: Icons.dashboard_customize_rounded,
+              label: 'Visual Standar',
+              subtitle: 'Elemen grafis pendukung materi',
+              accentColor: _visualPrimary,
+            );
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            DropdownButtonFormField<String>(
-              value: widget.controller.visualType,
-              decoration: const InputDecoration(
-                labelText: 'Jenis visual',
-                prefixIcon: Icon(
-                  Icons.dashboard_customize_rounded,
+            // 1. Label Tipe Visual
+            Row(
+              children: [
+                const Icon(
+                  Icons.category_outlined,
+                  size: 16,
+                  color: _visualMuted,
                 ),
+                const SizedBox(width: 6),
+                Text(
+                  'Pilih Model Visual Interaktif',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: _visualText,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // 2. Interactive Visual Type Selector Carousel/Chips
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children:
+                    _metaMap.entries.map((entry) {
+                      final key = entry.key;
+                      final meta = entry.value;
+                      final isSelected = currentType == key;
+
+                      return _VisualTypeChip(
+                        meta: meta,
+                        isSelected: isSelected,
+                        onTap: () {
+                          widget.controller.setVisualType(key);
+                          widget.onChanged();
+                        },
+                      );
+                    }).toList(),
               ),
-              items: widget.visualTypes
-                  .map(
-                    (item) => DropdownMenuItem<String>(
-                      value: item['value'].toString(),
-                      child: Text(
-                        item['label']?.toString() ??
-                            item['value'].toString(),
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                if (value == null) {
-                  return;
-                }
-                widget.controller.setVisualType(value);
-                widget.onChanged();
-              },
             ),
             const SizedBox(height: 14),
+
+            // 3. Informative Mode Context Card
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(13),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFFEAF1FF),
+                color: currentMeta.accentColor.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Text(
-                'Isi visual melalui form berikut. Sistem menyimpan format teknis secara otomatis.',
-                style: TextStyle(
-                  color: _visualText,
-                  height: 1.4,
+                border: Border.all(
+                  color: currentMeta.accentColor.withValues(alpha: 0.25),
                 ),
               ),
-            ),
-            const SizedBox(height: 14),
-            TextFormField(
-              controller: widget.controller.titleController,
-              decoration: const InputDecoration(
-                labelText: 'Judul visual',
-                hintText: 'Contoh: Komponen Penyusun Enzim',
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: currentMeta.accentColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      currentMeta.icon,
+                      color: currentMeta.accentColor,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Mode ${currentMeta.label}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: _visualText,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          currentMeta.subtitle,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11.5,
+                            color: _visualMuted,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              onChanged: (_) => _changed(),
-            ),
-            const SizedBox(height: 11),
-            TextFormField(
-              controller:
-                  widget.controller.descriptionController,
-              minLines: 2,
-              maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'Pengantar singkat',
-                hintText:
-                    'Jelaskan tujuan atau isi visual secara singkat.',
-                alignLabelWithHint: true,
-              ),
-              onChanged: (_) => _changed(),
             ),
             const SizedBox(height: 16),
+
+            // 4. Judul & Pengantar Visual
+            Text(
+              'Judul Visual Interaktif',
+              style: GoogleFonts.poppins(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: _visualText,
+              ),
+            ),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: widget.controller.titleController,
+              textCapitalization: TextCapitalization.sentences,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: _visualText,
+              ),
+              decoration: _buildInputDecoration(
+                hintText: 'Contoh: ${currentMeta.label} Konsep Utama',
+                prefixIcon: Icons.title_rounded,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            Text(
+              'Pengantar Singkat Visual (Opsional)',
+              style: GoogleFonts.poppins(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: _visualText,
+              ),
+            ),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: widget.controller.descriptionController,
+              minLines: 2,
+              maxLines: 4,
+              textCapitalization: TextCapitalization.sentences,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 13,
+                color: _visualText,
+              ),
+              decoration: _buildInputDecoration(
+                hintText: 'Ringkasan singkat yang dibaca siswa...',
+                alignLabelWithHint: true,
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // 5. Type-Specific Content Editor
             _buildTypeEditor(),
           ],
         );
@@ -526,19 +709,22 @@ class _AdminVisualBuilderState
       case 'flow':
       case 'sequence':
         return _buildItemsEditor(
-          title: 'Langkah Proses',
+          title: 'Langkah-Langkah Proses',
           addLabel: 'Tambah Langkah',
+          itemPrefix: 'Langkah',
           reorderable: true,
         );
       case 'comparison':
         return _buildItemsEditor(
-          title: 'Bagian yang Dibandingkan',
-          addLabel: 'Tambah Bagian',
+          title: 'Objek / Aspek yang Dibandingkan',
+          addLabel: 'Tambah Objek',
+          itemPrefix: 'Aspek',
         );
       default:
         return _buildItemsEditor(
-          title: 'Poin Visual',
+          title: 'Poin-Poin Visual',
           addLabel: 'Tambah Poin',
+          itemPrefix: 'Poin',
         );
     }
   }
@@ -546,6 +732,7 @@ class _AdminVisualBuilderState
   Widget _buildItemsEditor({
     required String title,
     required String addLabel,
+    required String itemPrefix,
     bool reorderable = false,
   }) {
     final items = widget.controller.items;
@@ -553,13 +740,33 @@ class _AdminVisualBuilderState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(
-          title,
-          style: const TextStyle(
-            color: _visualText,
-            fontWeight: FontWeight.w900,
-            fontSize: 15,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                color: _visualText,
+                fontWeight: FontWeight.w700,
+                fontSize: 13.5,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+              decoration: BoxDecoration(
+                color: _visualPrimary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '${items.length} Item',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: _visualPrimary,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
         if (reorderable)
@@ -576,6 +783,7 @@ class _AdminVisualBuilderState
                 key: ObjectKey(items[index]),
                 index: index,
                 item: items[index],
+                prefix: itemPrefix,
                 showDrag: true,
                 canDelete: items.length > 1,
                 onChanged: _changed,
@@ -588,24 +796,43 @@ class _AdminVisualBuilderState
           )
         else
           ...items.asMap().entries.map(
-                (entry) => _VisualItemCard(
-                  index: entry.key,
-                  item: entry.value,
-                  canDelete: items.length > 1,
-                  onChanged: _changed,
-                  onDelete: () {
-                    widget.controller.removeItem(entry.key);
-                    widget.onChanged();
-                  },
-                ),
+            (entry) => _VisualItemCard(
+              index: entry.key,
+              item: entry.value,
+              prefix: itemPrefix,
+              canDelete: items.length > 1,
+              onChanged: _changed,
+              onDelete: () {
+                widget.controller.removeItem(entry.key);
+                widget.onChanged();
+              },
+            ),
+          ),
+        const SizedBox(height: 4),
+        SizedBox(
+          width: double.infinity,
+          height: 42,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              widget.controller.addItem();
+              widget.onChanged();
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _visualPrimary,
+              side: const BorderSide(color: _visualPrimary, width: 1.2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-        OutlinedButton.icon(
-          onPressed: () {
-            widget.controller.addItem();
-            widget.onChanged();
-          },
-          icon: const Icon(Icons.add_rounded),
-          label: Text(addLabel),
+            ),
+            icon: const Icon(Icons.add_rounded, size: 19),
+            label: Text(
+              addLabel,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 12.5,
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -615,19 +842,87 @@ class _AdminVisualBuilderState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        TextFormField(
-          controller: widget.controller.formulaController,
-          decoration: const InputDecoration(
-            labelText: 'Rumus',
-            hintText: 'Contoh: F = k × Δx',
-            prefixIcon: Icon(Icons.functions_rounded),
+        // Preview Box Formula (Isolated ValueListenableBuilder)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [_visualNavy, _visualPrimary],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: _visualPrimary.withValues(alpha: 0.25),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          onChanged: (_) => _changed(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                'Pratinjau Rumus',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFFDCE9FF),
+                ),
+              ),
+              const SizedBox(height: 6),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: widget.controller.formulaController,
+                builder: (context, value, _) {
+                  final formulaText = value.text.trim();
+                  return Text(
+                    formulaText.isEmpty
+                        ? 'Ketik rumus di bawah...'
+                        : formulaText,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 14),
+
+        Text(
+          'Teks Rumus Sains',
+          style: GoogleFonts.poppins(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: _visualText,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: widget.controller.formulaController,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: _visualText,
+          ),
+          decoration: _buildInputDecoration(
+            hintText: 'Contoh: F = m × a  atau  PV = nRT',
+            prefixIcon: Icons.functions_rounded,
+          ),
+        ),
+        const SizedBox(height: 18),
+
         _buildItemsEditor(
-          title: 'Arti Simbol',
+          title: 'Keterangan Simbol & Satuan',
           addLabel: 'Tambah Simbol',
+          itemPrefix: 'Simbol',
         ),
       ],
     );
@@ -639,65 +934,129 @@ class _AdminVisualBuilderState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const Text(
-          'Tabel Data',
-          style: TextStyle(
+        Text(
+          'Tabel Data Pengamatan',
+          style: GoogleFonts.poppins(
             color: _visualText,
-            fontWeight: FontWeight.w900,
-            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            fontSize: 13.5,
           ),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: TextFormField(
-                controller:
-                    widget.controller.headerOneController,
-                decoration: const InputDecoration(
-                  labelText: 'Judul kolom 1',
+
+        // Headers Card
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: _visualCardBg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _visualBorder),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Judul Kolom Tabel',
+                style: GoogleFonts.poppins(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: _visualMuted,
                 ),
-                onChanged: (_) => _changed(),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextFormField(
-                controller:
-                    widget.controller.headerTwoController,
-                decoration: const InputDecoration(
-                  labelText: 'Judul kolom 2',
-                ),
-                onChanged: (_) => _changed(),
+              const SizedBox(height: 8),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: TextFormField(
+                      controller: widget.controller.headerOneController,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: _visualText,
+                      ),
+                      decoration: _buildInputDecoration(
+                        labelText: 'Kolom 1 (Kiri)',
+                        hintText: 'Misal: Konsentrasi (M)',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: widget.controller.headerTwoController,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: _visualText,
+                      ),
+                      decoration: _buildInputDecoration(
+                        labelText: 'Kolom 2 (Kanan)',
+                        hintText: 'Misal: Laju Reaksi',
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        const SizedBox(height: 11),
+        const SizedBox(height: 12),
+
+        // Data Rows
         ...rows.asMap().entries.map((entry) {
           final index = entry.key;
           final row = entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 9),
+          return Container(
+            margin: const EdgeInsets.only(bottom: 9),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: _visualBorder),
+            ),
             child: Row(
               children: <Widget>[
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: _visualPrimary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${index + 1}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _visualPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
                     controller: row.firstController,
-                    decoration: InputDecoration(
-                      labelText: 'Baris ${index + 1}',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12.5,
+                      color: _visualText,
                     ),
-                    onChanged: (_) => _changed(),
+                    decoration: _buildInputDecoration(
+                      hintText: 'Nilai kolom 1',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextFormField(
                     controller: row.secondController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nilai/Keterangan',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 12.5,
+                      color: _visualText,
                     ),
-                    onChanged: (_) => _changed(),
+                    decoration: _buildInputDecoration(
+                      hintText: 'Nilai kolom 2',
+                    ),
                   ),
                 ),
                 if (rows.length > 1)
@@ -710,19 +1069,39 @@ class _AdminVisualBuilderState
                     icon: const Icon(
                       Icons.delete_outline_rounded,
                       color: _visualDanger,
+                      size: 20,
                     ),
                   ),
               ],
             ),
           );
         }),
-        OutlinedButton.icon(
-          onPressed: () {
-            widget.controller.addRow();
-            widget.onChanged();
-          },
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('Tambah Baris Data'),
+        const SizedBox(height: 4),
+
+        SizedBox(
+          width: double.infinity,
+          height: 42,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              widget.controller.addRow();
+              widget.onChanged();
+            },
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _visualPrimary,
+              side: const BorderSide(color: _visualPrimary, width: 1.2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.add_rounded, size: 19),
+            label: Text(
+              'Tambah Baris Data',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 12.5,
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -732,36 +1111,33 @@ class _AdminVisualBuilderState
     final String? networkUrl =
         widget.existingImageUrl.trim().isEmpty
             ? null
-            : ApiService.resolveMediaUrl(
-                widget.existingImageUrl,
-              );
-    final bool hasImage =
-        widget.imagePath != null || networkUrl != null;
+            : ApiService.resolveMediaUrl(widget.existingImageUrl);
+    final bool hasImage = widget.imagePath != null || networkUrl != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const Text(
+        Text(
           'Titik Penjelasan pada Gambar',
-          style: TextStyle(
+          style: GoogleFonts.poppins(
             color: _visualText,
-            fontWeight: FontWeight.w900,
-            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            fontSize: 13.5,
           ),
         ),
-        const SizedBox(height: 6),
-        const Text(
-          'Ketuk bagian gambar, lalu isi nama dan penjelasannya. Siswa akan melihat penjelasan ketika titik tersebut diketuk.',
-          style: TextStyle(
+        const SizedBox(height: 4),
+        Text(
+          'Ketuk bagian gambar di bawah untuk menempatkan pin interaktif. Siswa dapat mengetuk pin untuk membaca penjelasan.',
+          style: GoogleFonts.plusJakartaSans(
             color: _visualMuted,
-            height: 1.45,
+            fontSize: 11.5,
+            height: 1.4,
           ),
         ),
         const SizedBox(height: 12),
+
         if (!hasImage)
-          _VisualImagePlaceholder(
-            onTap: widget.onPickImage,
-          )
+          _VisualImagePlaceholder(onTap: widget.onPickImage)
         else ...<Widget>[
           AspectRatio(
             aspectRatio: 16 / 9,
@@ -771,10 +1147,7 @@ class _AdminVisualBuilderState
                   onTapDown: (details) {
                     _createHotspot(
                       details.localPosition,
-                      Size(
-                        constraints.maxWidth,
-                        constraints.maxHeight,
-                      ),
+                      Size(constraints.maxWidth, constraints.maxHeight),
                     );
                   },
                   child: ClipRRect(
@@ -786,65 +1159,65 @@ class _AdminVisualBuilderState
                           Image.file(
                             File(widget.imagePath!),
                             fit: BoxFit.cover,
+                            cacheWidth: 800,
                           )
                         else
                           Image.network(
                             networkUrl!,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                const _VisualImageError(),
+                            cacheWidth: 800,
+                            errorBuilder:
+                                (_, __, ___) => const _VisualImageError(),
                           ),
-                        ...widget.controller.hotspots.map(
-                          (point) {
-                            final double left =
-                                (point.x * constraints.maxWidth - 18)
-                                    .clamp(
-                              0.0,
-                              constraints.maxWidth - 36,
-                            )
-                                    .toDouble();
-                            final double top =
-                                (point.y * constraints.maxHeight - 18)
-                                    .clamp(
-                              0.0,
-                              constraints.maxHeight - 36,
-                            )
-                                    .toDouble();
-                            return Positioned(
-                              left: left,
-                              top: top,
-                              child: GestureDetector(
-                                onTap: () => _editHotspot(point),
-                                child: Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: _visualPrimary,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 3,
-                                    ),
-                                    boxShadow: const <BoxShadow>[
-                                      BoxShadow(
-                                        color: Color(0x33000000),
-                                        blurRadius: 8,
-                                      ),
-                                    ],
+                        ...widget.controller.hotspots.map((point) {
+                          final double left =
+                              (point.x * constraints.maxWidth - 18)
+                                  .clamp(0.0, constraints.maxWidth - 36)
+                                  .toDouble();
+                          final double top =
+                              (point.y * constraints.maxHeight - 18)
+                                  .clamp(0.0, constraints.maxHeight - 36)
+                                  .toDouble();
+                          return Positioned(
+                            left: left,
+                            top: top,
+                            child: GestureDetector(
+                              onTap: () => _editHotspot(point),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const LinearGradient(
+                                    colors: [_visualNavy, _visualPrimary],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
                                   ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '${widget.controller.hotspots.indexOf(point) + 1}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w900,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2.5,
+                                  ),
+                                  boxShadow: const <BoxShadow>[
+                                    BoxShadow(
+                                      color: Color(0x44000000),
+                                      blurRadius: 8,
+                                      offset: Offset(0, 3),
                                     ),
+                                  ],
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '${widget.controller.hotspots.indexOf(point) + 1}',
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
                                   ),
                                 ),
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        }),
                       ],
                     ),
                   ),
@@ -858,8 +1231,21 @@ class _AdminVisualBuilderState
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: widget.onPickImage,
-                  icon: const Icon(Icons.image_search_rounded),
-                  label: const Text('Ganti Gambar'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _visualPrimary,
+                    side: const BorderSide(color: _visualBorder),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.image_search_rounded, size: 18),
+                  label: Text(
+                    'Ganti Gambar',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -872,55 +1258,82 @@ class _AdminVisualBuilderState
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _visualDanger,
+                    side: const BorderSide(color: Color(0xFFFEE2E2)),
+                    backgroundColor: const Color(0xFFFEF2F2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  icon: const Icon(Icons.delete_outline_rounded),
-                  label: const Text('Hapus Gambar'),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                  label: Text(
+                    'Hapus Gambar',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
         ],
         const SizedBox(height: 12),
+
         if (widget.controller.hotspots.isEmpty)
           const _VisualEmptyHint(
             text:
-                'Belum ada titik. Ketuk bagian gambar untuk menambahkan penjelasan.',
+                'Belum ada titik interaktif. Ketuk bagian gambar untuk menambahkan pin dan penjelasan.',
           )
         else
-          ...widget.controller.hotspots
-              .asMap()
-              .entries
-              .map((entry) {
+          ...widget.controller.hotspots.asMap().entries.map((entry) {
             final point = entry.value;
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(11),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(13),
-                border: Border.all(
-                  color: const Color(0xFFE2E8F0),
-                ),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _visualBorder),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 children: <Widget>[
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: _visualPrimary,
-                    foregroundColor: Colors.white,
-                    child: Text('${entry.key + 1}'),
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [_visualNavy, _visualPrimary],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${entry.key + 1}',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12.5,
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 9),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
                           point.label,
-                          style: const TextStyle(
+                          style: GoogleFonts.poppins(
                             color: _visualText,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -930,9 +1343,9 @@ class _AdminVisualBuilderState
                               : point.explanation,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: GoogleFonts.plusJakartaSans(
                             color: _visualMuted,
-                            fontSize: 11,
+                            fontSize: 11.5,
                           ),
                         ),
                       ],
@@ -944,6 +1357,7 @@ class _AdminVisualBuilderState
                     icon: const Icon(
                       Icons.edit_rounded,
                       color: _visualPrimary,
+                      size: 19,
                     ),
                   ),
                   IconButton(
@@ -955,6 +1369,7 @@ class _AdminVisualBuilderState
                     icon: const Icon(
                       Icons.delete_outline_rounded,
                       color: _visualDanger,
+                      size: 19,
                     ),
                   ),
                 ],
@@ -965,25 +1380,17 @@ class _AdminVisualBuilderState
     );
   }
 
-  Future<void> _createHotspot(
-    Offset position,
-    Size size,
-  ) async {
+  Future<void> _createHotspot(Offset position, Size size) async {
     if (size.width <= 0 || size.height <= 0) {
       return;
     }
 
     final draft = VisualHotspotDraft(
       id: 'point_${DateTime.now().microsecondsSinceEpoch}',
-      label:
-          'Titik ${widget.controller.hotspots.length + 1}',
+      label: 'Titik ${widget.controller.hotspots.length + 1}',
       explanation: '',
-      x: (position.dx / size.width)
-          .clamp(0.0, 1.0)
-          .toDouble(),
-      y: (position.dy / size.height)
-          .clamp(0.0, 1.0)
-          .toDouble(),
+      x: (position.dx / size.width).clamp(0.0, 1.0).toDouble(),
+      y: (position.dy / size.height).clamp(0.0, 1.0).toDouble(),
     );
 
     final result = await showModalBottomSheet<VisualHotspotDraft>(
@@ -1002,17 +1409,13 @@ class _AdminVisualBuilderState
     widget.onChanged();
   }
 
-  Future<void> _editHotspot(
-    VisualHotspotDraft point,
-  ) async {
+  Future<void> _editHotspot(VisualHotspotDraft point) async {
     final result = await showModalBottomSheet<VisualHotspotDraft>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _VisualHotspotSheet(
-        initial: point.copy(),
-      ),
+      builder: (_) => _VisualHotspotSheet(initial: point.copy()),
     );
 
     if (result == null || !mounted) {
@@ -1029,11 +1432,98 @@ class _AdminVisualBuilderState
   }
 }
 
+// =============================================================================
+// VISUAL TYPE CHIP ITEM
+// =============================================================================
+class _VisualTypeMeta {
+  const _VisualTypeMeta({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.accentColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final Color accentColor;
+}
+
+class _VisualTypeChip extends StatelessWidget {
+  const _VisualTypeChip({
+    required this.meta,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final _VisualTypeMeta meta;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: isSelected ? meta.accentColor : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isSelected ? meta.accentColor : _visualBorder,
+                width: isSelected ? 1.5 : 1,
+              ),
+              boxShadow:
+                  isSelected
+                      ? [
+                        BoxShadow(
+                          color: meta.accentColor.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
+                      : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  meta.icon,
+                  size: 16,
+                  color: isSelected ? Colors.white : meta.accentColor,
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  meta.label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? Colors.white : _visualText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// VISUAL ITEM CARD
+// =============================================================================
 class _VisualItemCard extends StatelessWidget {
   const _VisualItemCard({
     super.key,
     required this.index,
     required this.item,
+    required this.prefix,
     required this.canDelete,
     required this.onChanged,
     required this.onDelete,
@@ -1042,6 +1532,7 @@ class _VisualItemCard extends StatelessWidget {
 
   final int index;
   final VisualItemDraft item;
+  final String prefix;
   final bool canDelete;
   final VoidCallback onChanged;
   final VoidCallback onDelete;
@@ -1051,33 +1542,62 @@ class _VisualItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _visualBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
             children: <Widget>[
-              CircleAvatar(
-                radius: 15,
-                backgroundColor: const Color(0xFFEAF1FF),
-                foregroundColor: _visualPrimary,
-                child: Text('${index + 1}'),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [_visualNavy, _visualPrimary],
+                  ),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '${index + 1}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 9),
+              Text(
+                '$prefix ${index + 1}',
+                style: GoogleFonts.poppins(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: _visualText,
+                ),
               ),
               const Spacer(),
               if (showDrag)
                 ReorderableDragStartListener(
                   index: index,
                   child: const Padding(
-                    padding: EdgeInsets.all(8),
+                    padding: EdgeInsets.all(6),
                     child: Icon(
                       Icons.drag_handle_rounded,
                       color: _visualMuted,
+                      size: 20,
                     ),
                   ),
                 ),
@@ -1088,28 +1608,40 @@ class _VisualItemCard extends StatelessWidget {
                   icon: const Icon(
                     Icons.delete_outline_rounded,
                     color: _visualDanger,
+                    size: 19,
                   ),
                 ),
             ],
           ),
+          const SizedBox(height: 10),
           TextFormField(
             controller: item.titleController,
-            decoration: const InputDecoration(
-              labelText: 'Judul',
-              hintText: 'Contoh: Apoenzim',
+            textCapitalization: TextCapitalization.sentences,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: _visualText,
             ),
-            onChanged: (_) => onChanged(),
+            decoration: _buildInputDecoration(
+              labelText: 'Judul / Nama $prefix',
+              hintText: 'Contoh: Nama komponen atau langkah',
+            ),
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: 10),
           TextFormField(
             controller: item.descriptionController,
             minLines: 2,
             maxLines: 4,
-            decoration: const InputDecoration(
-              labelText: 'Penjelasan',
+            textCapitalization: TextCapitalization.sentences,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12.5,
+              color: _visualText,
+            ),
+            decoration: _buildInputDecoration(
+              labelText: 'Penjelasan Lengkap',
+              hintText: 'Tulis penjelasan rinci yang mudah dipahami siswa...',
               alignLabelWithHint: true,
             ),
-            onChanged: (_) => onChanged(),
           ),
         ],
       ),
@@ -1117,18 +1649,19 @@ class _VisualItemCard extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// HOTSPOT BOTTOM SHEET
+// =============================================================================
 class _VisualHotspotSheet extends StatefulWidget {
   const _VisualHotspotSheet({required this.initial});
 
   final VisualHotspotDraft initial;
 
   @override
-  State<_VisualHotspotSheet> createState() =>
-      _VisualHotspotSheetState();
+  State<_VisualHotspotSheet> createState() => _VisualHotspotSheetState();
 }
 
-class _VisualHotspotSheetState
-    extends State<_VisualHotspotSheet> {
+class _VisualHotspotSheetState extends State<_VisualHotspotSheet> {
   late final TextEditingController _labelController;
   late final TextEditingController _explanationController;
   String? _error;
@@ -1136,9 +1669,7 @@ class _VisualHotspotSheetState
   @override
   void initState() {
     super.initState();
-    _labelController = TextEditingController(
-      text: widget.initial.label,
-    );
+    _labelController = TextEditingController(text: widget.initial.label);
     _explanationController = TextEditingController(
       text: widget.initial.explanation,
     );
@@ -1155,24 +1686,20 @@ class _VisualHotspotSheetState
   Widget build(BuildContext context) {
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Material(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(26),
-        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Center(
                 child: Container(
-                  width: 42,
-                  height: 5,
+                  width: 40,
+                  height: 4.5,
                   decoration: BoxDecoration(
                     color: const Color(0xFFCBD5E1),
                     borderRadius: BorderRadius.circular(20),
@@ -1180,30 +1707,54 @@ class _VisualHotspotSheetState
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Atur Titik Gambar',
-                style: TextStyle(
-                  color: _visualText,
-                  fontSize: 21,
-                  fontWeight: FontWeight.w900,
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: _visualAmber.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.touch_app_rounded,
+                      color: _visualAmber,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Atur Titik Gambar',
+                    style: GoogleFonts.poppins(
+                      color: _visualText,
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 5),
-              const Text(
-                'Isi nama bagian dan penjelasan yang akan dibaca siswa.',
-                style: TextStyle(
+              const SizedBox(height: 4),
+              Text(
+                'Isi nama bagian dan penjelasan yang akan tampil saat titik diketuk siswa.',
+                style: GoogleFonts.plusJakartaSans(
                   color: _visualMuted,
+                  fontSize: 12,
                   height: 1.4,
                 ),
               ),
               const SizedBox(height: 16),
-              TextField(
+              TextFormField(
                 controller: _labelController,
                 autofocus: true,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  labelText: 'Nama bagian',
-                  hintText: 'Contoh: Situs aktif enzim',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: _visualText,
+                ),
+                decoration: _buildInputDecoration(
+                  labelText: 'Nama Bagian / Komponen',
+                  hintText: 'Contoh: Anode / Katode / Mitokondria',
+                  prefixIcon: Icons.label_important_outline_rounded,
                   errorText: _error,
                 ),
                 onChanged: (_) {
@@ -1213,33 +1764,59 @@ class _VisualHotspotSheetState
                 },
               ),
               const SizedBox(height: 12),
-              TextField(
+              TextFormField(
                 controller: _explanationController,
                 minLines: 3,
                 maxLines: 6,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Penjelasan saat titik diklik',
-                  hintText:
-                      'Jelaskan fungsi atau arti bagian tersebut.',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 13,
+                  color: _visualText,
+                ),
+                decoration: _buildInputDecoration(
+                  labelText: 'Penjelasan saat Titik Diketuk',
+                  hintText: 'Jelaskan fungsi atau arti bagian tersebut...',
                   alignLabelWithHint: true,
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 20),
               Row(
                 children: <Widget>[
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Batal'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _visualText,
+                        side: const BorderSide(color: _visualBorder),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Batal',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: FilledButton.icon(
+                    child: ElevatedButton.icon(
                       onPressed: _save,
-                      icon: const Icon(Icons.save_rounded),
-                      label: const Text('Simpan Titik'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _visualPrimary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.check_rounded, size: 18),
+                      label: Text(
+                        'Simpan Titik',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                      ),
                     ),
                   ),
                 ],
@@ -1270,13 +1847,13 @@ class _VisualHotspotSheetState
   }
 }
 
+// =============================================================================
+// DRAFT MODELS
+// =============================================================================
 class VisualItemDraft {
-  VisualItemDraft({
-    String title = '',
-    String description = '',
-  })  : titleController = TextEditingController(text: title),
-        descriptionController =
-            TextEditingController(text: description);
+  VisualItemDraft({String title = '', String description = ''})
+    : titleController = TextEditingController(text: title),
+      descriptionController = TextEditingController(text: description);
 
   final TextEditingController titleController;
   final TextEditingController descriptionController;
@@ -1292,11 +1869,9 @@ class VisualItemDraft {
 }
 
 class VisualTableRowDraft {
-  VisualTableRowDraft({
-    String first = '',
-    String second = '',
-  })  : firstController = TextEditingController(text: first),
-        secondController = TextEditingController(text: second);
+  VisualTableRowDraft({String first = '', String second = ''})
+    : firstController = TextEditingController(text: first),
+      secondController = TextEditingController(text: second);
 
   final TextEditingController firstController;
   final TextEditingController secondController;
@@ -1337,6 +1912,9 @@ class VisualHotspotDraft {
   }
 }
 
+// =============================================================================
+// HELPER PLACEHOLDERS & EMPTY STATES
+// =============================================================================
 class _VisualImagePlaceholder extends StatelessWidget {
   const _VisualImagePlaceholder({required this.onTap});
 
@@ -1344,36 +1922,53 @@ class _VisualImagePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
+    return Material(
+      color: _visualCardBg,
       borderRadius: BorderRadius.circular(16),
-      child: Container(
-        height: 170,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFFE2E8F0),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          height: 160,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _visualBorder, style: BorderStyle.solid),
           ),
-        ),
-        child: const Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Icon(
-              Icons.add_photo_alternate_outlined,
-              size: 42,
-              color: _visualPrimary,
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Pilih gambar terlebih dahulu',
-              style: TextStyle(
-                color: _visualText,
-                fontWeight: FontWeight.w800,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: _visualPrimary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.add_photo_alternate_rounded,
+                  size: 32,
+                  color: _visualPrimary,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+              Text(
+                'Pilih Ilustrasi Gambar Terlebih Dahulu',
+                style: GoogleFonts.poppins(
+                  color: _visualText,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Klik untuk mengunggah gambar pendukung hotspot',
+                style: GoogleFonts.plusJakartaSans(
+                  color: _visualMuted,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1386,11 +1981,25 @@ class _VisualImageError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFE2E8F0),
+      color: const Color(0xFFF1F5F9),
       alignment: Alignment.center,
-      child: const Text(
-        'Gambar tidak dapat dimuat',
-        style: TextStyle(color: _visualMuted),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.broken_image_rounded,
+            color: _visualMuted,
+            size: 28,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Gambar tidak dapat dimuat',
+            style: GoogleFonts.plusJakartaSans(
+              color: _visualMuted,
+              fontSize: 11.5,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1407,15 +2016,17 @@ class _VisualEmptyHint extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: _visualCardBg,
         borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: _visualBorder),
       ),
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: const TextStyle(
+        style: GoogleFonts.plusJakartaSans(
           color: _visualMuted,
-          height: 1.4,
+          fontSize: 11.5,
+          height: 1.45,
         ),
       ),
     );

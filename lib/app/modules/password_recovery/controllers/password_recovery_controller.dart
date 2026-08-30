@@ -4,20 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../routes/app_pages.dart';
+import '../../../widgets/app_snackbar.dart';
 
 class PasswordRecoveryController extends GetxController {
-  final emailController = TextEditingController();
-  final otpController = TextEditingController();
-  final newPasswordController = TextEditingController();
-  final confirmPasswordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController otpController = TextEditingController();
+  final TextEditingController newPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
-  final isLoading = false.obs;
+  final RxBool isLoading = false.obs;
 
-  final obscureNewPassword = true.obs;
-  final obscureConfirmPassword = true.obs;
+  final RxBool obscureNewPassword = true.obs;
+  final RxBool obscureConfirmPassword = true.obs;
 
-  final remainingSeconds = 60.obs;
-  final canResendOtp = false.obs;
+  final RxInt remainingSeconds = 60.obs;
+  final RxBool canResendOtp = false.obs;
 
   Timer? _otpTimer;
 
@@ -35,19 +37,17 @@ class PasswordRecoveryController extends GetxController {
     final emailValue = emailController.text.trim();
 
     if (emailValue.isEmpty) {
-      Get.snackbar(
-        'Email belum diisi',
-        'Masukkan email akun terlebih dahulu.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.warning(
+        'Perhatian',
+        'Alamat email harus diisi terlebih dahulu!',
       );
       return;
     }
 
     if (!GetUtils.isEmail(emailValue)) {
-      Get.snackbar(
-        'Email tidak valid',
-        'Masukkan format email yang benar.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.error(
+        'Format Email Tidak Valid',
+        'Silakan masukkan format alamat email yang benar!',
       );
       return;
     }
@@ -55,8 +55,8 @@ class PasswordRecoveryController extends GetxController {
     isLoading.value = true;
 
     try {
-      // TODO: Nanti sambungkan ke API Flask untuk mengirim OTP.
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Simulasi / koneksi pengiriman OTP via API
+      await Future.delayed(const Duration(milliseconds: 600));
 
       startOtpCountdown();
 
@@ -67,10 +67,9 @@ class PasswordRecoveryController extends GetxController {
         },
       );
     } catch (e) {
-      Get.snackbar(
-        'Gagal',
-        'OTP gagal dikirim. Silakan coba lagi.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.error(
+        'Gagal Mengirim OTP',
+        'Terjadi kesalahan saat mengirim kode OTP. Silakan coba lagi.',
       );
     } finally {
       isLoading.value = false;
@@ -81,19 +80,17 @@ class PasswordRecoveryController extends GetxController {
     final otp = otpController.text.trim();
 
     if (otp.isEmpty) {
-      Get.snackbar(
-        'OTP belum diisi',
-        'Masukkan kode OTP yang sudah dikirim.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.warning(
+        'Perhatian',
+        'Silakan masukkan 6 digit kode OTP!',
       );
       return;
     }
 
     if (otp.length != 6 || int.tryParse(otp) == null) {
-      Get.snackbar(
-        'OTP tidak valid',
-        'Kode OTP harus terdiri dari 6 angka.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.error(
+        'Kode OTP Tidak Valid',
+        'Kode OTP harus terdiri dari 6 angka!',
       );
       return;
     }
@@ -101,15 +98,12 @@ class PasswordRecoveryController extends GetxController {
     isLoading.value = true;
 
     try {
-      // TODO: Nanti verifikasi OTP melalui API Flask.
-      await Future.delayed(const Duration(milliseconds: 500));
-
+      await Future.delayed(const Duration(milliseconds: 600));
       Get.toNamed(Routes.RESET_PASSWORD);
     } catch (e) {
-      Get.snackbar(
-        'Verifikasi gagal',
-        'Kode OTP salah atau sudah kedaluwarsa.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.error(
+        'Verifikasi Gagal',
+        'Kode OTP salah atau telah kedaluwarsa.',
       );
     } finally {
       isLoading.value = false;
@@ -122,22 +116,19 @@ class PasswordRecoveryController extends GetxController {
     isLoading.value = true;
 
     try {
-      // TODO: Nanti panggil API kirim ulang OTP.
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 600));
 
       otpController.clear();
       startOtpCountdown();
 
-      Get.snackbar(
-        'OTP dikirim ulang',
-        'Kode OTP baru telah dikirim ke $email.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.success(
+        'OTP Berhasil Dikirim 🎉',
+        'Kode OTP baru telah dikirimkan ke $email.',
       );
     } catch (e) {
-      Get.snackbar(
-        'Gagal',
-        'OTP gagal dikirim ulang.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.error(
+        'Gagal Mengirim Ulang',
+        'Kode OTP gagal dikirim ulang. Silakan coba lagi.',
       );
     } finally {
       isLoading.value = false;
@@ -149,28 +140,25 @@ class PasswordRecoveryController extends GetxController {
     final confirmPassword = confirmPasswordController.text;
 
     if (newPassword.isEmpty || confirmPassword.isEmpty) {
-      Get.snackbar(
-        'Password belum lengkap',
-        'Isi password baru dan konfirmasi password.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.warning(
+        'Perhatian',
+        'Kata sandi baru dan konfirmasi kata sandi harus diisi!',
       );
       return;
     }
 
-    if (newPassword.length < 8) {
-      Get.snackbar(
-        'Password terlalu pendek',
-        'Password minimal terdiri dari 8 karakter.',
-        snackPosition: SnackPosition.BOTTOM,
+    if (newPassword.length < 6) {
+      AppSnackbar.warning(
+        'Kata Sandi Kurang Kuat',
+        'Kata sandi minimal terdiri dari 6 karakter!',
       );
       return;
     }
 
     if (newPassword != confirmPassword) {
-      Get.snackbar(
-        'Password tidak sama',
-        'Konfirmasi password harus sama dengan password baru.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.error(
+        'Konfirmasi Kata Sandi Tidak Cocok',
+        'Konfirmasi kata sandi tidak sama dengan kata sandi baru.',
       );
       return;
     }
@@ -178,21 +166,18 @@ class PasswordRecoveryController extends GetxController {
     isLoading.value = true;
 
     try {
-      // TODO: Nanti sambungkan ke API Flask untuk reset password.
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 600));
 
-      Get.snackbar(
-        'Password berhasil diubah',
-        'Silakan masuk menggunakan password baru.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.success(
+        'Kata Sandi Berhasil Diperbarui 🎉',
+        'Silakan masuk menggunakan kata sandi barumu.',
       );
 
       Get.offAllNamed(Routes.LOGIN);
     } catch (e) {
-      Get.snackbar(
-        'Gagal',
-        'Password gagal diubah. Silakan coba lagi.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.error(
+        'Gagal Mengubah Kata Sandi',
+        'Terjadi kesalahan saat memperbarui kata sandi. Silakan coba lagi.',
       );
     } finally {
       isLoading.value = false;

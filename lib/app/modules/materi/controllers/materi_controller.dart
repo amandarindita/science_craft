@@ -4,9 +4,11 @@ import 'package:science_craft/app/modules/notification/notification_helper.dart'
 import '../../../data/db/database_helper.dart';
 import '../../../models/material_model.dart'; 
 import '../../../routes/app_pages.dart';
+import '../../../data/api_client.dart';
 import '../../../data/api_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../profile/controllers/profile_controller.dart'; 
@@ -90,9 +92,8 @@ class MaterialDetailController extends GetxController {
 
  Future<void> fetchMaterialContent(String id) async {
     try {
-      final response = await http.get(
+      final response = await ApiClient.get(
         Uri.parse('${ApiService.baseUrl}/admin/material/$id'),
-        headers: {'Authorization': 'Bearer ${profileController.authService.token}'},
       );
 
       if (response.statusCode == 200) {
@@ -301,25 +302,26 @@ class BadgeUnlockedPopup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String imagePath = _getBadgeImagePath(badgeName);
-
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.topCenter,
         children: [
-          // 1. KOTAK DIALOG UTAMA
+          // White Body Card
           Container(
-            margin: const EdgeInsets.only(top: 60),
-            padding: const EdgeInsets.only(top: 80, left: 20, right: 20, bottom: 20),
+            margin: const EdgeInsets.only(top: 52),
+            padding: const EdgeInsets.fromLTRB(20, 72, 20, 24),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(25),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.12),
+                  blurRadius: 28,
                   offset: const Offset(0, 10),
                 ),
               ],
@@ -327,77 +329,140 @@ class BadgeUnlockedPopup extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  "PENCAPAIAN BARU!",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF6C63FF),
-                    letterSpacing: 1,
+                // Pill Header
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 4.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 13,
+                        color: Color(0xFF2563EB),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'PENCAPAIAN BARU',
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF1E3A8A),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
+
+                // Title
+                Text(
+                  'Lencana Terbuka!',
+                  style: GoogleFonts.poppins(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF0F172A),
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Badge Name Card
                 Container(
-                  width: 50, height: 4,
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: Colors.amber,
-                    borderRadius: BorderRadius.circular(10)
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Selamat! Kamu berhasil meraih:',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          color: const Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        badgeName,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF1E3A8A),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  "Selamat! Kamu berhasil membuka lencana:\n\n$badgeName",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 16, 
-                    color: Color(0xFF374151), 
-                    height: 1.4, 
-                    fontWeight: FontWeight.bold
-                  ),
-                ),
-                const SizedBox(height: 25),
+
+                // Primary Action Button
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  height: 48,
+                  child: FilledButton.icon(
                     onPressed: () => Get.back(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF6C63FF),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
                       foregroundColor: Colors.white,
-                      elevation: 3,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
-                    child: const Text("MANTAP!", style: TextStyle(fontWeight: FontWeight.bold)),
+                    icon: const Icon(
+                      Icons.check_circle_rounded,
+                      size: 18,
+                    ),
+                    label: Text(
+                      'Klaim & Lanjutkan',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
-          // 2. LOGO BADGE DENGAN EFEK GLOW DI ATAS CARD 🎉
+          // Floating Badge Orb with Golden Aura Glow
           Positioned(
-            top: -10,
+            top: 0,
             child: Container(
-              width: 120,
-              height: 120,
+              width: 104,
+              height: 104,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
+                border: Border.all(
+                  color: const Color(0xFFFEF3C7),
+                  width: 3.5,
+                ),
                 boxShadow: [
-                  // INI RAHASIA EFEK GLOW-NYA COK!
                   BoxShadow(
-                    color: const Color(0xFFFFD700).withOpacity(0.6), // Warna Gold neon
-                    blurRadius: 35,  // Tingkat pendaran cahaya glow
-                    spreadRadius: 8, // Luas pancaran cahaya glow
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.35),
+                    blurRadius: 28,
+                    spreadRadius: 4,
                   ),
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16.0), // Jarak logo di dalam lingkaran putih
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.contain,
-                ),
+                padding: const EdgeInsets.all(14),
+                child: Image.asset(imagePath, fit: BoxFit.contain),
               ),
             ),
           ),

@@ -2,17 +2,41 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../data/api_service.dart';
+import '../../../widgets/app_snackbar.dart';
 import '../../profile/controllers/profile_controller.dart';
 import '../../profile_learning/controllers/profile_learning_controller.dart';
+
+class AvatarCharacter {
+  final String path;
+  final String name;
+  final String element;
+  final Color themeColor;
+  final String category; // 'nature', 'energy', 'cosmic'
+  final String lore;
+  final String traitBadge;
+
+  const AvatarCharacter({
+    required this.path,
+    required this.name,
+    required this.element,
+    required this.themeColor,
+    this.category = 'nature',
+    this.lore = 'Fokus pada eksplorasi dan metodologi sains modern.',
+    this.traitBadge = 'General Science',
+  });
+}
 
 class EditProfileLearningController extends GetxController {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-  final TextEditingController currentPasswordController = TextEditingController();
+  final TextEditingController currentPasswordController =
+      TextEditingController();
   final TextEditingController newPasswordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
-  final RxString selectedAvatar = 'assets/amanda.png'.obs;
+  final RxString selectedAvatar = 'assets/aira.png'.obs;
+  final RxString selectedAvatarCategory = 'all'.obs;
   final RxBool isLoading = false.obs;
   final RxBool isSaving = false.obs;
   final RxBool isChangingPassword = false.obs;
@@ -22,14 +46,104 @@ class EditProfileLearningController extends GetxController {
   final RxBool isNewPasswordObscure = true.obs;
   final RxBool isConfirmPasswordObscure = true.obs;
 
-  /// Avatar yang sudah diketahui dipakai oleh project/backend saat ini.
-  /// Avatar user yang sedang aktif otomatis ikut dimasukkan ke daftar,
-  /// jadi data lama tetap aman walau tidak ada di list ini.
-  final RxList<String> avatarOptions = <String>[
-    'assets/aira.png',
-    'assets/aqua.png',
-    'assets/amanda.png',
+  /// Daftar lengkap avatar karakter Science Craft dengan tema persona sains modern
+  final RxList<AvatarCharacter> avatarList = <AvatarCharacter>[
+    const AvatarCharacter(
+      path: 'assets/aira.png',
+      name: 'Aira',
+      element: 'Aerodinamika',
+      themeColor: Color(0xFF0284C7),
+      category: 'nature',
+      lore: 'Eksplorasi fluida udara, tekanan atmosfer, dan kinetika gerak.',
+      traitBadge: 'Aerodynamics',
+    ),
+    const AvatarCharacter(
+      path: 'assets/aqua.png',
+      name: 'Aqua',
+      element: 'Hidrodinamika',
+      themeColor: Color(0xFF0EA5E9),
+      category: 'nature',
+      lore: 'Analisis larutan kimia, termodinamika zat cair, dan struktur molekul.',
+      traitBadge: 'Hydrokinetics',
+    ),
+    const AvatarCharacter(
+      path: 'assets/terra.png',
+      name: 'Terra',
+      element: 'Geosains & Bio',
+      themeColor: Color(0xFF10B981),
+      category: 'nature',
+      lore: 'Penelitian ekosistem biologi, struktur geologi, dan keberlanjutan bumi.',
+      traitBadge: 'Geoscience',
+    ),
+    const AvatarCharacter(
+      path: 'assets/volt.png',
+      name: 'Volt',
+      element: 'Elektromagnetik',
+      themeColor: Color(0xFFD97706),
+      category: 'energy',
+      lore: 'Fisika arus listrik, medan magnet, dan konversi energi terbarukan.',
+      traitBadge: 'Electromagnetics',
+    ),
+    const AvatarCharacter(
+      path: 'assets/nova.png',
+      name: 'Nova',
+      element: 'Optika & Foton',
+      themeColor: Color(0xFFF59E0B),
+      category: 'energy',
+      lore: 'Spektrum gelombang elektromagnetik, radiasi foton, dan teknologi laser.',
+      traitBadge: 'Photonics',
+    ),
+    const AvatarCharacter(
+      path: 'assets/ferro.png',
+      name: 'Ferro',
+      element: 'Material Sains',
+      themeColor: Color(0xFF64748B),
+      category: 'energy',
+      lore: 'Rekayasa material logam, kekuatan mekanik, dan struktur nanoteknologi.',
+      traitBadge: 'Materials Science',
+    ),
+    const AvatarCharacter(
+      path: 'assets/lyra.png',
+      name: 'Lyra',
+      element: 'Fisika Kuantum',
+      themeColor: Color(0xFF8B5CF6),
+      category: 'cosmic',
+      lore: 'Mekanika kuantum partikel subatomik dan komputasi sains tingkat lanjut.',
+      traitBadge: 'Quantum Physics',
+    ),
+    const AvatarCharacter(
+      path: 'assets/orion.png',
+      name: 'Orion',
+      element: 'Astrofisika',
+      themeColor: Color(0xFF6366F1),
+      category: 'cosmic',
+      lore: 'Observasi astronomi, relativitas kosmologi, dan dinamika ruang angkasa.',
+      traitBadge: 'Astrophysics',
+    ),
   ].obs;
+
+  List<AvatarCharacter> get filteredAvatarList {
+    final cat = selectedAvatarCategory.value;
+    if (cat == 'all') {
+      return avatarList;
+    }
+    return avatarList.where((char) => char.category == cat).toList();
+  }
+
+  AvatarCharacter get currentSelectedCharacter {
+    final current = selectedAvatar.value.trim();
+    for (final char in avatarList) {
+      if (char.path == current) return char;
+    }
+    return AvatarCharacter(
+      path: current,
+      name: 'Custom',
+      element: 'Peneliti Sains',
+      themeColor: const Color(0xFF2563EB),
+      lore: 'Persona kustom untuk eksplorasi modul pembelajaran sains.',
+      traitBadge: 'Researcher',
+    );
+  }
 
   ProfileLearningController? get learningController =>
       Get.isRegistered<ProfileLearningController>()
@@ -67,7 +181,7 @@ class EditProfileLearningController extends GetxController {
 
         selectedAvatar.value = avatar.isNotEmpty
             ? avatar
-            : (learningController?.avatarPath.value ?? 'assets/amanda.png');
+            : (learningController?.avatarPath.value ?? 'assets/aira.png');
 
         hasPassword.value = data['has_password'] is bool
             ? data['has_password'] as bool
@@ -96,13 +210,28 @@ class EditProfileLearningController extends GetxController {
 
   void _ensureCurrentAvatarIsVisible() {
     final String avatar = selectedAvatar.value.trim();
-    if (avatar.isNotEmpty && !avatarOptions.contains(avatar)) {
-      avatarOptions.insert(0, avatar);
+    if (avatar.isNotEmpty && !avatarList.any((char) => char.path == avatar)) {
+      avatarList.insert(
+        0,
+        AvatarCharacter(
+          path: avatar,
+          name: 'Aktif',
+          element: 'Peneliti Sains',
+          themeColor: const Color(0xFF2563EB),
+          category: 'nature',
+          lore: 'Avatar aktif yang sedang digunakan.',
+          traitBadge: 'Active Profile',
+        ),
+      );
     }
   }
 
   void selectAvatar(String avatarPath) {
     selectedAvatar.value = avatarPath;
+  }
+
+  void setAvatarCategory(String category) {
+    selectedAvatarCategory.value = category;
   }
 
   void toggleCurrentPasswordVisibility() {
@@ -124,19 +253,17 @@ class EditProfileLearningController extends GetxController {
     final String avatar = selectedAvatar.value.trim();
 
     if (newName.isEmpty) {
-      Get.snackbar(
-        'Nama belum diisi',
-        'Masukkan nama lengkap terlebih dahulu.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.warning(
+        'Nama Belum Diisi',
+        'Silakan masukkan nama lengkap atau nama tampilan.',
       );
       return;
     }
 
     if (avatar.isEmpty) {
-      Get.snackbar(
-        'Avatar belum dipilih',
-        'Pilih avatar terlebih dahulu.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.warning(
+        'Avatar Belum Dipilih',
+        'Pilih salah satu karakter persona sains di atas.',
       );
       return;
     }
@@ -147,47 +274,35 @@ class EditProfileLearningController extends GetxController {
       final bool success = await ApiService.updateProfile(newName, avatar);
 
       if (!success) {
-        Get.snackbar(
-          'Gagal menyimpan profil',
-          'Perubahan belum tersimpan. Coba lagi.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFFFFF1F2),
-          colorText: const Color(0xFF991B1B),
+        AppSnackbar.error(
+          'Gagal Menyimpan',
+          'Perubahan profil belum tersimpan di server. Silakan coba lagi.',
         );
         return;
       }
 
-      // Sinkronkan langsung ke state Profil Pembelajaran agar UI tidak
-      // menunggu request berikutnya untuk menampilkan perubahan.
+      // Sinkronkan langsung ke state Profil Pembelajaran
       final ProfileLearningController? learning = learningController;
       if (learning != null) {
         learning.userName.value = newName;
         learning.avatarPath.value = avatar;
       }
 
-      // Profile lama tetap disegarkan karena user ingin versi lama tetap
-      // dapat dibandingkan, tetapi module lama tidak diubah.
       legacyProfileController?.fetchUserProfile();
 
-      // Ambil ulang data server untuk memastikan nama/avatar yang tersimpan
-      // benar-benar menjadi sumber data utama.
       if (learning != null) {
         await learning.loadProfile();
       }
 
       Get.back<bool>(result: true);
-      Get.snackbar(
-        'Profil diperbarui',
-        'Nama dan avatar berhasil disimpan.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFFECFDF5),
-        colorText: const Color(0xFF166534),
+      AppSnackbar.success(
+        'Profil Diperbarui',
+        'Data nama dan avatar persona berhasil disimpan.',
       );
     } catch (_) {
-      Get.snackbar(
-        'Gagal menyimpan profil',
-        'Terjadi kendala saat menyimpan perubahan.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.error(
+        'Gagal Menyimpan',
+        'Terjadi kendala jaringan saat menyimpan profil.',
       );
     } finally {
       isSaving.value = false;
@@ -202,19 +317,25 @@ class EditProfileLearningController extends GetxController {
     final String confirmPassword = confirmPasswordController.text;
 
     if (oldPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
-      Get.snackbar(
-        'Data belum lengkap',
+      AppSnackbar.warning(
+        'Data Belum Lengkap',
         'Isi password saat ini, password baru, dan konfirmasi password.',
-        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      AppSnackbar.warning(
+        'Password Terlalu Pendek',
+        'Password baru minimal terdiri dari 6 karakter.',
       );
       return;
     }
 
     if (newPassword != confirmPassword) {
-      Get.snackbar(
-        'Konfirmasi tidak sama',
-        'Password baru dan konfirmasi password harus sama.',
-        snackPosition: SnackPosition.BOTTOM,
+      AppSnackbar.warning(
+        'Konfirmasi Tidak Cocok',
+        'Password baru dan konfirmasi password harus sesuai.',
       );
       return;
     }
@@ -239,24 +360,14 @@ class EditProfileLearningController extends GetxController {
         currentPasswordController.clear();
         newPasswordController.clear();
         confirmPasswordController.clear();
+        AppSnackbar.success('Password Diperbarui', message);
+      } else {
+        AppSnackbar.error('Gagal Mengubah Password', message);
       }
-
-      Get.snackbar(
-        success ? 'Password diperbarui' : 'Gagal mengubah password',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: success
-            ? const Color(0xFFECFDF5)
-            : const Color(0xFFFFF1F2),
-        colorText: success
-            ? const Color(0xFF166534)
-            : const Color(0xFF991B1B),
-      );
     } catch (_) {
-      Get.snackbar(
-        'Gagal mengubah password',
+      AppSnackbar.error(
+        'Gagal Mengubah Password',
         'Terjadi kendala saat menghubungi server.',
-        snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
       isChangingPassword.value = false;

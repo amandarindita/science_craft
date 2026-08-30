@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../widgets/app_snackbar.dart';
 import '../services/admin_learning_api.dart';
 
 class AdminLearningController
@@ -172,20 +173,6 @@ class AdminLearningController
       }
 
       await loadModules();
-
-      Get.snackbar(
-        'Berhasil',
-        materialId == null
-            ? 'Modul berhasil dibuat.'
-            : 'Modul berhasil diperbarui.',
-        snackPosition:
-            SnackPosition.BOTTOM,
-        backgroundColor:
-            const Color(0xFFE7F8EE),
-        colorText:
-            const Color(0xFF166534),
-      );
-
       return true;
     } catch (e) {
       showError(
@@ -257,11 +244,9 @@ class AdminLearningController
 
       await loadModules();
 
-      Get.snackbar(
-        'Modul dihapus',
-        'Konten terkait berhasil dihapus.',
-        snackPosition:
-            SnackPosition.BOTTOM,
+      AppSnackbar.success(
+        'Modul Dihapus',
+        'Modul beserta seluruh konten terkait berhasil dihapus.',
       );
 
       return true;
@@ -412,19 +397,6 @@ class AdminLearningController
       await loadSubmaterials(materialId);
       await loadModules();
 
-      Get.snackbar(
-        'Berhasil',
-        submaterialId == null
-            ? 'Submateri berhasil dibuat.'
-            : 'Submateri berhasil diperbarui.',
-        snackPosition:
-            SnackPosition.BOTTOM,
-        backgroundColor:
-            const Color(0xFFE7F8EE),
-        colorText:
-            const Color(0xFF166534),
-      );
-
       return true;
     } catch (e) {
       showError(
@@ -495,11 +467,9 @@ class AdminLearningController
       await loadSubmaterials(materialId);
       await loadModules();
 
-      Get.snackbar(
-        'Submateri dihapus',
-        'Konten dan checkpoint terkait berhasil dihapus.',
-        snackPosition:
-            SnackPosition.BOTTOM,
+      AppSnackbar.success(
+        'Submateri Dihapus',
+        'Submateri beserta seluruh checkpoint terkait berhasil dihapus.',
       );
 
       return true;
@@ -592,16 +562,6 @@ class AdminLearningController
         await loadSubmaterials(materialId);
       }
 
-      Get.snackbar(
-        'Berhasil',
-        checkpointId == null
-            ? 'Checkpoint berhasil dibuat.'
-            : 'Checkpoint berhasil diperbarui.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFFE7F8EE),
-        colorText: const Color(0xFF166534),
-      );
-
       return true;
     } catch (e) {
       showError('Gagal menyimpan checkpoint: $e');
@@ -662,6 +622,11 @@ class AdminLearningController
         await loadSubmaterials(materialId);
       }
 
+      AppSnackbar.success(
+        'Checkpoint Dihapus',
+        'Checkpoint berhasil dihapus.',
+      );
+
       return true;
     } catch (e) {
       showError('Gagal menghapus checkpoint: $e');
@@ -702,16 +667,6 @@ class AdminLearningController
       );
 
       await loadQuestions(materialId);
-
-      Get.snackbar(
-        'Berhasil',
-        questionId == null
-            ? 'Soal kuis berhasil dibuat.'
-            : 'Soal kuis berhasil diperbarui.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFFE7F8EE),
-        colorText: const Color(0xFF166534),
-      );
 
       return true;
     } catch (e) {
@@ -761,6 +716,12 @@ class AdminLearningController
       );
 
       await loadQuestions(materialId);
+
+      AppSnackbar.success(
+        'Soal Dihapus',
+        'Soal kuis berhasil dihapus.',
+      );
+
       return true;
     } catch (e) {
       showError('Gagal menghapus soal kuis: $e');
@@ -937,11 +898,9 @@ class AdminLearningController
 
       await loadFunFacts();
 
-      Get.snackbar(
-        'Fun Fact dihapus',
-        'Data berhasil dihapus.',
-        snackPosition:
-            SnackPosition.BOTTOM,
+      AppSnackbar.success(
+        'Fakta Sains Dihapus',
+        'Data fakta sains berhasil dihapus.',
       );
 
       return true;
@@ -988,16 +947,11 @@ class AdminLearningController
         result['totals'],
       );
 
-      Get.snackbar(
-        'Konten berhasil diimpor',
+      AppSnackbar.success(
+        'Konten Berhasil Diimpor',
         '${intValue(totals['imported'])} baru, '
         '${intValue(totals['updated'])} diperbarui, '
         '${intValue(totals['skipped'])} dilewati.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor:
-            const Color(0xFFE7F8EE),
-        colorText:
-            const Color(0xFF166534),
       );
 
       return true;
@@ -1032,16 +986,11 @@ class AdminLearningController
       lastQuestionImportResult.value =
           result;
 
-      Get.snackbar(
-        'Kuis berhasil diimpor',
+      AppSnackbar.success(
+        'Kuis Berhasil Diimpor',
         '${intValue(result['imported'])} baru, '
         '${intValue(result['updated'])} diperbarui, '
         '${mapList(result['skipped']).length} dilewati.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor:
-            const Color(0xFFE7F8EE),
-        colorText:
-            const Color(0xFF166534),
       );
 
       return true;
@@ -1065,15 +1014,9 @@ class AdminLearningController
   // =======================================================
 
   void showError(String message) {
-    Get.snackbar(
-      'Terjadi kesalahan',
+    AppSnackbar.error(
+      'Terjadi Kesalahan',
       message,
-      snackPosition:
-          SnackPosition.BOTTOM,
-      backgroundColor:
-          const Color(0xFFFFE8E8),
-      colorText:
-          const Color(0xFF8C1D18),
     );
   }
 

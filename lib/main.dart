@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
   String _determineInitialRoute() {
     final box = GetStorage();
     
-    if (box.hasData('authToken')) {
+    if (box.hasData('authToken') || box.hasData('refreshToken')) {
       // --- LOGIKA BARU: CEK PANGKAT PAS AUTO-LOGIN ---
       String role = box.read('userRole') ?? 'user';
       if (role == 'admin') {

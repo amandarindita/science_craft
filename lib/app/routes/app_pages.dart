@@ -4,7 +4,6 @@ import 'package:science_craft/app/modules/FAQ/views/faq_view.dart';
 import 'package:science_craft/app/modules/notification/views/notification_view.dart';
 import 'package:science_craft/app/modules/on_boarding/views/on_boarding_view.dart';
 import 'package:science_craft/app/modules/learning/bindings/learning_binding.dart';
-import 'package:science_craft/app/modules/learning/views/quiz_view.dart';
 import '../modules/login/bindings/login_binding.dart';
 import '../modules/login/views/login_view.dart';
 import '../modules/register/bindings/register_binding.dart';
@@ -26,18 +25,17 @@ import '../modules/materi/views/material_list_view.dart';
 import '../modules/notification/bindings/notification_binding.dart';
 import '../modules/about/bindings/about_binding.dart';
 import '../modules/about/views/about_view.dart';
-import '../modules/edit_profile/bindings/edit_profile_binding.dart';
-import '../modules/edit_profile/views/edit_profile_view.dart';
+import '../modules/edit_profile_learning/bindings/edit_profile_learning_binding.dart';
+import '../modules/edit_profile_learning/views/edit_profile_learning_view.dart';
 import '../modules/chatbot/views/chatbot_view.dart';
 import '../modules/chatbot/bindings/chatbot_binding.dart';
 import '../modules/roadmap/bindings/roadmap_binding.dart';
 import '../modules/roadmap/views/roadmap_view.dart';
-import '../modules/admin/bindings/admin_binding.dart  ';
-import '../modules/admin/views/admin_view.dart  ';
+import '../modules/admin/bindings/admin_binding.dart';
+import '../modules/admin/views/admin_view.dart';
 import '../modules/lab/bindings/lab_binding.dart';
 import '../modules/lab/views/lab_view.dart';
 import '../modules/lab/views/simulation_view.dart';
-import '../modules/learning/bindings/learning_binding.dart';
 import '../modules/learning/views/learning_view.dart';
 import '../modules/admin_learning/bindings/admin_learning_binding.dart';
 import '../modules/admin_learning/views/admin_learning_view.dart';
@@ -133,8 +131,8 @@ class AppPages {
     ),
     GetPage(
       name: _Paths.EDITPROFILE,
-      page: () => const EditProfileView(),
-      binding: EditProfileBinding(),
+      page: () => const EditProfileLearningView(),
+      binding: EditProfileLearningBinding(),
     ),
     GetPage(
       name: _Paths.ROADMAP,
