@@ -544,6 +544,7 @@ class _XpCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               Text(
                 '$xpInLevel / 200 XP',
@@ -553,13 +554,17 @@ class _XpCard extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const Spacer(),
-              Text(
-                '$xpToNext XP menuju Tingkat ${level + 1}',
-                style: GoogleFonts.plusJakartaSans(
-                  color: _progressPrimary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  '$xpToNext XP menuju Tingkat ${level + 1}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: _progressPrimary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -600,12 +605,37 @@ class _LearningLevelCard extends StatelessWidget {
     final double progress =
         LearningController.doubleValue(level['progress']).clamp(0.0, 1.0);
     final int moduleCount = LearningController.intValue(level['module_count']);
+    final bool isCompleted = progress >= 1.0;
 
     final String subtitle = number == 1
         ? 'Tingkat Dasar Sains'
         : number == 2
             ? 'Tingkat Menengah Sains'
             : 'Tingkat Mahir Sains';
+
+    final Color cardBorderColor = isCompleted
+        ? const Color(0xFFBBF7D0)
+        : unlocked
+            ? const Color(0xFFBFDBFE)
+            : _border;
+
+    final Color badgeBgColor = isCompleted
+        ? const Color(0xFFDCFCE7)
+        : unlocked
+            ? const Color(0xFFEFF6FF)
+            : const Color(0xFFF1F5F9);
+
+    final Color iconColor = isCompleted
+        ? _progressSuccess
+        : unlocked
+            ? _progressPrimary
+            : _progressMuted;
+
+    final IconData leadingIcon = isCompleted
+        ? Icons.check_circle_rounded
+        : unlocked
+            ? Icons.auto_stories_rounded
+            : Icons.lock_rounded;
 
     return Material(
       color: Colors.white,
@@ -618,11 +648,16 @@ class _LearningLevelCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: unlocked ? const Color(0xFFBFDBFE) : _border,
+              color: cardBorderColor,
+              width: isCompleted || unlocked ? 1.5 : 1.0,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
+                color: isCompleted
+                    ? _progressSuccess.withValues(alpha: 0.04)
+                    : unlocked
+                        ? _progressPrimary.withValues(alpha: 0.04)
+                        : Colors.black.withValues(alpha: 0.02),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
@@ -634,15 +669,13 @@ class _LearningLevelCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: unlocked
-                      ? const Color(0xFFEFF6FF)
-                      : const Color(0xFFF1F5F9),
+                  color: badgeBgColor,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
-                  unlocked ? Icons.lock_open_rounded : Icons.lock_rounded,
-                  color: unlocked ? _progressPrimary : _progressMuted,
-                  size: 20,
+                  leadingIcon,
+                  color: iconColor,
+                  size: 22,
                 ),
               ),
               const SizedBox(width: 14),
@@ -652,21 +685,27 @@ class _LearningLevelCard extends StatelessWidget {
                   children: <Widget>[
                     Row(
                       children: <Widget>[
-                        Text(
-                          'Level $number: $subtitle',
-                          style: GoogleFonts.poppins(
-                            color: _progressText,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13.5,
+                        Expanded(
+                          child: Text(
+                            'Level $number: $subtitle',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              color: _progressText,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13.5,
+                            ),
                           ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 8),
                         Text(
                           '${(progress * 100).round()}%',
                           style: GoogleFonts.plusJakartaSans(
-                            color: unlocked
-                                ? _progressPrimary
-                                : _progressMuted,
+                            color: isCompleted
+                                ? _progressSuccess
+                                : (unlocked
+                                    ? _progressPrimary
+                                    : _progressMuted),
                             fontWeight: FontWeight.w800,
                             fontSize: 12,
                           ),
@@ -675,9 +714,11 @@ class _LearningLevelCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      unlocked
-                          ? '$moduleCount modul pembelajaran aktif'
-                          : 'Selesaikan seluruh modul pada Level ${number - 1}',
+                      isCompleted
+                          ? 'Semua modul level ini tuntas diselesaikan'
+                          : (unlocked
+                              ? '$moduleCount modul pembelajaran aktif'
+                              : 'Selesaikan seluruh modul pada Level ${number - 1}'),
                       style: GoogleFonts.plusJakartaSans(
                         color: _progressMuted,
                         fontSize: 11,
@@ -691,7 +732,9 @@ class _LearningLevelCard extends StatelessWidget {
                         minHeight: 5,
                         backgroundColor: const Color(0xFFE2E8F0),
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          unlocked ? _progressPrimary : _progressMuted,
+                          isCompleted
+                              ? _progressSuccess
+                              : (unlocked ? _progressPrimary : _progressMuted),
                         ),
                       ),
                     ),
@@ -864,14 +907,32 @@ class _QuestItem extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                quest['title']?.toString() ?? _questFallbackTitle(key),
-                style: GoogleFonts.poppins(
-                  color: _progressText,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12.5,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      quest['title']?.toString() ?? _questFallbackTitle(key),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        color: _progressText,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    completed ? 'Selesai' : '$progress/$target',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: completed ? _progressSuccess : _progressMuted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 2),
               Text(
                 (quest['description'] ?? quest['desc'] ?? '').toString(),
                 style: GoogleFonts.plusJakartaSans(
@@ -895,15 +956,6 @@ class _QuestItem extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          completed ? 'Selesai' : '$progress/$target',
-          style: GoogleFonts.plusJakartaSans(
-            color: completed ? _progressSuccess : _progressMuted,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
           ),
         ),
       ],

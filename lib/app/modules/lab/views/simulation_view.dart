@@ -50,12 +50,26 @@ class _SimulationViewState extends State<SimulationView> {
           ),
 
           Positioned(
-            top: 30,
+            top: 24,
             left: 20,
-            child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.45),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
               child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                tooltip: 'Kembali ke Aplikasi',
                 onPressed: () {
                   Get.back();
                 },
