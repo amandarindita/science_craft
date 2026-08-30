@@ -136,14 +136,6 @@ class _AdminSubmaterialFormViewState extends State<AdminSubmaterialFormView> {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasRead = _readController.text.trim().isNotEmpty;
-    final bool hasListen = _ttsController.text.trim().isNotEmpty ||
-        _audioPath != null ||
-        (_existingAudioUrl.isNotEmpty && !_removeExistingAudio);
-    final bool hasVisual = _imagePath != null ||
-        (_existingImageUrl.isNotEmpty && !_removeExistingImage) ||
-        _visualBuilder.hasContent;
-
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
@@ -260,11 +252,28 @@ class _AdminSubmaterialFormViewState extends State<AdminSubmaterialFormView> {
 
             const SizedBox(height: 16),
 
-            // Mode Completion Status Indicators
-            _ModeStatusCard(
-              hasRead: hasRead,
-              hasListen: hasListen,
-              hasVisual: hasVisual,
+            // Mode Completion Status Indicators (Isolated ListenableBuilder for Zero Rebuild Storm)
+            ListenableBuilder(
+              listenable: Listenable.merge([
+                _readController,
+                _ttsController,
+                _visualBuilder,
+              ]),
+              builder: (context, _) {
+                final bool hasRead = _readController.text.trim().isNotEmpty;
+                final bool hasListen = _ttsController.text.trim().isNotEmpty ||
+                    _audioPath != null ||
+                    (_existingAudioUrl.isNotEmpty && !_removeExistingAudio);
+                final bool hasVisual = _imagePath != null ||
+                    (_existingImageUrl.isNotEmpty && !_removeExistingImage) ||
+                    _visualBuilder.hasContent;
+
+                return _ModeStatusCard(
+                  hasRead: hasRead,
+                  hasListen: hasListen,
+                  hasVisual: hasVisual,
+                );
+              },
             ),
 
             const SizedBox(height: 16),
@@ -288,7 +297,6 @@ class _AdminSubmaterialFormViewState extends State<AdminSubmaterialFormView> {
                   controller: _readController,
                   minLines: 6,
                   maxLines: 15,
-                  onChanged: (_) => setState(() {}),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13.5,
                     color: _textDark,
@@ -324,7 +332,6 @@ class _AdminSubmaterialFormViewState extends State<AdminSubmaterialFormView> {
                   controller: _ttsController,
                   minLines: 4,
                   maxLines: 10,
-                  onChanged: (_) => setState(() {}),
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13,
                     color: _textDark,
@@ -433,8 +440,7 @@ class _AdminSubmaterialFormViewState extends State<AdminSubmaterialFormView> {
                     onPickImage: _pickImage,
                     onRemoveImage: _removeImage,
                     onChanged: () {
-                      _syncVisualData();
-                      setState(() {});
+                      _visualType = _visualBuilder.visualType;
                     },
                   );
                 }),
@@ -1126,10 +1132,12 @@ class _ImagePickerCard extends StatelessWidget {
                       ? Image.file(
                           File(selectedPath!),
                           fit: BoxFit.cover,
+                          cacheWidth: 800,
                         )
                       : Image.network(
                           resolvedUrl!,
                           fit: BoxFit.cover,
+                          cacheWidth: 800,
                           errorBuilder: (context, error, stackTrace) =>
                               const Center(
                             child: Text(

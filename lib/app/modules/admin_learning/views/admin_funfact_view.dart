@@ -96,53 +96,85 @@ class _AdminFunFactViewState extends State<AdminFunFactView> {
           final List<Map<String, dynamic>> results =
               controller.filteredFunFacts;
 
-          return ListView(
+          return CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 110),
-            children: <Widget>[
+            slivers: <Widget>[
               // 1. Hero Header (Cerah & Hangat)
-              const _FunFactHeader(),
-              const SizedBox(height: 16),
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(18, 16, 18, 16),
+                  child: _FunFactHeader(),
+                ),
+              ),
 
               // 2. Search Box
-              _SearchBox(
-                searchController: _searchController,
-                controller: controller,
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                  child: _SearchBox(
+                    searchController: _searchController,
+                    controller: controller,
+                  ),
+                ),
               ),
-              const SizedBox(height: 12),
 
               // 3. Counter Chip Row
-              _CountCard(
-                total: controller.funFacts.length,
-                displayed: results.length,
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
+                  child: _CountCard(
+                    total: controller.funFacts.length,
+                    displayed: results.length,
+                  ),
+                ),
               ),
-              const SizedBox(height: 14),
 
               // 4. Content List / States
               if (controller.isLoadingFunFacts.value &&
                   controller.funFacts.isEmpty)
-                const _LoadingState()
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 18),
+                    child: _LoadingState(),
+                  ),
+                )
               else if (controller.funFacts.isEmpty)
-                const _EmptyState(
-                  message:
-                      'Belum ada fakta sains yang tersimpan. Ketuk tombol Tambah Fakta untuk membuat data pertama.',
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 18),
+                    child: _EmptyState(
+                      message:
+                          'Belum ada fakta sains yang tersimpan. Ketuk tombol Tambah Fakta untuk membuat data pertama.',
+                    ),
+                  ),
                 )
               else if (results.isEmpty)
-                const _EmptyState(
-                  message:
-                      'Fakta sains tidak ditemukan dengan kata kunci tersebut. Coba cari kata kunci lain.',
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 18),
+                    child: _EmptyState(
+                      message:
+                          'Fakta sains tidak ditemukan dengan kata kunci tersebut. Coba cari kata kunci lain.',
+                    ),
+                  ),
                 )
               else
-                ...results.map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _FunFactCard(
-                      item: item,
-                      onEdit: () => _openFunFactForm(funFact: item),
-                      onDelete: () => _confirmDelete(item),
-                    ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 110),
+                  sliver: SliverList.separated(
+                    itemCount: results.length,
+                    itemBuilder: (context, index) {
+                      final item = results[index];
+                      return _FunFactCard(
+                        item: item,
+                        onEdit: () => _openFunFactForm(funFact: item),
+                        onDelete: () => _confirmDelete(item),
+                      );
+                    },
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
                   ),
                 ),
             ],

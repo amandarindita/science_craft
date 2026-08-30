@@ -110,64 +110,81 @@ class _AdminQuizManagerViewState extends State<AdminQuizManagerView> {
             );
           }
 
-          return ListView(
+          return CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 110),
-            children: <Widget>[
+            slivers: <Widget>[
               // 1. Hero Header Card
-              _QuizHeader(
-                title: moduleTitle,
-                totalQuestions: controller.questions.length,
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+                  child: _QuizHeader(
+                    title: moduleTitle,
+                    totalQuestions: controller.questions.length,
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
 
               // 2. Section Title
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Daftar Pertanyaan Kuis',
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: _textDark,
-                    ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Daftar Pertanyaan Kuis',
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: _textDark,
+                        ),
+                      ),
+                      Text(
+                        '${controller.questions.length} Soal Terdaftar',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: _primaryBlue,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    '${controller.questions.length} Soal Terdaftar',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: _primaryBlue,
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 12),
 
               // 3. Question List or Empty State
               if (controller.questions.isEmpty)
-                const _EmptyQuiz()
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 18),
+                    child: _EmptyQuiz(),
+                  ),
+                )
               else
-                ...controller.questions.asMap().entries.map(
-                      (entry) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _QuestionCard(
-                          number: entry.key + 1,
-                          question: entry.value,
-                          onEdit: () => Get.to<bool>(
-                            () => AdminQuestionFormView(
-                              materialId: materialId,
-                              question: entry.value,
-                            ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 110),
+                  sliver: SliverList.separated(
+                    itemCount: controller.questions.length,
+                    itemBuilder: (context, index) {
+                      final question = controller.questions[index];
+                      return _QuestionCard(
+                        number: index + 1,
+                        question: question,
+                        onEdit: () => Get.to<bool>(
+                          () => AdminQuestionFormView(
+                            materialId: materialId,
+                            question: question,
                           ),
-                          onDelete: () =>
-                              _confirmDeleteQuestion(entry.value),
                         ),
-                      ),
-                    ),
+                        onDelete: () => _confirmDeleteQuestion(question),
+                      );
+                    },
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                  ),
+                ),
             ],
           );
         }),

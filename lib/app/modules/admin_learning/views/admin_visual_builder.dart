@@ -662,7 +662,6 @@ class _AdminVisualBuilderState extends State<AdminVisualBuilder> {
                 hintText: 'Contoh: ${currentMeta.label} Konsep Utama',
                 prefixIcon: Icons.title_rounded,
               ),
-              onChanged: (_) => _changed(),
             ),
             const SizedBox(height: 12),
 
@@ -688,7 +687,6 @@ class _AdminVisualBuilderState extends State<AdminVisualBuilder> {
                 hintText: 'Ringkasan singkat yang dibaca siswa...',
                 alignLabelWithHint: true,
               ),
-              onChanged: (_) => _changed(),
             ),
             const SizedBox(height: 18),
 
@@ -841,12 +839,10 @@ class _AdminVisualBuilderState extends State<AdminVisualBuilder> {
   }
 
   Widget _buildFormulaEditor() {
-    final formulaText = widget.controller.formulaController.text.trim();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        // Preview Box Formula
+        // Preview Box Formula (Isolated ValueListenableBuilder)
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
@@ -877,15 +873,23 @@ class _AdminVisualBuilderState extends State<AdminVisualBuilder> {
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
-                formulaText.isEmpty ? 'Ketik rumus di bawah...' : formulaText,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: 0.5,
-                ),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: widget.controller.formulaController,
+                builder: (context, value, _) {
+                  final formulaText = value.text.trim();
+                  return Text(
+                    formulaText.isEmpty
+                        ? 'Ketik rumus di bawah...'
+                        : formulaText,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -912,10 +916,6 @@ class _AdminVisualBuilderState extends State<AdminVisualBuilder> {
             hintText: 'Contoh: F = m × a  atau  PV = nRT',
             prefixIcon: Icons.functions_rounded,
           ),
-          onChanged: (_) {
-            setState(() {});
-            _changed();
-          },
         ),
         const SizedBox(height: 18),
 
@@ -978,7 +978,6 @@ class _AdminVisualBuilderState extends State<AdminVisualBuilder> {
                         labelText: 'Kolom 1 (Kiri)',
                         hintText: 'Misal: Konsentrasi (M)',
                       ),
-                      onChanged: (_) => _changed(),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -994,7 +993,6 @@ class _AdminVisualBuilderState extends State<AdminVisualBuilder> {
                         labelText: 'Kolom 2 (Kanan)',
                         hintText: 'Misal: Laju Reaksi',
                       ),
-                      onChanged: (_) => _changed(),
                     ),
                   ),
                 ],
@@ -1046,7 +1044,6 @@ class _AdminVisualBuilderState extends State<AdminVisualBuilder> {
                     decoration: _buildInputDecoration(
                       hintText: 'Nilai kolom 1',
                     ),
-                    onChanged: (_) => _changed(),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1060,7 +1057,6 @@ class _AdminVisualBuilderState extends State<AdminVisualBuilder> {
                     decoration: _buildInputDecoration(
                       hintText: 'Nilai kolom 2',
                     ),
-                    onChanged: (_) => _changed(),
                   ),
                 ),
                 if (rows.length > 1)
@@ -1163,11 +1159,13 @@ class _AdminVisualBuilderState extends State<AdminVisualBuilder> {
                           Image.file(
                             File(widget.imagePath!),
                             fit: BoxFit.cover,
+                            cacheWidth: 800,
                           )
                         else
                           Image.network(
                             networkUrl!,
                             fit: BoxFit.cover,
+                            cacheWidth: 800,
                             errorBuilder:
                                 (_, __, ___) => const _VisualImageError(),
                           ),
@@ -1628,7 +1626,6 @@ class _VisualItemCard extends StatelessWidget {
               labelText: 'Judul / Nama $prefix',
               hintText: 'Contoh: Nama komponen atau langkah',
             ),
-            onChanged: (_) => onChanged(),
           ),
           const SizedBox(height: 10),
           TextFormField(
@@ -1645,7 +1642,6 @@ class _VisualItemCard extends StatelessWidget {
               hintText: 'Tulis penjelasan rinci yang mudah dipahami siswa...',
               alignLabelWithHint: true,
             ),
-            onChanged: (_) => onChanged(),
           ),
         ],
       ),

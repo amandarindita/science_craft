@@ -12,7 +12,7 @@ import '../../../widgets/science_shimmer.dart';
 import '../controllers/admin_learning_controller.dart';
 
 // =============================================================================
-// COLOR PALETTE (MAINTAINING PURPLE ACCENT AS REQUESTED)
+// COLOR PALETTE (MAINTAINING PURPLE ACCENT)
 // =============================================================================
 const Color _primary = Color(0xFF7C3AED); // Main Purple
 const Color _primaryDark = Color(0xFF4C1D95); // Deep Indigo/Purple
@@ -78,7 +78,7 @@ InputDecoration _buildInputDecoration({
 }
 
 // =============================================================================
-// 1. CHECKPOINT MANAGER VIEW (LIST SCREEN)
+// 1. CHECKPOINT MANAGER VIEW (LIST SCREEN WITH VIRTUALIZATION)
 // =============================================================================
 class AdminCheckpointManagerView extends StatefulWidget {
   const AdminCheckpointManagerView({super.key, required this.submaterial});
@@ -147,43 +147,59 @@ class _AdminCheckpointManagerViewState
             return const AdminModuleListShimmer(itemCount: 3);
           }
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
-            children: <Widget>[
-              _Header(
-                title: widget.submaterial['title']?.toString() ?? 'Submateri',
-                checkpointCount: controller.checkpoints.length,
+          return CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            slivers: <Widget>[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  child: _Header(
+                    title:
+                        widget.submaterial['title']?.toString() ?? 'Submateri',
+                    checkpointCount: controller.checkpoints.length,
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
               if (controller.checkpoints.isEmpty)
-                _EmptyState(
-                  onAdd:
-                      () => Get.to<bool>(
-                        () => AdminCheckpointFormView(
-                          submaterialId: submaterialId,
-                        ),
-                      ),
-                )
-              else
-                ...controller.checkpoints.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final checkpoint = entry.value;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _CheckpointCard(
-                      index: index,
-                      checkpoint: checkpoint,
-                      onEdit:
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _EmptyState(
+                      onAdd:
                           () => Get.to<bool>(
                             () => AdminCheckpointFormView(
                               submaterialId: submaterialId,
-                              checkpoint: checkpoint,
                             ),
                           ),
-                      onDelete: () => controller.deleteCheckpoint(checkpoint),
                     ),
-                  );
-                }),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 110),
+                  sliver: SliverList.separated(
+                    itemCount: controller.checkpoints.length,
+                    itemBuilder: (context, index) {
+                      final checkpoint = controller.checkpoints[index];
+                      return _CheckpointCard(
+                        index: index,
+                        checkpoint: checkpoint,
+                        onEdit:
+                            () => Get.to<bool>(
+                              () => AdminCheckpointFormView(
+                                submaterialId: submaterialId,
+                                checkpoint: checkpoint,
+                              ),
+                            ),
+                        onDelete: () => controller.deleteCheckpoint(checkpoint),
+                      );
+                    },
+                    separatorBuilder:
+                        (context, index) => const SizedBox(height: 12),
+                  ),
+                ),
             ],
           );
         }),
@@ -1195,11 +1211,16 @@ class _AdminCheckpointFormViewState extends State<AdminCheckpointFormView> {
                           fit: StackFit.expand,
                           children: <Widget>[
                             if (_imagePath != null)
-                              Image.file(File(_imagePath!), fit: BoxFit.cover)
+                              Image.file(
+                                File(_imagePath!),
+                                fit: BoxFit.cover,
+                                cacheWidth: 800,
+                              )
                             else
                               Image.network(
                                 resolvedImage!,
                                 fit: BoxFit.cover,
+                                cacheWidth: 800,
                                 errorBuilder:
                                     (_, __, ___) => const _ImageError(),
                               ),
@@ -1783,10 +1804,15 @@ class _AdminCheckpointFormViewState extends State<AdminCheckpointFormView> {
                   aspectRatio: 16 / 9,
                   child:
                       _imagePath != null
-                          ? Image.file(File(_imagePath!), fit: BoxFit.cover)
+                          ? Image.file(
+                            File(_imagePath!),
+                            fit: BoxFit.cover,
+                            cacheWidth: 800,
+                          )
                           : Image.network(
                             resolvedImage!,
                             fit: BoxFit.cover,
+                            cacheWidth: 800,
                             errorBuilder: (_, __, ___) => const _ImageError(),
                           ),
                 ),
@@ -2281,7 +2307,8 @@ class _AdminCheckpointFormViewState extends State<AdminCheckpointFormView> {
                             children: <Widget>[
                               Expanded(
                                 child: OutlinedButton(
-                                  onPressed: () => Navigator.of(context).pop(false),
+                                  onPressed:
+                                      () => Navigator.of(context).pop(false),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: _text,
                                     side: const BorderSide(color: _border),
@@ -2332,7 +2359,10 @@ class _AdminCheckpointFormViewState extends State<AdminCheckpointFormView> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
-                                  icon: const Icon(Icons.check_rounded, size: 18),
+                                  icon: const Icon(
+                                    Icons.check_rounded,
+                                    size: 18,
+                                  ),
                                   label: Text(
                                     'Simpan Titik',
                                     style: GoogleFonts.poppins(
