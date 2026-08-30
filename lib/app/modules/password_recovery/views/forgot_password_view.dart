@@ -146,10 +146,10 @@ class ForgotPasswordView extends GetView<PasswordRecoveryController> {
                     width: 68,
                     height: 68,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
+                      color: Colors.white.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.35),
+                        color: Colors.white.withValues(alpha: 0.35),
                         width: 1.5,
                       ),
                     ),
@@ -183,7 +183,7 @@ class ForgotPasswordView extends GetView<PasswordRecoveryController> {
                     style: GoogleFonts.inter(
                       fontSize: 13,
                       height: 1.4,
-                      color: Colors.white.withOpacity(0.85),
+                      color: Colors.white.withValues(alpha: 0.85),
                     ),
                   ),
                 ),

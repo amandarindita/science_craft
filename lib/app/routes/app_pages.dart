@@ -69,11 +69,13 @@ class AppPages {
     GetPage(
       name: _Paths.OTP_VERIFICATION,
       page: () => const OtpVerificationView(),
+      binding: PasswordRecoveryBinding(),
     ),
 
     GetPage(
       name: _Paths.RESET_PASSWORD,
       page: () => const ResetPasswordView(),
+      binding: PasswordRecoveryBinding(),
     ),
     
     // Ini adalah "rumah" utama aplikasi setelah login

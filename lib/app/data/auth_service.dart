@@ -287,12 +287,32 @@ class AuthService extends GetxService {
       );
       debugPrint('[AuthService] 📥 Register Response Body: ${response.body}');
 
-      if (response.statusCode == 201) {
-        AppSnackbar.success(
-          'Registrasi Berhasil 🎉',
-          'Akun kamu berhasil dibuat. Selamat datang di Science Craft!',
-        );
-        _handleLoginResult(ApiClient.decodeMap(response.body));
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final resData = ApiClient.decodeMap(response.body);
+
+        // Jika backend langsung mengembalikan access_token (direct login)
+        if (resData['access_token'] != null) {
+          AppSnackbar.success(
+            'Registrasi Berhasil 🎉',
+            'Akun kamu berhasil dibuat. Selamat datang di Science Craft!',
+          );
+          _handleLoginResult(resData);
+        } else {
+          // Backend mengirimkan OTP ke email
+          final String message = resData['message'] ??
+              'Registrasi awal berhasil! Silakan cek kode OTP di email Anda.';
+          AppSnackbar.success('Kode OTP Terkirim ✉️', message);
+
+          Get.toNamed(
+            Routes.OTP_VERIFICATION,
+            arguments: {
+              'email': email,
+              'username': username,
+              'password': password,
+              'isRegistration': true,
+            },
+          );
+        }
       } else {
         final resData = ApiClient.decodeMap(response.body);
         final String message =
@@ -310,6 +330,65 @@ class AuthService extends GetxService {
         'Gangguan Koneksi',
         'Tidak dapat terhubung ke server pendaftaran: ${e.toString().split('\n').first}',
       );
+    }
+  }
+
+  Future<bool> verifyRegisterOtp(String email, String otp) async {
+    try {
+      debugPrint('==================================================');
+      debugPrint(
+        '[AuthService] 🚀 Memulai verifikasi OTP registrasi: $email, OTP: $otp',
+      );
+      Get.dialog(
+        const Center(
+          child: CircularProgressIndicator(color: Color(0xFF2563EB)),
+        ),
+        barrierDismissible: false,
+      );
+
+      final targetUrl =
+          Uri.parse('${ApiService.baseUrl}/auth/register/verify-otp');
+      debugPrint('[AuthService] 📡 Mengirim POST ke $targetUrl');
+      final response = await http.post(
+        targetUrl,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'otp': otp,
+        }),
+      );
+      if (Get.isDialogOpen ?? false) Get.back();
+
+      debugPrint(
+        '[AuthService] 📥 Verify OTP Status: ${response.statusCode}',
+      );
+      debugPrint('[AuthService] 📥 Verify OTP Body: ${response.body}');
+
+      final resData = ApiClient.decodeMap(response.body);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        AppSnackbar.success(
+          'Akun Terverifikasi 🎉',
+          resData['message'] ?? 'Selamat! Akun kamu berhasil diverifikasi.',
+        );
+        _handleLoginResult(resData);
+        return true;
+      } else {
+        final String message = resData['error'] ??
+            resData['message'] ??
+            'Kode OTP salah atau telah kedaluwarsa.';
+        debugPrint('[AuthService] ❌ Verifikasi OTP gagal: $message');
+        AppSnackbar.error('Verifikasi Gagal', message);
+        return false;
+      }
+    } catch (e, stackTrace) {
+      if (Get.isDialogOpen ?? false) Get.back();
+      debugPrint('[AuthService] ❌ Error Verify OTP Exception: $e');
+      debugPrint('[AuthService] ❌ StackTrace: $stackTrace');
+      AppSnackbar.error(
+        'Gangguan Koneksi',
+        'Tidak dapat terhubung ke server verifikasi: ${e.toString().split('\n').first}',
+      );
+      return false;
     }
   }
 

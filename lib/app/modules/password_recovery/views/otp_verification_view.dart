@@ -13,19 +13,25 @@ class OtpVerificationView extends StatefulWidget {
 }
 
 class _OtpVerificationViewState extends State<OtpVerificationView> {
-  final PasswordRecoveryController controller =
-      Get.find<PasswordRecoveryController>();
-
+  late final PasswordRecoveryController controller;
   final FocusNode otpFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
 
+    controller = Get.isRegistered<PasswordRecoveryController>()
+        ? Get.find<PasswordRecoveryController>()
+        : Get.put(PasswordRecoveryController());
+
+    controller.initFromArguments();
     controller.otpController.addListener(_refreshOtpBoxes);
+    otpFocusNode.addListener(_refreshOtpBoxes);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      otpFocusNode.requestFocus();
+      if (mounted) {
+        otpFocusNode.requestFocus();
+      }
     });
   }
 
@@ -38,6 +44,7 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
   @override
   void dispose() {
     controller.otpController.removeListener(_refreshOtpBoxes);
+    otpFocusNode.removeListener(_refreshOtpBoxes);
     otpFocusNode.dispose();
     super.dispose();
   }
@@ -202,10 +209,10 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                     width: 68,
                     height: 68,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
+                      color: Colors.white.withValues(alpha: 0.18),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.35),
+                        color: Colors.white.withValues(alpha: 0.35),
                         width: 1.5,
                       ),
                     ),
@@ -217,26 +224,31 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Center(
-                  child: Text(
-                    'Verifikasi OTP',
-                    style: GoogleFonts.inter(
-                      fontSize: 23,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Center(
-                  child: Text(
-                    'Dikirim ke: ${controller.email}',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
+                Obx(
+                  () => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        controller.isRegistration.value
+                            ? 'Verifikasi Akun Baru'
+                            : 'Verifikasi OTP',
+                        style: GoogleFonts.inter(
+                          fontSize: 23,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Dikirim ke: ${controller.emailText.value.isNotEmpty ? controller.emailText.value : controller.email}',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -252,88 +264,107 @@ class _OtpVerificationViewState extends State<OtpVerificationView> {
   // -------------------------------------------------------------
   Widget _buildOtpBoxes(String otpValue) {
     return GestureDetector(
-      onTap: () => otpFocusNode.requestFocus(),
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        if (!otpFocusNode.hasFocus) {
+          otpFocusNode.requestFocus();
+        }
+      },
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Hidden TextField
-          Opacity(
-            opacity: 0,
-            child: TextField(
-              controller: controller.otpController,
-              focusNode: otpFocusNode,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(6),
-              ],
-              onChanged: (value) {
-                setState(() {});
-                if (value.length == 6) {
-                  FocusScope.of(context).unfocus();
-                  controller.verifyOtp();
-                }
-              },
-              decoration: const InputDecoration(
-                counterText: '',
-                border: InputBorder.none,
-              ),
+          // 1. 6 Digit Visual Boxes (Behind, IgnorePointer so taps pass through)
+          IgnorePointer(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(6, (index) {
+                final bool hasValue = index < otpValue.length;
+                final bool isActive =
+                    otpFocusNode.hasFocus &&
+                    (index == otpValue.length ||
+                        (index == 5 && otpValue.length == 6));
+
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 44,
+                  height: 56,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: hasValue
+                        ? const Color(0xFFEFF6FF)
+                        : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isActive
+                          ? const Color(0xFF2563EB)
+                          : hasValue
+                              ? const Color(0xFF3B82F6)
+                              : const Color(0xFFE2E8F0),
+                      width: isActive ? 2.0 : 1.2,
+                    ),
+                    boxShadow: isActive
+                        ? const [
+                            BoxShadow(
+                              color: Color(0x292563EB),
+                              blurRadius: 8,
+                              offset: Offset(0, 3),
+                            ),
+                          ]
+                        : const [
+                            BoxShadow(
+                              color: Color(0x080F172A),
+                              blurRadius: 6,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                  ),
+                  child: Text(
+                    hasValue ? otpValue[index] : '',
+                    style: GoogleFonts.inter(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                );
+              }),
             ),
           ),
 
-          // 6 Digit Visual Boxes
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(6, (index) {
-              final bool hasValue = index < otpValue.length;
-              final bool isActive =
-                  index == otpValue.length && otpValue.length < 6;
-
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 44,
-                height: 56,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: hasValue
-                      ? const Color(0xFFEFF6FF)
-                      : const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: isActive
-                        ? const Color(0xFF2563EB)
-                        : hasValue
-                            ? const Color(0xFF3B82F6)
-                            : const Color(0xFFE2E8F0),
-                    width: isActive ? 2 : 1.2,
-                  ),
-                  boxShadow: isActive
-                      ? const [
-                          BoxShadow(
-                            color: Color(0x292563EB),
-                            blurRadius: 8,
-                            offset: Offset(0, 3),
-                          ),
-                        ]
-                      : const [
-                          BoxShadow(
-                            color: Color(0x080F172A),
-                            blurRadius: 6,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
+          // 2. Invisible TextField covering the FULL area ON TOP for direct native touch
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.01,
+              child: TextField(
+                controller: controller.otpController,
+                focusNode: otpFocusNode,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                enableSuggestions: false,
+                autocorrect: false,
+                showCursor: false,
+                cursorColor: Colors.transparent,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(6),
+                ],
+                onChanged: (value) {
+                  setState(() {});
+                  if (value.length == 6) {
+                    FocusScope.of(context).unfocus();
+                    controller.verifyOtp();
+                  }
+                },
+                decoration: const InputDecoration(
+                  counterText: '',
+                  border: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
                 ),
-                child: Text(
-                  hasValue ? otpValue[index] : '',
-                  style: GoogleFonts.inter(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: const Color(0xFF0F172A),
-                  ),
-                ),
-              );
-            }),
+              ),
+            ),
           ),
         ],
       ),

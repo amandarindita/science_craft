@@ -169,10 +169,10 @@ class RegisterView extends GetView<RegisterController> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.18),
+                color: Colors.white.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.32),
+                  color: Colors.white.withValues(alpha: 0.32),
                   width: 1,
                 ),
               ),
@@ -219,7 +219,7 @@ class RegisterView extends GetView<RegisterController> {
                       width: 125,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.24),
+                        color: Colors.white.withValues(alpha: 0.24),
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(18),
                           topRight: Radius.circular(18),
