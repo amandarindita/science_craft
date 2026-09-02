@@ -84,6 +84,9 @@ class ProfileLearningController
   final currentLevelProgress = 0.0.obs;
   final overallProgress = 0.0.obs;
 
+  final gachaTickets = 0.obs;
+  final shards = 0.obs;
+
   final completedModules = 0.obs;
   final totalModules = 0.obs;
   final totalXp = 0.obs;
@@ -177,6 +180,8 @@ class ProfileLearningController
     todayActivityStatus.value =
         (data['daily_status'] ?? 'none')
             .toString();
+    gachaTickets.value = _intValue(data['gacha_tickets']);
+    shards.value = _intValue(data['shards']);
 
     final List<Map<String, dynamic>>
         weeklyItems = _mapList(
@@ -189,6 +194,9 @@ class ProfileLearningController
       final DateTime now = DateTime.now();
       final DateTime todayDate = DateTime(now.year, now.month, now.day);
       final int streak = dailyStreak.value;
+
+      final bool isTodayActive = todayActivityStatus.value == 'active';
+      final int targetPastDays = isTodayActive ? (streak - 1) : streak;
 
       final List<LearningStreakDay> parsedList = weeklyItems.map(
         (Map<String, dynamic> item) {
@@ -211,7 +219,7 @@ class ProfileLearningController
                 .difference(DateTime(
                     parsedDate.year, parsedDate.month, parsedDate.day))
                 .inDays;
-            if (diffDays < streak && status == 'none') {
+            if (diffDays <= targetPastDays && status == 'none') {
               status = 'active';
             }
           }
@@ -280,6 +288,9 @@ class ProfileLearningController
 
     final int streak = dailyStreak.value;
 
+    final bool isTodayActive = todayActivityStatus.value == 'active';
+    final int targetPastDays = isTodayActive ? (streak - 1) : streak;
+
     weeklyActivity.assignAll(
       List<LearningStreakDay>.generate(
         7,
@@ -299,8 +310,8 @@ class ProfileLearningController
                 : (streak > 0 ? 'active' : 'none');
           } else if (checkDate.isBefore(todayDate)) {
             final int diffDays = todayDate.difference(checkDate).inDays;
-            if (diffDays < streak) {
-              status = 'active';
+            if (diffDays <= targetPastDays) {
+             status = 'active';
             }
           }
 

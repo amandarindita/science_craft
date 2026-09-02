@@ -11,6 +11,7 @@ abstract class Routes {
   static const MATERIAL_LIST = _Paths.MATERIAL_LIST; 
   static const ROOT = _Paths.ROOT;
   static const PROFILE = _Paths.PROFILE;
+  static const GACHA = _Paths.GACHA;
   static const MATERIAL_DETAIL = _Paths.MATERIAL_DETAIL;
   static const NOTIFICATION = _Paths.NOTIFICATION;
   static const ABOUT = _Paths.ABOUT;
@@ -39,6 +40,7 @@ abstract class _Paths {
   static const MATERIAL_LIST = '/material-list';
   static const ROOT = '/root';
   static const PROFILE = '/profile';
+  static const GACHA = '/gacha';
   static const MATERIAL_DETAIL = '/material-detail/-:id';
   static const NOTIFICATION = '/notification';
   static const ABOUT = '/about';

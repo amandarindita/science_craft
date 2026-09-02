@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import '../../../routes/app_pages.dart';
 import '../../../widgets/logout_confirmation_dialog.dart';
 import '../../../widgets/science_shimmer.dart';
 
@@ -131,22 +131,25 @@ class _ProfileViewState extends State<ProfileView> {
                       : const SizedBox.shrink(),
             ),
             const SizedBox(height: 14),
-            Obx(
-              () => _ProgressCard(
+            Obx(() {
+              // Mengambil data XP riil
+              final int currentXp = controller.totalXp.value;
+              final int targetXp = milestoneController.progressTargetXp.value;
+              
+              // Mencegah error pembagian nol jika target 0
+              final double xpProgress = targetXp > 0 
+                  ? (currentXp / targetXp).clamp(0.0, 1.0) 
+                  : 1.0;
+
+              return _ProgressCard(
                 level: controller.currentLearningLevel.value,
-                progress: controller.currentLevelProgress.value,
-                message: controller.nextLearningMessage,
-              ),
-            ),
+                currentXp: currentXp,
+                targetXp: targetXp,
+                progress: xpProgress,
+              );
+            }),
             const SizedBox(height: 12),
-            Obx(
-              () => _StatsGrid(
-                completed: controller.completedModules.value,
-                total: controller.totalModules.value,
-                xp: controller.totalXp.value,
-                badges: controller.ownedBadgeCount.value,
-              ),
-            ),
+            const SizedBox(height: 12),
             const SizedBox(height: 12),
             Obx(
               () => _WeeklyStreakCard(
@@ -162,7 +165,11 @@ class _ProfileViewState extends State<ProfileView> {
                 await Get.to<void>(() => const MilestoneCollectionView());
                 await milestoneController.loadMilestones();
               },
+              
             ),
+            const SizedBox(height: 12),
+
+            const _GachaPreviewCard(),
             const SizedBox(height: 18),
             const _SectionTitle(
               title: 'Perjalanan Level',
@@ -357,21 +364,24 @@ class _HeroCard extends StatelessWidget {
 // =============================================================================
 // 2. PROGRESS LEVEL CARD
 // =============================================================================
+// =============================================================================
+// 2. PROGRESS LEVEL CARD (XP BASED)
+// =============================================================================
 class _ProgressCard extends StatelessWidget {
   const _ProgressCard({
     required this.level,
+    required this.currentXp,
+    required this.targetXp,
     required this.progress,
-    required this.message,
   });
 
   final int level;
+  final int currentXp;
+  final int targetXp;
   final double progress;
-  final String message;
 
   @override
   Widget build(BuildContext context) {
-    final int percent = (progress * 100).round();
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -394,12 +404,12 @@ class _ProgressCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: _primaryBlue.withValues(alpha: 0.1),
+                  color: _warning.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
-                  Icons.auto_graph_rounded,
-                  color: _primaryBlue,
+                  Icons.bolt_rounded,
+                  color: _warning,
                   size: 20,
                 ),
               ),
@@ -414,29 +424,38 @@ class _ProgressCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(
-                '$percent%',
-                style: GoogleFonts.poppins(
-                  color: _primaryBlue,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _primaryBlue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  targetXp > 0 ? '$currentXp / $targetXp XP' : 'Maksimal',
+                  style: GoogleFonts.poppins(
+                    color: _primaryBlue,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 10,
-              color: _primaryBlue,
+              color: _warning, // Warna kuning XP agar senada dengan tema energi
               backgroundColor: const Color(0xFFF1F5F9),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Text(
-            message,
+            targetXp > currentXp
+                ? 'Kumpulkan ${targetXp - currentXp} XP lagi untuk naik ke level selanjutnya!'
+                : 'Luar biasa! Kamu sudah menuntaskan semua target level.',
             style: GoogleFonts.plusJakartaSans(
               color: _textMuted,
               fontSize: 11.5,
@@ -448,7 +467,6 @@ class _ProgressCard extends StatelessWidget {
     );
   }
 }
-
 // =============================================================================
 // 3. STATS GRID
 // =============================================================================
@@ -458,43 +476,52 @@ class _StatsGrid extends StatelessWidget {
     required this.total,
     required this.xp,
     required this.badges,
+    required this.tickets,
+    // HAPUS required this.shards
   });
 
   final int completed;
   final int total;
   final int xp;
   final int badges;
+  final int tickets;
+  // HAPUS final int shards;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      childAspectRatio: 1.8,
       children: <Widget>[
-        Expanded(
-          child: _Stat(
-            icon: Icons.menu_book_rounded,
-            color: _primaryBlue,
-            value: '$completed/$total',
-            label: 'Modul',
-          ),
+        _Stat(
+          icon: Icons.menu_book_rounded,
+          color: _primaryBlue,
+          value: '$completed/$total',
+          label: 'Modul',
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _Stat(
-            icon: Icons.bolt_rounded,
-            color: _warning,
-            value: '$xp',
-            label: 'Total XP',
-          ),
+        _Stat(
+          icon: Icons.bolt_rounded,
+          color: _warning,
+          value: '$xp',
+          label: 'Total XP',
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _Stat(
-            icon: Icons.workspace_premium_rounded,
-            color: const Color(0xFF8B5CF6),
-            value: '$badges',
-            label: 'Badge',
-          ),
+        _Stat(
+          icon: Icons.workspace_premium_rounded,
+          color: const Color(0xFF8B5CF6),
+          value: '$badges',
+          label: 'Badge',
         ),
+        _Stat(
+          icon: Icons.local_activity_rounded,
+          color: const Color(0xFFEC4899),
+          value: '$tickets',
+          label: 'Tiket Gacha',
+        ),
+        // KOTAK _STAT SERPIHAN SUDAH DIHAPUS DARI SINI
       ],
     );
   }
@@ -562,6 +589,8 @@ class _Stat extends StatelessWidget {
     );
   }
 }
+
+
 
 // =============================================================================
 // 4. WEEKLY STREAK CARD
@@ -1168,6 +1197,7 @@ class _AccountCard extends StatelessWidget {
       ),
       child: Column(
         children: <Widget>[
+          
           _AccountItem(
             icon: Icons.edit_outlined,
             label: 'Edit Profil Pembelajaran',
@@ -1357,5 +1387,84 @@ class _LoadingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const ProfileLevelShimmer();
+  }
+}
+
+// =============================================================================
+// GACHA PREVIEW CARD (MENCOLOK & MUDAH DI-NOTICE)
+// =============================================================================
+class _GachaPreviewCard extends StatelessWidget {
+  const _GachaPreviewCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => Get.toNamed(Routes.GACHA),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: <Color>[Color(0xFF2563EB), Color(0xFF7C3AED)],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: <Widget>[
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(
+                Icons.card_giftcard_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'Laboratorium Gacha & Kartu',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Koleksi kartu ilmuwan sains dan tukar shards-mu!',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: const Color(0xFFE2E8F0),
+                      fontSize: 11.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -374,7 +374,7 @@ class _CheckpointExerciseViewState extends State<CheckpointExerciseView> {
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   key: ValueKey<String>('$leftId-${selected ?? 'empty'}'),
-                  initialValue: selected,
+                  value: selected,
                   isExpanded: true,
                   style: GoogleFonts.plusJakartaSans(
                     color: _checkpointDark,

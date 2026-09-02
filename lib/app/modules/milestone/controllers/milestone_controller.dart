@@ -39,10 +39,6 @@ class MilestoneController extends GetxController {
   List<MilestoneReward> get unlockedRewards =>
       rewards.where((MilestoneReward item) => item.unlocked).toList();
 
-  List<MilestoneReward> get unlockedDiscoveryCards => rewards
-      .where((MilestoneReward item) => item.unlocked && item.isDiscoveryCard)
-      .toList();
-
   List<MilestoneReward> get unlockedAvatarFrames => rewards
       .where((MilestoneReward item) => item.unlocked && item.isAvatarFrame)
       .toList();

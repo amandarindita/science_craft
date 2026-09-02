@@ -26,6 +26,7 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
   // Dashboard baru tidak menampilkan Level dari XP.
   final userLevel = 1.obs;
   final userXp = 0.obs;
+  
 
   // =====================================================
   // DATA "LANJUTKAN BELAJAR"
@@ -58,8 +59,9 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
   // =====================================================
   final dailyQuests = <Map<String, dynamic>>[].obs;
   final isDailyRewardClaimed = false.obs;
-  final dailyRewardXp = 50.obs;
+  final dailyRewardTickets = 1.obs;
   final isDailyQuestLoading = false.obs;
+  final dailyRewardXp = 50.obs; // Tambahkan kembali variabel ini agar view tidak error
 
   @override
   void onInit() {
@@ -632,7 +634,7 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
   }
 
   void _applyDailyQuestData(Map<String, dynamic> data) {
-    dailyRewardXp.value = _toInt(data['reward_xp'], fallback: 50);
+    dailyRewardTickets.value = _toInt(data['reward_tickets'], fallback: 1);
 
     isDailyRewardClaimed.value = _toBool(data['is_claimed']);
 
@@ -759,10 +761,7 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
         return;
       }
 
-      final rewardXp = _toInt(
-        result['reward_xp'],
-        fallback: dailyRewardXp.value,
-      );
+      final int rewardTickets = _toInt(result['reward_tickets'], fallback: 1);
 
       final currentXp = _toInt(result['current_xp'], fallback: userXp.value);
 
@@ -779,7 +778,7 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
 
       Get.snackbar(
         "Daily Quest Selesai!",
-        "+$rewardXp XP berhasil diklaim.",
+        "+$rewardTickets Tiket Gacha berhasil diklaim",
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green,
         colorText: Colors.white,
@@ -798,7 +797,7 @@ class DashboardController extends GetxController with WidgetsBindingObserver {
         );
       }
 
-      print("[DailyQuest] Reward berhasil diklaim +$rewardXp XP");
+      print("[DailyQuest] Reward berhasil diklaim +$rewardTickets Tiket Gacha");
     } catch (e) {
       Get.snackbar(
         "Gagal",

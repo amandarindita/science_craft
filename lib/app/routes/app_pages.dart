@@ -39,6 +39,8 @@ import '../modules/lab/views/simulation_view.dart';
 import '../modules/learning/views/learning_view.dart';
 import '../modules/admin_learning/bindings/admin_learning_binding.dart';
 import '../modules/admin_learning/views/admin_learning_view.dart';
+import '../modules/gacha/bindings/gacha_binding.dart';
+import '../modules/gacha/views/gacha_view.dart';
 
 part 'app_routes.dart';
 
@@ -115,6 +117,11 @@ class AppPages {
       name: _Paths.PROFILE,
       page: () => const ProfileView(),
       binding: ProfileBinding(),
+    ),
+    GetPage(
+      name: Routes.GACHA,
+      page: () => const GachaView(),
+      binding: GachaBinding(),
     ),
     GetPage(
       name: _Paths.NOTIFICATION,

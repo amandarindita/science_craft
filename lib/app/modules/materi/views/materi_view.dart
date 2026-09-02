@@ -6,7 +6,6 @@ import 'package:flutter_quill/flutter_quill.dart';
 // Pastikan import ini sesuai dengan lokasi file kamu
 import '../controllers/materi_controller.dart';
 import '../../../models/material_model.dart'; 
-import 'package:tuple/tuple.dart';
 import '../../../routes/app_pages.dart';
 import '../../../data/api_service.dart';
 

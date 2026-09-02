@@ -384,7 +384,7 @@ class _AdminQuestionFormViewState extends State<AdminQuestionFormView> {
                 ),
                 const SizedBox(height: 6),
                 DropdownButtonFormField<String>(
-                  initialValue: _type,
+                  value: _type,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w600,
@@ -521,7 +521,7 @@ class _AdminQuestionFormViewState extends State<AdminQuestionFormView> {
                 ),
                 const SizedBox(height: 6),
                 DropdownButtonFormField<String>(
-                  initialValue: _answer,
+                  value: _answer,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w700,

@@ -665,7 +665,7 @@ class _DashboardViewState extends State<DashboardView> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Text(
-                            '+${controller.dailyRewardXp.value} XP',
+                            '+${controller.dailyRewardTickets.value} Tiket',
                             style: GoogleFonts.poppins(
                               color: _blueDark,
                               fontSize: 11,
@@ -746,7 +746,7 @@ class _DashboardViewState extends State<DashboardView> {
                           controller.isDailyRewardClaimed.value
                               ? 'Reward Sudah Diklaim'
                               : controller.isAllDailyQuestDone
-                                  ? 'Klaim Bonus +${controller.dailyRewardXp.value} XP'
+                                  ? 'Klaim Bonus +${controller.dailyRewardTickets.value} Tiket'
                                   : 'Selesaikan Semua Misi',
                           style: GoogleFonts.poppins(
                             fontSize: 13,

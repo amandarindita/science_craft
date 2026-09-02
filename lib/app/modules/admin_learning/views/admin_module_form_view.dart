@@ -192,7 +192,7 @@ class _AdminModuleFormViewState extends State<AdminModuleFormView> {
                           ),
                           const SizedBox(height: 6),
                           DropdownButtonFormField<String>(
-                            initialValue: _category,
+                            value: _category,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w600,
@@ -239,7 +239,7 @@ class _AdminModuleFormViewState extends State<AdminModuleFormView> {
                           ),
                           const SizedBox(height: 6),
                           DropdownButtonFormField<int>(
-                            initialValue: _level,
+                            value: _level,
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w600,
