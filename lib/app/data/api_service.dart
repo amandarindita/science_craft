@@ -567,6 +567,109 @@ class ApiService {
   }
 
   // =====================================================
+  // GACHA & CARD COLLECTION API
+  // =====================================================
+
+  static Future<Map<String, dynamic>?> getGachaOverview() async {
+    if (!hasToken) {
+      return null;
+    }
+
+    final List<String> candidatePaths = <String>[
+      '/gacha/overview',
+      '/gacha/cards',
+      '/gacha',
+      '/cards',
+    ];
+
+    for (final path in candidatePaths) {
+      try {
+        final response = await ApiClient.get(
+          Uri.parse('$baseUrl$path'),
+        );
+
+        debugPrint('[GachaAPI] GET $path status: ${response.statusCode}, body: ${response.body}');
+
+        if (response.statusCode == 200) {
+          final decoded = _decodeMap(response.body);
+          final dynamic rawCards = decoded['master_cards'] ??
+              decoded['cards'] ??
+              decoded['data'];
+
+          if (rawCards is List && rawCards.isNotEmpty) {
+            final dynamic owned = decoded['owned_card_ids'] ??
+                decoded['owned_cards'] ??
+                decoded['user_cards'] ??
+                <dynamic>[];
+
+            return <String, dynamic>{
+              'master_cards': rawCards,
+              'owned_card_ids': owned is List ? owned : <dynamic>[],
+              'gacha_tickets': decoded['gacha_tickets'] ?? decoded['tickets'],
+              'shards': decoded['shards'],
+            };
+          }
+
+          final list = _decodeMapList(response.body);
+          if (list.isNotEmpty) {
+            return <String, dynamic>{
+              'master_cards': list,
+              'owned_card_ids': <dynamic>[],
+            };
+          }
+        }
+      } catch (e) {
+        debugPrint('[API] Error getGachaOverview for path $path: $e');
+      }
+    }
+
+    return null;
+  }
+
+  static Future<Map<String, dynamic>?> pullGachaApi() async {
+    if (!hasToken) {
+      return null;
+    }
+
+    try {
+      final response = await ApiClient.post(
+        Uri.parse('$baseUrl/gacha/pull'),
+      );
+
+      if (response.statusCode == 200) {
+        return _decodeMap(response.body);
+      }
+      return _failureData(response);
+    } catch (e) {
+      debugPrint('[API] Error pullGachaApi: $e');
+      return null;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> craftGachaCard(String cardId) async {
+    if (!hasToken) {
+      return null;
+    }
+
+    try {
+      final response = await ApiClient.post(
+        Uri.parse('$baseUrl/gacha/craft'),
+        body: jsonEncode(<String, String>{
+          'card_id': cardId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return _decodeMap(response.body);
+      }
+      return _failureData(response);
+    } catch (e) {
+      debugPrint('[API] Error craftGachaCard: $e');
+      return null;
+    }
+  }
+
+  // =====================================================
   // DAILY QUEST API
   // =====================================================
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../data/api_service.dart';
 import '../controllers/gacha_controller.dart';
-
 
 const Color _bg = Color(0xFFF8FAFC);
 const Color _primaryBlue = Color(0xFF2563EB);
@@ -11,11 +11,86 @@ const Color _purple = Color(0xFF7C3AED);
 const Color _textDark = Color(0xFF0F172A);
 const Color _textMuted = Color(0xFF64748B);
 const Color _success = Color(0xFF10B981);
-const Color _warning = Color(0xFFF59E0B);
 const Color _border = Color(0xFFE2E8F0);
 
 class GachaView extends GetView<GachaController> {
   const GachaView({super.key});
+
+  Widget _buildCardImage(
+    Map<String, dynamic> card, {
+    double iconSize = 40,
+    Color? iconColor,
+  }) {
+    final String? rawImg = card['image_url']?.toString() ??
+        card['image']?.toString() ??
+        card['image_path']?.toString() ??
+        card['imageUrl']?.toString() ??
+        card['avatar']?.toString();
+
+    if (rawImg != null && rawImg.trim().isNotEmpty) {
+      final String clean = rawImg.trim();
+      if (clean.startsWith('assets/')) {
+        return Image.asset(
+          clean,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Center(
+            child: Icon(
+              Icons.science_rounded,
+              size: iconSize,
+              color: iconColor ?? Colors.white,
+            ),
+          ),
+        );
+      }
+
+      final String? mediaUrl = ApiService.resolveMediaUrl(clean);
+      if (mediaUrl != null && mediaUrl.isNotEmpty) {
+        return Image.network(
+          mediaUrl,
+          fit: BoxFit.cover,
+          headers: const <String, String>{
+            'ngrok-skip-browser-warning': 'true',
+            'User-Agent': 'ScienceCraftApp',
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                      : null,
+                  strokeWidth: 2,
+                  color: iconColor ?? Colors.white,
+                ),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('[GachaImage] Error loading network image $mediaUrl: $error');
+            return Center(
+              child: Icon(
+                Icons.science_rounded,
+                size: iconSize,
+                color: iconColor ?? Colors.white,
+              ),
+            );
+          },
+        );
+      }
+    }
+
+    return Center(
+      child: Icon(
+        Icons.science_rounded,
+        size: iconSize,
+        color: iconColor ?? Colors.white,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +154,7 @@ class GachaView extends GetView<GachaController> {
                     Tab(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                        children: <Widget>[
                           Icon(Icons.card_giftcard_rounded, size: 15),
                           SizedBox(width: 5),
                           Text('Gacha'),
@@ -89,7 +164,7 @@ class GachaView extends GetView<GachaController> {
                     Tab(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                        children: <Widget>[
                           Icon(Icons.collections_bookmark_rounded, size: 15),
                           SizedBox(width: 5),
                           Text('Galeri'),
@@ -99,7 +174,7 @@ class GachaView extends GetView<GachaController> {
                     Tab(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                        children: <Widget>[
                           Icon(Icons.diamond_rounded, size: 15),
                           SizedBox(width: 5),
                           Text('Crafting'),
@@ -130,7 +205,8 @@ class GachaView extends GetView<GachaController> {
       ),
     );
   }
-// ===========================================================================
+
+  // ===========================================================================
   // TAB 1: AREA MESIN GACHA & ANIMASI (PULL TAB)
   // ===========================================================================
   Widget _buildPullTab(GachaController controller) {
@@ -142,18 +218,18 @@ class GachaView extends GetView<GachaController> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
-              _HeaderChip(
-                icon: Icons.local_activity_rounded,
-                color: const Color(0xFFEC4899),
-                value: '${controller.gachaTickets.value}',
-                label: 'Tiket',
-              ),
-              _HeaderChip(
-                icon: Icons.diamond_rounded,
-                color: const Color(0xFF06B6D4),
-                value: '${controller.shards.value}',
-                label: 'Shards',
-              ),
+              Obx(() => _HeaderChip(
+                    icon: Icons.local_activity_rounded,
+                    color: const Color(0xFFEC4899),
+                    value: '${controller.gachaTickets.value}',
+                    label: 'Tiket Gacha',
+                  )),
+              Obx(() => _HeaderChip(
+                    icon: Icons.diamond_rounded,
+                    color: const Color(0xFF06B6D4),
+                    value: '${controller.shards.value}',
+                    label: 'Shards',
+                  )),
             ],
           ),
         ),
@@ -166,46 +242,49 @@ class GachaView extends GetView<GachaController> {
             return Stack(
               alignment: Alignment.center,
               children: <Widget>[
-                // 1. VISUAL MESIN GACHA (Berubah berdasarkan State)
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: _buildMachineVisual(state),
-                ),
+                // Visual Mesin Animasi Dinamis
+                _AnimatedGachaMachine(state: state),
 
-                // 2. TOMBOL TARIK (Hanya muncul saat Idle)
+                // Tombol Tarik (Muncul saat Idle)
                 if (state == GachaState.idle)
                   Positioned(
-                    bottom: 40,
+                    bottom: 30,
                     child: ElevatedButton.icon(
                       onPressed: controller.pullGacha,
                       icon: const Icon(Icons.touch_app_rounded, size: 22),
                       label: Text(
-                        'Tarik (1 Tiket)',
+                        'Tarik Gacha (1 Tiket)',
                         style: GoogleFonts.poppins(
-                          fontSize: 16,
+                          fontSize: 15.5,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB),
+                        backgroundColor: _primaryBlue,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 16,
                         ),
-                        elevation: 8,
-                        shadowColor: const Color(0xFF2563EB).withValues(alpha: 0.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 10,
+                        shadowColor: _primaryBlue.withValues(alpha: 0.5),
                       ),
                     ),
                   ),
 
-                // 3. POPUP HASIL KARTU (Muncul saat State Result)
+                // Popup Hasil Kartu (Muncul saat State Result)
                 if (state == GachaState.result)
                   Positioned.fill(
                     child: Container(
-                      color: Colors.black.withValues(alpha: 0.8), // Overlay gelap
+                      color: Colors.black.withValues(alpha: 0.82),
                       child: Center(
-                        child: _buildResultCard(controller),
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: _buildResultCard(controller),
+                        ),
                       ),
                     ),
                   ),
@@ -217,213 +296,243 @@ class GachaView extends GetView<GachaController> {
     );
   }
 
-  // Visual Placeholder untuk setiap Fase Animasi
-  Widget _buildMachineVisual(GachaState state) {
-    switch (state) {
-      case GachaState.shaking:
-        return Column(
-          key: const ValueKey('shaking'),
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.vibration_rounded, size: 120, color: Color(0xFFF59E0B)),
-            SizedBox(height: 16),
-            Text('Mesin Mengaduk...', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-          ],
-        );
-      case GachaState.dropping:
-        return Column(
-          key: const ValueKey('dropping'),
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.catching_pokemon_rounded, size: 100, color: Color(0xFF10B981)), // Icon Bola Jatuh
-            SizedBox(height: 16),
-            Text('Kapsul Keluar!', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-          ],
-        );
-      case GachaState.opening:
-        return Column(
-          key: const ValueKey('opening'),
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.flare_rounded, size: 140, color: Color(0xFF8B5CF6)), // Icon Cahaya Membuka
-            SizedBox(height: 16),
-            Text('Membuka Kapsul...', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-          ],
-        );
-      case GachaState.result:
-        return const SizedBox.shrink(); // Disembunyikan karena ditimpa overlay hasil
-      case GachaState.idle:
-      default:
-        return Column(
-          key: const ValueKey('idle'),
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.casino_rounded, size: 160, color: Color(0xFF334155)), // Icon Mesin Gacha Standby
-            SizedBox(height: 20),
-            Text('Mesin Siap', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-          ],
-        );
-    }
-  }
-
   // Tampilan Kartu Hasil Tarikan
   Widget _buildResultCard(GachaController controller) {
     final card = controller.pulledCard;
     final bool isDup = controller.isDuplicate.value;
     final int shards = controller.earnedShards.value;
+    final String rarity = (card['rarity'] ?? 'Common').toString();
+    final String name = (card['name'] ?? 'Kartu Sains').toString();
+    final String desc =
+        (card['description'] ?? 'Penemuan ilmu pengetahuan yang menakjubkan.')
+            .toString();
+
+    List<Color> rarityGradient;
+    Color rarityBadgeColor;
+
+    switch (rarity.toLowerCase()) {
+      case 'legendary':
+        rarityGradient = const <Color>[Color(0xFFF59E0B), Color(0xFFD97706)];
+        rarityBadgeColor = const Color(0xFFD97706);
+        break;
+      case 'epic':
+        rarityGradient = const <Color>[Color(0xFF8B5CF6), Color(0xFF6D28D9)];
+        rarityBadgeColor = const Color(0xFF7C3AED);
+        break;
+      case 'rare':
+        rarityGradient = const <Color>[Color(0xFF06B6D4), Color(0xFF0284C7)];
+        rarityBadgeColor = const Color(0xFF0284C7);
+        break;
+      case 'common':
+      default:
+        rarityGradient = const <Color>[Color(0xFF10B981), Color(0xFF059669)];
+        rarityBadgeColor = const Color(0xFF059669);
+        break;
+    }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        // Label Duplikat
+      children: <Widget>[
+        // Status Banner (New vs Duplicate)
         if (isDup)
           Container(
             margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.purple,
+              gradient: const LinearGradient(
+                colors: <Color>[Color(0xFF7C3AED), Color(0xFF5B21B6)],
+              ),
               borderRadius: BorderRadius.circular(20),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.5),
+                  blurRadius: 12,
+                ),
+              ],
             ),
             child: Text(
-              '♻️ Duplikat! +$shards Shards',
-              style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+              '♻️ Kartu Duplikat! +$shards Shards',
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13.5,
+              ),
             ),
           )
         else
           Container(
             margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.green,
+              gradient: const LinearGradient(
+                colors: <Color>[Color(0xFF10B981), Color(0xFF047857)],
+              ),
               borderRadius: BorderRadius.circular(20),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.5),
+                  blurRadius: 12,
+                ),
+              ],
             ),
             child: Text(
               '✨ PENEMUAN BARU! ✨',
-              style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold),
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13.5,
+              ),
             ),
           ),
 
         // Desain Kartu Fisik
         Container(
-          width: 220,
-          height: 320,
+          width: 260,
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFE2E8F0), width: 4),
-            boxShadow: [
-              BoxShadow(color: Colors.white.withValues(alpha: 0.2), blurRadius: 40, spreadRadius: 10),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: rarityBadgeColor, width: 3.5),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: rarityBadgeColor.withValues(alpha: 0.4),
+                blurRadius: 30,
+                spreadRadius: 4,
+              ),
             ],
           ),
           child: Column(
-            children: [
-              Expanded(
-                flex: 3,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              // Visual Gambar Kartu
+              Container(
+                height: 160,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: rarityGradient,
                   ),
-                  child: const Center(
-                    child: Icon(Icons.science_rounded, size: 80, color: Color(0xFF64748B)),
-                  ),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        card['name'] ?? 'Unknown',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Stack(
+                    children: <Widget>[
+                      Positioned.fill(
+                        child: _buildCardImage(card, iconSize: 70),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        card['rarity'] ?? 'Common',
-                        style: GoogleFonts.plusJakartaSans(color: Colors.orange, fontWeight: FontWeight.bold),
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            rarity.toUpperCase(),
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
+
+              const SizedBox(height: 14),
+
+              // Detail Informasi Kartu
+              Text(
+                name,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: _textDark,
+                ),
+              ),
+
+              const SizedBox(height: 6),
+
+              Text(
+                desc,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 11.5,
+                  color: _textMuted,
+                  height: 1.35,
+                ),
+              ),
+
+              const SizedBox(height: 10),
             ],
           ),
         ),
 
-        const SizedBox(height: 30),
-        
-        // Tombol Tutup & Reset
+        const SizedBox(height: 24),
+
+        // Tombol Tutup & Kumpulkan
         ElevatedButton(
           onPressed: controller.resetGachaMachine,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+            foregroundColor: _textDark,
+            padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 4,
           ),
-          child: const Text('Kumpulkan'),
+          child: Text(
+            'Kumpulkan Kartu',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
         ),
       ],
     );
-  }// ===========================================================================
-  // TAB 2: GALERI KOLEKSI (GRID SET TEMATIK YANG ELEGAN)
+  }
+
+  // ===========================================================================
+  // TAB 2: GALERI KOLEKSI (GRID SET TEMATIK DINAMIS)
   // ===========================================================================
   Widget _buildGalleryTab(GachaController controller) {
-    final List<Map<String, dynamic>> thematicSets = [
-      {
-        'id': 'set_1',
-        'title': 'Eksplorasi Awal',
-        'desc': 'Fisika dasar & hukum alam',
-        'collected': 3,
-        'total': 5,
-        'isUnlocked': true,
-        'gradient': const <Color>[Color(0xFF2563EB), Color(0xFF1E3A8A)],
-        'cards': [
-          {'name': 'Robert Hooke', 'rarity': 'Common', 'isOwned': true},
-          {'name': 'Hukum Gravitasi', 'rarity': 'Common', 'isOwned': true},
-          {'name': 'Termometer Gas', 'rarity': 'Rare', 'isOwned': true},
-          {'name': 'Prinsip Lensa', 'rarity': 'Epic', 'isOwned': false},
-          {'name': 'Teori Sel Awal', 'rarity': 'Legendary', 'isOwned': false},
-        ],
-      },
-      {
-        'id': 'set_2',
-        'title': 'Pionir Biologi',
-        'desc': 'Misteri sel & genetika',
-        'collected': 0,
-        'total': 4,
-        'isUnlocked': false,
-        'unlockRequirement': 'Level 3',
-        'gradient': const <Color>[Color(0xFF059669), Color(0xFF047857)],
-        'cards': [],
-      },
-      {
-        'id': 'set_3',
-        'title': 'Kosmos & Fisika',
-        'desc': 'Galaksi & lubang hitam',
-        'collected': 0,
-        'total': 6,
-        'isUnlocked': false,
-        'unlockRequirement': '10 Modul',
-        'gradient': const <Color>[Color(0xFF7C3AED), Color(0xFF5B21B6)],
-        'cards': [],
-      },
-    ];
+    final sets = controller.thematicSets;
+
+    if (sets.isEmpty) {
+      return Center(
+        child: Text(
+          'Belum ada set kartu tersedia.',
+          style: GoogleFonts.plusJakartaSans(color: _textMuted),
+        ),
+      );
+    }
 
     return GridView.builder(
       padding: const EdgeInsets.all(20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // Bentuk grid 2 kolom ke samping
+        crossAxisCount: 2,
         crossAxisSpacing: 14,
         mainAxisSpacing: 16,
-        childAspectRatio: 0.85, // Proporsi kartu set yang pas dan compact
+        childAspectRatio: 0.85,
       ),
-      itemCount: thematicSets.length,
+      itemCount: sets.length,
       itemBuilder: (BuildContext context, int index) {
-        final setItem = thematicSets[index];
+        final setItem = sets[index];
         final bool isUnlocked = setItem['isUnlocked'] as bool;
         final int collected = setItem['collected'] as int;
         final int total = setItem['total'] as int;
@@ -435,8 +544,8 @@ class GachaView extends GetView<GachaController> {
             borderRadius: BorderRadius.circular(22),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: isUnlocked 
-                    ? gradientColors.first.withValues(alpha: 0.2) 
+                color: isUnlocked
+                    ? gradientColors.first.withValues(alpha: 0.2)
                     : Colors.black.withValues(alpha: 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
@@ -453,7 +562,7 @@ class GachaView extends GetView<GachaController> {
                     _showSetDetailModal(context, setItem);
                   } else {
                     Get.snackbar(
-                      'Set Masih Terkunci 🔒',
+                      'Set Terkunci 🔒',
                       'Syarat: ${setItem['unlockRequirement']}',
                       snackPosition: SnackPosition.BOTTOM,
                       backgroundColor: _darkNavy,
@@ -483,20 +592,32 @@ class GachaView extends GetView<GachaController> {
                             height: 38,
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: isUnlocked ? gradientColors : <Color>[Colors.grey[400]!, Colors.grey[600]!],
+                                colors: isUnlocked
+                                    ? gradientColors
+                                    : <Color>[
+                                        Colors.grey[400]!,
+                                        Colors.grey[600]!
+                                      ],
                               ),
                               borderRadius: BorderRadius.circular(11),
                             ),
                             child: Icon(
-                              isUnlocked ? Icons.auto_awesome_rounded : Icons.lock_rounded,
+                              isUnlocked
+                                  ? Icons.auto_awesome_rounded
+                                  : Icons.lock_rounded,
                               color: Colors.white,
                               size: 20,
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
-                              color: isUnlocked ? _primaryBlue.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.2),
+                              color: isUnlocked
+                                  ? _primaryBlue.withValues(alpha: 0.1)
+                                  : Colors.grey.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -525,7 +646,9 @@ class GachaView extends GetView<GachaController> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            isUnlocked ? setItem['desc'] as String : 'Syarat: ${setItem['unlockRequirement']}',
+                            isUnlocked
+                                ? setItem['desc'] as String
+                                : 'Syarat: ${setItem['unlockRequirement']}',
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.plusJakartaSans(
@@ -555,15 +678,14 @@ class GachaView extends GetView<GachaController> {
     );
   }
 
-  // ===========================================================================
-  // MODAL DETAIL KARTU DI DALAM SET (KETIKA SET DIKLIK)
-  // ===========================================================================
-  void _showSetDetailModal(BuildContext context, Map<String, dynamic> setItem) {
+  // Modal Detail Kartu di Dalam Set
+  void _showSetDetailModal(
+      BuildContext context, Map<String, dynamic> setItem) {
     final List cards = setItem['cards'] as List;
 
     Get.bottomSheet(
       Container(
-        height: MediaQuery.of(context).size.height * 0.7,
+        height: MediaQuery.of(context).size.height * 0.72,
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -593,7 +715,7 @@ class GachaView extends GetView<GachaController> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Daftar kartu penemuan dalam set tematik ini.',
+              'Daftar kartu ilmuwan & penemuan dalam set tematik ini.',
               style: GoogleFonts.plusJakartaSans(
                 color: _textMuted,
                 fontSize: 12,
@@ -606,25 +728,27 @@ class GachaView extends GetView<GachaController> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 0.72,
+                  childAspectRatio: 0.75,
                 ),
                 itemCount: cards.length,
                 itemBuilder: (BuildContext context, int index) {
-                  final card = cards[index];
-                  final bool isOwned = card['isOwned'] as bool;
-                  final String name = card['name'] as String;
-                  final String rarity = card['rarity'] as String;
+                  final card = Map<String, dynamic>.from(cards[index] as Map);
+                  final bool isOwned = card['isOwned'] == true;
+                  final String name = (card['name'] ?? 'Unknown').toString();
+                  final String rarity = (card['rarity'] ?? 'Common').toString();
 
                   return Container(
                     decoration: BoxDecoration(
-                      color: isOwned ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
-                      borderRadius: BorderRadius.circular(16),
+                      color: isOwned
+                          ? const Color(0xFFF8FAFC)
+                          : const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(
                         color: isOwned ? _border : Colors.transparent,
                       ),
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(17),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
@@ -633,18 +757,28 @@ class GachaView extends GetView<GachaController> {
                             child: Stack(
                               fit: StackFit.expand,
                               children: <Widget>[
-                                Center(
-                                  child: Icon(
-                                    isOwned ? Icons.science_rounded : Icons.lock_rounded,
-                                    color: isOwned ? _primaryBlue : Colors.white54,
-                                    size: 32,
+                                if (isOwned)
+                                  _buildCardImage(
+                                    card,
+                                    iconSize: 34,
+                                    iconColor: _primaryBlue,
+                                  )
+                                else
+                                  const Center(
+                                    child: Icon(
+                                      Icons.lock_rounded,
+                                      color: Colors.white54,
+                                      size: 34,
+                                    ),
                                   ),
-                                ),
                                 Positioned(
                                   top: 8,
                                   left: 8,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 7,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.black.withValues(alpha: 0.6),
                                       borderRadius: BorderRadius.circular(6),
@@ -653,7 +787,7 @@ class GachaView extends GetView<GachaController> {
                                       rarity,
                                       style: GoogleFonts.poppins(
                                         color: Colors.white,
-                                        fontSize: 8.5,
+                                        fontSize: 9,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
@@ -666,7 +800,9 @@ class GachaView extends GetView<GachaController> {
                             flex: 4,
                             child: Container(
                               padding: const EdgeInsets.all(10),
-                              color: isOwned ? Colors.white : const Color(0xFF0F172A),
+                              color: isOwned
+                                  ? Colors.white
+                                  : const Color(0xFF0F172A),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -676,18 +812,20 @@ class GachaView extends GetView<GachaController> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: GoogleFonts.poppins(
-                                      color: isOwned ? _textDark : Colors.white,
+                                      color:
+                                          isOwned ? _textDark : Colors.white,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    isOwned ? 'Milik Sendiri' : 'Terkunci (??? পারা)',
+                                    isOwned ? 'Milik Sendiri' : 'Terkunci',
                                     style: GoogleFonts.plusJakartaSans(
-                                      color: isOwned ? _success : Colors.white54,
+                                      color:
+                                          isOwned ? _success : Colors.white54,
                                       fontSize: 10,
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],
@@ -707,6 +845,7 @@ class GachaView extends GetView<GachaController> {
       isScrollControlled: true,
     );
   }
+
   // ===========================================================================
   // TAB 3: CRAFTING & SHARDS PITY SYSTEM
   // ===========================================================================
@@ -721,10 +860,14 @@ class GachaView extends GetView<GachaController> {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: <Color>[Color(0xFF581C87), Color(0xFF7C3AED), Color(0xFF9333EA)],
+              colors: <Color>[
+                Color(0xFF581C87),
+                Color(0xFF7C3AED),
+                Color(0xFF9333EA)
+              ],
             ),
             borderRadius: BorderRadius.circular(22),
-            boxShadow: [
+            boxShadow: <BoxShadow>[
               BoxShadow(
                 color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
                 blurRadius: 14,
@@ -741,7 +884,11 @@ class GachaView extends GetView<GachaController> {
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.diamond_rounded, color: Colors.white, size: 26),
+                child: const Icon(
+                  Icons.diamond_rounded,
+                  color: Colors.white,
+                  size: 26,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -758,7 +905,7 @@ class GachaView extends GetView<GachaController> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Tukar serpihan (shards) duplikat untuk klaim kartu incaranmu tanpa gacha.',
+                      'Tukar serpihan (shards) duplikat untuk merakit kartu incaranmu tanpa gacha.',
                       style: GoogleFonts.plusJakartaSans(
                         color: const Color(0xFFF3E8FF),
                         fontSize: 11,
@@ -772,7 +919,7 @@ class GachaView extends GetView<GachaController> {
         ),
         const SizedBox(height: 20),
 
-        // Subtitle Daftar Kartu yang Bisa Ditebus
+        // Subtitle & Balance Display
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
@@ -796,13 +943,15 @@ class GachaView extends GetView<GachaController> {
         ),
         const SizedBox(height: 12),
 
-        // List Katalog Kartu Master dari Database untuk Dicraft
+        // List Katalog Kartu Master dari Controller untuk Dicraft
         Obx(() {
           if (controller.allMasterCards.isEmpty) {
-            return const Center(child: Padding(
-              padding: EdgeInsets.all(40),
-              child: Text('Memuat katalog kartu...'),
-            ));
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: CircularProgressIndicator(color: _purple),
+              ),
+            );
           }
 
           return ListView.builder(
@@ -813,7 +962,13 @@ class GachaView extends GetView<GachaController> {
               final card = controller.allMasterCards[index];
               final String cardId = card['id'].toString();
               final bool isOwned = controller.ownedCardIds.contains(cardId);
-              const int craftCost = 100; // Biaya shards per kartu
+              final int craftCost =
+                  int.tryParse(card['craft_cost']?.toString() ?? '100') ?? 100;
+              final String name = (card['name'] ?? 'Kartu').toString();
+              final String setName =
+                  (card['set_name'] ?? 'Umum').toString();
+              final String rarity =
+                  (card['rarity'] ?? 'Common').toString();
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -832,7 +987,14 @@ class GachaView extends GetView<GachaController> {
                         color: _purple.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.science_rounded, color: _purple, size: 22),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: _buildCardImage(
+                          card,
+                          iconSize: 22,
+                          iconColor: _purple,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -840,7 +1002,7 @@ class GachaView extends GetView<GachaController> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            card['name'] as String,
+                            name,
                             style: GoogleFonts.poppins(
                               color: _textDark,
                               fontSize: 13.5,
@@ -849,7 +1011,7 @@ class GachaView extends GetView<GachaController> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Set: ${card['set_name']} • ${card['rarity']}',
+                            'Set: $setName • $rarity',
                             style: GoogleFonts.plusJakartaSans(
                               color: _textMuted,
                               fontSize: 11,
@@ -861,7 +1023,10 @@ class GachaView extends GetView<GachaController> {
                     const SizedBox(width: 10),
                     isOwned
                         ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: _success.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
@@ -881,7 +1046,10 @@ class GachaView extends GetView<GachaController> {
                               backgroundColor: _purple,
                               foregroundColor: Colors.white,
                               elevation: 0,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -904,6 +1072,225 @@ class GachaView extends GetView<GachaController> {
     );
   }
 }
+
+// Widget Animasi Mesin Gacha Dinamis
+class _AnimatedGachaMachine extends StatefulWidget {
+  final GachaState state;
+  const _AnimatedGachaMachine({required this.state});
+
+  @override
+  State<_AnimatedGachaMachine> createState() => _AnimatedGachaMachineState();
+}
+
+class _AnimatedGachaMachineState extends State<_AnimatedGachaMachine>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _shakeController;
+  late Animation<double> _shakeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+
+    _shakeAnimation = Tween<double>(begin: -0.05, end: 0.05).animate(
+      CurvedAnimation(parent: _shakeController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnimatedGachaMachine oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.state == GachaState.shaking) {
+      _shakeController.repeat(reverse: true);
+    } else {
+      _shakeController.stop();
+      _shakeController.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _shakeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    switch (widget.state) {
+      case GachaState.shaking:
+        return AnimatedBuilder(
+          animation: _shakeAnimation,
+          builder: (context, child) {
+            return Transform.rotate(
+              angle: _shakeAnimation.value,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.vibration_rounded,
+                      size: 90,
+                      color: Color(0xFFF59E0B),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Mesin Mengaduk Kapsul...',
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFFD97706),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+
+      case GachaState.dropping:
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: -50, end: 0),
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.bounceOut,
+              builder: (context, val, child) {
+                return Transform.translate(
+                  offset: Offset(0, val),
+                  child: child,
+                );
+              },
+              child: Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.catching_pokemon_rounded,
+                  size: 80,
+                  color: Color(0xFF10B981),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Kapsul Rahasia Keluar!',
+              style: GoogleFonts.poppins(
+                color: const Color(0xFF059669),
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+          ],
+        );
+
+      case GachaState.opening:
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.8, end: 1.2),
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeInOut,
+              builder: (context, val, child) {
+                return Transform.scale(
+                  scale: val,
+                  child: child,
+                );
+              },
+              child: Container(
+                width: 140,
+                height: 140,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.4),
+                      blurRadius: 30,
+                      spreadRadius: 10,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.flare_rounded,
+                  size: 90,
+                  color: Color(0xFF7C3AED),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Membuka Kapsul Penemuan...',
+              style: GoogleFonts.poppins(
+                color: const Color(0xFF7C3AED),
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+          ],
+        );
+
+      case GachaState.result:
+        return const SizedBox.shrink();
+
+      case GachaState.idle:
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                color: _primaryBlue.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _primaryBlue.withValues(alpha: 0.2),
+                  width: 2,
+                ),
+              ),
+              child: const Icon(
+                Icons.casino_rounded,
+                size: 90,
+                color: _primaryBlue,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Mesin Gacha Siap',
+              style: GoogleFonts.poppins(
+                color: _textDark,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Gunakan tiketmu untuk menemukan kartu ilmuwan baru!',
+              style: GoogleFonts.plusJakartaSans(
+                color: _textMuted,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        );
+    }
+  }
+}
+
 class _HeaderChip extends StatelessWidget {
   const _HeaderChip({
     required this.icon,
