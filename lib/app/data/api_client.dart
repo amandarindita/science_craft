@@ -9,7 +9,7 @@ import '../widgets/app_snackbar.dart';
 
 class ApiClient {
   // static const String baseUrl = 'http://192.168.0.111:5000';
-  static const String baseUrl = 'https://ethical-ape-oddly.ngrok-free.app';
+  static const String baseUrl = 'https://delphia-formulable-kristyn.ngrok-free.dev';
   static const Duration defaultTimeout = Duration(seconds: 25);
   static final GetStorage _storage = GetStorage();
 
