@@ -31,7 +31,14 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+
+# Build outputs
+build/
+**/build/
+android/unityLibrary/build/
+.gradle/
+android/.gradle/
+
 
 # Symbolication related
 app.*.symbols
